@@ -1,0 +1,1 @@
+UPDATE ledger_entries SET amount=2 WHERE id='ffffffff-ffff-ffff-ffff-ffffffffffff';

@@ -1,0 +1,1 @@
+DELETE FROM audit_logs WHERE id='abababab-abab-abab-abab-abababababab';

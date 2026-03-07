@@ -1,0 +1,14 @@
+psql:.temp/verify_race_2.sql:7: ERROR:  duplicate key value violates unique constraint "invoices_invoice_number_key"
+DETAIL:  Key (invoice_number)=(AYA-2026-00003) already exists.
+CONTEXT:  SQL statement "INSERT INTO invoices (
+    id, invoice_number, customer_name, customer_phone,
+    subtotal, discount_amount, discount_by, total_amount,
+    debt_amount, debt_customer_id, status,
+    pos_terminal_code, notes, idempotency_key, created_by
+  ) VALUES (
+    v_invoice_id, v_invoice_number, p_customer_name, p_customer_phone,
+    0, 0, p_discount_by, 0,
+    0, p_debt_customer_id, 'active',
+    p_pos_terminal, p_notes, p_idempotency_key, v_user_id
+  )"
+PL/pgSQL function create_sale(jsonb,jsonb,character varying,character varying,uuid,uuid,character varying,text,uuid) line 46 at SQL statement

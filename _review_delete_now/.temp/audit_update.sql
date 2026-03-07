@@ -1,0 +1,1 @@
+UPDATE audit_logs SET description='changed' WHERE id='abababab-abab-abab-abab-abababababab';

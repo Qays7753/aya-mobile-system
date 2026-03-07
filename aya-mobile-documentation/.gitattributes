@@ -1,0 +1,45 @@
+# Auto detect text files and normalize line endings
+* text=auto eol=lf
+
+# Markdown files
+*.md text eol=lf encoding=utf-8
+
+# JSON files
+*.json text eol=lf encoding=utf-8
+
+# JavaScript/TypeScript
+*.js text eol=lf
+*.ts text eol=lf
+*.jsx text eol=lf
+*.tsx text eol=lf
+
+# CSS
+*.css text eol=lf
+*.scss text eol=lf
+
+# HTML
+*.html text eol=lf
+
+# SQL
+*.sql text eol=lf encoding=utf-8
+
+# Config files
+*.yml text eol=lf
+*.yaml text eol=lf
+*.toml text eol=lf
+
+# Git
+.gitattributes text eol=lf
+.gitignore text eol=lf
+
+# Binary files (no conversion)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
