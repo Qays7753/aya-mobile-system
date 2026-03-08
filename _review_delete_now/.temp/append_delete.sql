@@ -1,1 +1,0 @@
-DELETE FROM ledger_entries WHERE id='ffffffff-ffff-ffff-ffff-ffffffffffff';

@@ -68,10 +68,65 @@ LANGUAGE sql STABLE AS $$
   GROUP BY a.opening_balance;
 $$;
 
+CREATE OR REPLACE FUNCTION fn_require_actor(p_created_by UUID DEFAULT NULL)
+RETURNS UUID
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_user_id UUID := COALESCE(p_created_by, auth.uid());
+BEGIN
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'ERR_UNAUTHORIZED';
+  END IF;
+
+  PERFORM 1
+  FROM profiles
+  WHERE id = v_user_id
+    AND is_active = true;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'ERR_UNAUTHORIZED';
+  END IF;
+
+  RETURN v_user_id;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION fn_require_admin_actor(p_created_by UUID DEFAULT NULL)
+RETURNS UUID
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_user_id UUID;
+BEGIN
+  v_user_id := fn_require_actor(p_created_by);
+
+  PERFORM 1
+  FROM profiles
+  WHERE id = v_user_id
+    AND role = 'admin'
+    AND is_active = true;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'ERR_UNAUTHORIZED';
+  END IF;
+
+  RETURN v_user_id;
+END;
+$$;
+
 
 -- ┌─────────────────────────────────────────────┐
 -- │  1. create_sale() — عملية البيع              │
 -- └─────────────────────────────────────────────┘
+
+DROP FUNCTION IF EXISTS create_sale(JSONB, JSONB, VARCHAR, VARCHAR, UUID, UUID, VARCHAR, TEXT, UUID);
 
 CREATE OR REPLACE FUNCTION create_sale(
   p_items           JSONB,
@@ -82,12 +137,13 @@ CREATE OR REPLACE FUNCTION create_sale(
   p_discount_by     UUID DEFAULT NULL,
   p_pos_terminal    VARCHAR DEFAULT NULL,
   p_notes           TEXT DEFAULT NULL,
-  p_idempotency_key UUID DEFAULT NULL
+  p_idempotency_key UUID DEFAULT NULL,
+  p_created_by      UUID DEFAULT NULL
 )
 RETURNS JSONB
 LANGUAGE plpgsql SECURITY DEFINER AS $$
 DECLARE
-  v_user_id         UUID := auth.uid();
+  v_user_id         UUID;
   v_invoice_id      UUID;
   v_invoice_number  VARCHAR;
   v_item            JSONB;
@@ -112,6 +168,8 @@ DECLARE
   v_retry_count     INT := 0;
   v_max_retries     INT := 2;
 BEGIN
+  v_user_id := fn_require_actor(p_created_by);
+
   -- ═══ التحقق من Idempotency ═══
   IF p_idempotency_key IS NOT NULL THEN
     IF EXISTS (SELECT 1 FROM invoices WHERE idempotency_key = p_idempotency_key) THEN
@@ -368,19 +426,24 @@ $$;
 -- │  2. cancel_invoice() — إلغاء فاتورة         │
 -- └─────────────────────────────────────────────┘
 
+DROP FUNCTION IF EXISTS cancel_invoice(UUID, VARCHAR);
+
 CREATE OR REPLACE FUNCTION cancel_invoice(
   p_invoice_id   UUID,
-  p_cancel_reason VARCHAR
+  p_cancel_reason VARCHAR,
+  p_created_by    UUID DEFAULT NULL
 )
 RETURNS JSONB
 LANGUAGE plpgsql SECURITY DEFINER AS $$
 DECLARE
-  v_user_id  UUID := auth.uid();
+  v_user_id  UUID;
   v_invoice  RECORD;
   v_payment  RECORD;
   v_item     RECORD;
   v_debt     RECORD;
 BEGIN
+  v_user_id := fn_require_admin_actor(p_created_by);
+
   -- جلب الفاتورة مع قفل
   SELECT * INTO v_invoice FROM invoices WHERE id = p_invoice_id FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'ERR_INVOICE_NOT_FOUND'; END IF;
@@ -457,17 +520,20 @@ $$;
 -- │  3. create_return() — عملية المرتجع          │
 -- └─────────────────────────────────────────────┘
 
+DROP FUNCTION IF EXISTS create_return(UUID, JSONB, UUID, VARCHAR, UUID);
+
 CREATE OR REPLACE FUNCTION create_return(
   p_invoice_id      UUID,
   p_items           JSONB,
   p_refund_account_id UUID DEFAULT NULL,
   p_reason          VARCHAR DEFAULT '',
-  p_idempotency_key UUID DEFAULT NULL
+  p_idempotency_key UUID DEFAULT NULL,
+  p_created_by      UUID DEFAULT NULL
 )
 RETURNS JSONB
 LANGUAGE plpgsql SECURITY DEFINER AS $$
 DECLARE
-  v_user_id        UUID := auth.uid();
+  v_user_id        UUID;
   v_return_id      UUID := gen_random_uuid();
   v_return_number  VARCHAR;
   v_invoice        RECORD;
@@ -479,6 +545,8 @@ DECLARE
   v_return_type    return_type;
   v_all_returned   BOOLEAN := true;
 BEGIN
+  v_user_id := fn_require_actor(p_created_by);
+
   -- Idempotency
   IF p_idempotency_key IS NOT NULL THEN
     IF EXISTS (SELECT 1 FROM returns WHERE idempotency_key = p_idempotency_key) THEN
@@ -603,18 +671,21 @@ $$;
 -- │  4. create_debt_payment() — تسديد دين (FIFO) │
 -- └─────────────────────────────────────────────┘
 
+DROP FUNCTION IF EXISTS create_debt_payment(UUID, NUMERIC, UUID, TEXT, UUID, UUID);
+
 CREATE OR REPLACE FUNCTION create_debt_payment(
   p_debt_customer_id UUID,
   p_amount           DECIMAL,
   p_account_id       UUID,
   p_notes            TEXT DEFAULT NULL,
   p_idempotency_key  UUID DEFAULT NULL,
-  p_debt_entry_id    UUID DEFAULT NULL
+  p_debt_entry_id    UUID DEFAULT NULL,
+  p_created_by       UUID DEFAULT NULL
 )
 RETURNS JSONB
 LANGUAGE plpgsql SECURITY DEFINER AS $$
 DECLARE
-  v_user_id         UUID := auth.uid();
+  v_user_id         UUID;
   v_payment_id      UUID := gen_random_uuid();
   v_receipt_number  VARCHAR;
   v_remaining       DECIMAL(12,3) := p_amount;
@@ -624,6 +695,8 @@ DECLARE
   v_customer        RECORD;
   v_customer_due    DECIMAL(12,3);
 BEGIN
+  v_user_id := fn_require_actor(p_created_by);
+
   IF p_amount <= 0 THEN RAISE EXCEPTION 'ERR_VALIDATION_NEGATIVE_AMOUNT'; END IF;
 
   -- Idempotency
@@ -1150,16 +1223,18 @@ $$;
 -- └─────────────────────────────────────────────┘
 
 -- Remove legacy overload to keep one canonical command signature.
+DROP FUNCTION IF EXISTS create_daily_snapshot(DATE, TEXT);
 DROP FUNCTION IF EXISTS create_daily_snapshot(DATE, TEXT, UUID);
 
 CREATE OR REPLACE FUNCTION create_daily_snapshot(
   p_snapshot_date DATE DEFAULT CURRENT_DATE, -- ADR-034: تم تقييد التاريخ بـ CURRENT_DATE فقط
-  p_notes         TEXT DEFAULT NULL
+  p_notes         TEXT DEFAULT NULL,
+  p_created_by    UUID DEFAULT NULL
 )
 RETURNS JSONB
 LANGUAGE plpgsql SECURITY DEFINER AS $$
 DECLARE
-  v_user_id       UUID := auth.uid();
+  v_user_id       UUID;
   v_snapshot_id   UUID := gen_random_uuid();
   v_sales         DECIMAL(12,3);
   v_cost          DECIMAL(12,3);
@@ -1173,6 +1248,8 @@ DECLARE
   v_accounts_snap JSONB;
   v_existing_snapshot RECORD;
 BEGIN
+  v_user_id := fn_require_admin_actor(p_created_by);
+
   -- ADR-034: منع اللقطات بأثر رجعي
   IF p_snapshot_date <> CURRENT_DATE THEN
     RAISE EXCEPTION 'ERR_VALIDATION_SNAPSHOT_DATE';
@@ -1440,19 +1517,21 @@ $$;
 -- │  16. edit_invoice() — تعديل فاتورة           │
 -- └─────────────────────────────────────────────┘
 
+DROP FUNCTION IF EXISTS edit_invoice(UUID, JSONB, JSONB, UUID, VARCHAR, UUID);
+
 CREATE OR REPLACE FUNCTION edit_invoice(
   p_invoice_id        UUID,
   p_items             JSONB,
   p_payments          JSONB,
   p_debt_customer_id  UUID DEFAULT NULL,
   p_edit_reason       VARCHAR DEFAULT '',
-  p_idempotency_key   UUID DEFAULT NULL
+  p_idempotency_key   UUID DEFAULT NULL,
+  p_created_by        UUID DEFAULT NULL
 )
 RETURNS JSONB
 LANGUAGE plpgsql SECURITY DEFINER AS $$
 DECLARE
-  v_user_id         UUID := auth.uid();
-  v_user_role       VARCHAR;
+  v_user_id         UUID;
   v_invoice         RECORD;
   v_item            JSONB;
   v_payment         JSONB;
@@ -1478,12 +1557,9 @@ DECLARE
   v_old_values      JSONB;
   v_new_values      JSONB;
 BEGIN
-  -- ═══ Authorization (Admin فقط) ═══
-  SELECT role INTO v_user_role FROM profiles WHERE id = v_user_id;
-  IF v_user_role IS NULL OR v_user_role <> 'admin' THEN
-    RAISE EXCEPTION 'ERR_UNAUTHORIZED';
-  END IF;
+  v_user_id := fn_require_admin_actor(p_created_by);
 
+  -- ═══ Authorization (Admin فقط) ═══
   -- ═══ Idempotency ═══
   IF p_idempotency_key IS NOT NULL THEN
     IF EXISTS (

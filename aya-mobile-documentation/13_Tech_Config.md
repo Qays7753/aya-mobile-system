@@ -127,12 +127,13 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
 SUPABASE_SERVICE_ROLE_KEY=eyJ...
 ```
 
-### اختيارية (Optional — لها قيم افتراضية)
+### اختيارية (Optional — لها قيم افتراضية أو تُستخدم فقط عند تفعيل المسار المرتبط بها)
 ```env
 NEXT_PUBLIC_APP_NAME=آية موبايل
 NEXT_PUBLIC_CURRENCY=JOD
 NEXT_PUBLIC_TIMEZONE=Asia/Amman
 NEXT_PUBLIC_POS_TERMINAL_CODE=POS-01
+CRON_SECRET=change-me-before-enabling-cron
 ```
 
 **⚠️ `SUPABASE_SERVICE_ROLE_KEY` لا يُوضع في `NEXT_PUBLIC_` أبداً — للخادم فقط.**
@@ -359,7 +360,7 @@ aya-mobile/
 │   │   ├── audit-log/page.tsx  # سجل النظام (Admin)
 │   │   └── maintenance/        # الصيانة (V1)
 │   ├── layout.tsx              # RTL + Font + Theme
-│   └── globals.css             # Tailwind/CSS Variables
+│   └── globals.css             # Global CSS Variables (Tailwind optional لاحقاً)
 ├── components/
 │   ├── ui/                     # Button, Input, Modal, Table, Card, Badge
 │   ├── pos/                    # ProductSearch, Cart, PaymentPanel, PostSale
@@ -635,10 +636,11 @@ aya-mobile/
 | الإعداد | القيمة |
 |---------|--------|
 | **Endpoint** | `GET /api/health` |
-| **Response (OK)** | `{ "status": "ok", "timestamp": "..." }` — HTTP 200 |
-| **Response (Degraded)** | `{ "status": "degraded", "timestamp": "..." }` — HTTP 503 |
-| **ما يفحص** | اتصال DB (query بسيط على `system_settings`) |
-| **الاستخدام** | UptimeRobot يستدعيه كل 5 دقائق |
+| **Response (PX-01 Baseline)** | `{ "status": "ok", "timestamp": "..." }` — HTTP 200 |
+| **Response (PX-02+ Degraded)** | `{ "status": "degraded", "timestamp": "..." }` — HTTP 503 |
+| **ما يفحص الآن** | App liveness فقط في `PX-01` |
+| **ما يفحص لاحقاً** | اتصال DB (query بسيط على `system_settings`) بعد تثبيت طبقة قاعدة البيانات في `PX-02` |
+| **الاستخدام** | UptimeRobot يستدعيه كل 5 دقائق؛ DB-aware health يُفعّل بعد اكتمال `PX-02` |
 
 ---
 

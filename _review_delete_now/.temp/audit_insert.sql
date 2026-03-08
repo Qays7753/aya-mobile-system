@@ -1,1 +1,0 @@
-INSERT INTO audit_logs (id,user_id,action_type,table_name,record_id,description,ip_address) VALUES ('abababab-abab-abab-abab-abababababab','11111111-1111-1111-1111-111111111111','qa_test','products','dddddddd-dddd-dddd-dddd-dddddddddddd','audit append-only test','127.0.0.1');

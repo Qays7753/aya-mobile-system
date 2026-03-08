@@ -1,10 +1,15 @@
 export default function UnsupportedDevicePage() {
   return (
-    <main style={{ padding: 24, fontFamily: "system-ui, sans-serif" }}>
-      <h1>Unsupported Browser or Device</h1>
-      <p>
-        This session is blocked by the Aya Mobile device/browser policy.
-      </p>
+    <main className="unsupported-shell">
+      <section className="unsupported-panel">
+        <p className="eyebrow">Device Policy</p>
+        <h1>هذا المتصفح أو الجهاز غير مدعوم حاليًا</h1>
+        <p>
+          الجلسة الحالية لا تطابق سياسة تشغيل Aya Mobile. استخدم Chrome أو Edge
+          أو Safari أو Firefox بإصدار حديث، وعلى هاتف أو تابلت أو لابتوب أو
+          ديسكتوب مدعوم.
+        </p>
+      </section>
     </main>
   );
 }

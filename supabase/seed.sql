@@ -1,0 +1,2 @@
+-- Canonical bootstrap seed data is versioned in migrations.
+-- This file is intentionally a no-op so Supabase CLI seed paths remain valid.

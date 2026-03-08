@@ -33,9 +33,9 @@
 
 | # | المهمة | التفاصيل | معيار "تم" |
 |---|--------|----------|------------|
-| 0.1 | إنشاء مشروع Next.js | App Router + TypeScript + Tailwind | `npm run dev` يفتح صفحة فارغة |
+| 0.1 | إنشاء مشروع Next.js | App Router + TypeScript + baseline CSS shell | `npm run dev` يفتح صفحة فارغة |
 | 0.2 | إنشاء مشروع Supabase | `supabase init` + ربط بمشروع Cloud | `supabase status` يُرجع connected |
-| 0.3 | إعداد Environment Variables | `.env.local` مع `SUPABASE_URL` + `ANON_KEY` + `SERVICE_ROLE_KEY` | المفاتیح تعمل |
+| 0.3 | إعداد Environment Variables | `.env.local` مع `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY` + `SUPABASE_SERVICE_ROLE_KEY` | المفاتیح تعمل |
 | 0.4 | إنشاء `lib/supabase/server.ts` | عميل `service_role` للـ API Routes فقط | Import يعمل بدون خطأ |
 | 0.5 | إنشاء `lib/supabase/client.ts` | عميل `@supabase/ssr` للقراءة فقط | Import يعمل |
 | 0.6 | إعداد Git + `.gitignore` | `.env.local` محمي، لا Secrets في الكود | `git status` لا يعرض `.env` |

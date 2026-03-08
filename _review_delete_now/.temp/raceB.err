@@ -1,2 +1,0 @@
-psql:.temp/raceB.sql:7: ERROR:  ERR_STOCK_INSUFFICIENT
-CONTEXT:  PL/pgSQL function create_sale(jsonb,jsonb,character varying,character varying,uuid,uuid,character varying,text,uuid) line 86 at RAISE

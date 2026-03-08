@@ -89,6 +89,7 @@
    - `Evidence`
    - `Updated At`
    - `Notes / Blockers`
+   - `Checklist التنفيذ السريع`
 4. بعد كل تنفيذ، أنشئ:
    - `Execution Report`
    - `Review Prompt`
@@ -100,6 +101,38 @@
 6. إذا خرجت المراجعة بـ `PASS WITH FIXES` أو `FAIL`، تعود المهمة إلى `In Progress` حتى إغلاق الملاحظات.
 7. لا تنتقل إلى المرحلة التالية قبل تحقق **Gate Success** الخاصة بالمرحلة الحالية + اكتمال حزمة الإغلاق.
 8. إذا فشل شرط نجاح واحد من شروط المرحلة، تتحول المرحلة إلى `Blocked` حتى يُوثق سبب الفشل وخطة الإغلاق.
+
+---
+
+## Checklist التنفيذ السريع
+
+هذا القسم **للقراءة السريعة فقط**.  
+كل بند = **نفس المهمة الموجودة في التراكر** لكن بصيغة سريعة جدًا.
+
+- `Execution Agent`: يحدّث الوصف والدليل عند كل إنجاز.
+- `Review Agent`: لا يغيّر الوصف؛ يحدّث **كلمة الحالة فقط** بعد المراجعة أو يتركها كما هي إذا لم تبدأ المراجعة.
+- الكلمات المعتمدة هنا: `التالي`، `تنفيذ`، `مراجعة`، `مغلق`، `مؤجل`، `متعثر`.
+
+### المرحلة المغلقة
+
+- `مغلق` `PX-01-T01` Bootstrap المشروع (`Next.js`, `TypeScript`)
+- `مغلق` `PX-01-T02` تثبيت المكتبات الأساسية
+- `مؤجل` `PX-01-T03` إعداد Supabase CLI والربط
+- `مغلق` `PX-01-T04` إنشاء browser/server/admin clients بحدود واضحة
+- `مغلق` `PX-01-T05` Health endpoint
+- `مغلق` `PX-01-T06` baseline installability + responsive shell
+- `مغلق` `PX-01` أُغلقت مع عنصر مؤجل (`T03`)
+
+### المرحلة الحالية
+
+- `مغلق` `PX-03-T01` قراءة المنتجات للـ POS مع Blind POS
+- `مغلق` `PX-03-T02` سلة محلية + بحث سريع + Auto-Focus
+- `مغلق` `PX-03-T03` Route + validation + RPC لـ `create_sale`
+- `مغلق` `PX-03-T04` إثبات idempotency في البيع
+- `مغلق` `PX-03-T05` إثبات concurrency بين جهازين POS
+- `مغلق` `PX-03-T06` حفظ سلة POS محليًا
+- `مغلق` `PX-03` أُغلقت بنجاح
+- `التالي` `PX-04-T01` `create_return` مع قواعد partial/debt refund
 
 ---
 
@@ -152,10 +185,10 @@
 | Phase ID | المرحلة | الهدف | المصدر الأساسي | Gate Success | الحالة |
 |----------|---------|-------|----------------|--------------|--------|
 | `PX-00` | Pre-Build Freeze | تثبيت مرجعية الوثائق والـ locks قبل أي بناء | `27`, `31`, `archive/30` | كل `GP-01..GP-08 = Pass` | `Done` |
-| `PX-01` | Workspace + Runtime Baseline | تجهيز المشروع وبيئة التنفيذ والاتصال الأساسي | `09:26+`, `24:41+` | التطبيق يعمل محليًا + Health + Device baseline | `In Progress` |
-| `PX-02` | DB Security Foundation | تطبيق schema/RLS/RPC boundaries ومنع direct writes | `05`, `10`, `13`, `15` | كل write عبر RPC wrappers فقط | `Open` |
-| `PX-03` | Sales Core Slice | المنتجات + POS + `create_sale` + concurrency | `04`, `16`, `25` | بيع كامل ناجح + replay محمي + لا stock drift | `Open` |
-| `PX-04` | Invoice Control + Debt | المرتجعات + الديون + الإلغاء + التعديل | `04`, `06`, `08`, `15` | flows الحرجة تمر بدون تناقض مالي | `Open` |
+| `PX-01` | Workspace + Runtime Baseline | تجهيز المشروع وبيئة التنفيذ والاتصال الأساسي | `09:26+`, `24:41+` | التطبيق يعمل محليًا + Health + Device baseline | `Done` |
+| `PX-02` | DB Security Foundation | تطبيق schema/RLS/RPC boundaries ومنع direct writes | `05`, `10`, `13`, `15` | كل write عبر RPC wrappers فقط | `Done` |
+| `PX-03` | Sales Core Slice | المنتجات + POS + `create_sale` + concurrency | `04`, `16`, `25` | بيع كامل ناجح + replay محمي + لا stock drift | `Done` |
+| `PX-04` | Invoice Control + Debt | المرتجعات + الديون + الإلغاء + التعديل | `04`, `06`, `08`, `15` | flows الحرجة تمر بدون تناقض مالي | `In Progress` |
 | `PX-05` | Reports + Snapshot + Integrity + Device | اللقطة اليومية + التقارير + فحص النزاهة + جودة الأجهزة | `03`, `09`, `17`, `29` | Device/UAT/Integrity checks ناجحة | `Open` |
 | `PX-06` | MVP Release Gate | فحص قبول MVP وإعلان الجاهزية | `17`, `24`, `27` | اجتياز جميع اختبارات MVP المطلوبة | `Open` |
 | `PX-07` | V1 Expansion | الموردون/المشتريات/الشحن/الجرد/التسوية/الصيانة | `09`, `24` | تسليم V1 بدون كسر عقود MVP | `Open` |
@@ -219,36 +252,156 @@
 
 ### Current Phase Status
 
-- **Phase State:** `In Progress`
-- **Active Task:** `PX-01-T01`
+- **Phase State:** `Done`
+- **Active Task:** `PX-01 Closed`
 - **Started At:** `2026-03-07`
 - **Execution Owner:** `Execution Agent`
 - **Review Owner:** `Review Agent (Review-Only)`
-- **Next Gate:** إنهاء `PX-01-T01` بعقد واضح ثم الانتقال تدريجيًا إلى `PX-01-T02..T06`
+- **Next Gate:** بدء `PX-02-T01` وفق عقد `PX-02` بعد إغلاق `PX-01` مع عنصر مؤجل واحد موثق.
 
 | Task ID | المهمة | المرجع | Status | Evidence | Updated At | Notes / Blockers |
 |--------|--------|--------|--------|----------|------------|------------------|
-| `PX-01-T01` | Bootstrap المشروع (`Next.js`, `TypeScript`) | `24/TASK-00-01` | `In Progress` | `PX-01 kickoff started` | `2026-03-07` | التنفيذ يبدأ من bootstrap فقط. لا يسمح بفتح أي مهمة خارج `PX-01` حاليًا. |
-| `PX-01-T02` | تثبيت المكتبات الأساسية | `24/TASK-00-02` | `Open` |  |  |  |
-| `PX-01-T03` | إعداد Supabase CLI والربط | `24/TASK-00-03` | `Open` |  |  |  |
-| `PX-01-T04` | إنشاء browser/server/admin clients بحدود واضحة | `24/TASK-00-04` | `Open` |  |  |  |
-| `PX-01-T05` | Health endpoint | `24/TASK-00-06` | `Open` |  |  |  |
-| `PX-01-T06` | baseline installability + responsive shell | `24/TASK-00-07`, `29` | `Open` |  |  |  |
+| `PX-01-T01` | Bootstrap المشروع (`Next.js`, `TypeScript`) | `24/TASK-00-01` | `Done` | `package.json`, `app/layout.tsx`, `app/page.tsx`, `app/globals.css`, `npm run check`, `npm run test:e2e`, `Re-review PASS` | `2026-03-07` | أُغلق بعد re-review ناجح؛ baseline CSS موثق كخيار المرحلة الحالية بدل فرض Tailwind داخل `PX-01`. |
+| `PX-01-T02` | تثبيت المكتبات الأساسية | `24/TASK-00-02` | `Done` | `package.json`, `package-lock.json`, `npm run check`, `Re-review PASS` | `2026-03-07` | أُغلق بعد re-review ناجح؛ `check` يعمل على checkout نظيف (`lint -> build -> test`). |
+| `PX-01-T03` | إعداد Supabase CLI والربط | `24/TASK-00-03` | `Deferred` | `supabase/config.toml`, `supabase/.temp/project-ref`, `supabase/.temp/pooler-url`, `npx supabase projects list`, `npx supabase migration list --linked`, `npx supabase migration list --linked --debug` | `2026-03-07` | تم ربط CLI بالمشروع الصحيح (`aya-mobile`) محليًا، لكن المصادقة على Postgres البعيد ما زالت تفشل بـ `password authentication failed for user "postgres"`. وبقرار موثق تم تأجيل إغلاق remote DB auth إلى وقت لاحق لأنه لا يجب أن يمنع إغلاق `PX-01` والانتقال إلى `PX-02`. |
+| `PX-01-T04` | إنشاء browser/server/admin clients بحدود واضحة | `24/TASK-00-04` | `Done` | `lib/env.ts`, `lib/supabase/admin.ts`, `lib/supabase/client.ts`, `lib/supabase/server.ts`, `Re-review PASS` | `2026-03-07` | أُغلق بعد re-review ناجح؛ تم توحيد URL authority على `NEXT_PUBLIC_SUPABASE_URL` وإزالة shim غير الضروري. |
+| `PX-01-T05` | Health endpoint | `24/TASK-00-06` | `Done` | `app/api/health/route.ts`, `tests/unit/health-route.test.ts`, `tests/e2e/smoke.spec.ts`, `npm run check`, `Re-review PASS` | `2026-03-07` | أُغلق بعد re-review ناجح؛ health baseline الحالي مقصود لـ `PX-01` (liveness فقط)، وDB-aware health مؤجل إلى `PX-02`. |
+| `PX-01-T06` | baseline installability + responsive shell | `24/TASK-00-07`, `29` | `Done` | `app/layout.tsx`, `app/manifest.ts`, `app/page.tsx`, `app/globals.css`, `app/unsupported-device/page.tsx`, `components/runtime/install-prompt.tsx`, `middleware.ts`, `tests/e2e/smoke.spec.ts`, `npm run build`, `npm run typecheck`, `npm run check`, `npm run test:e2e`, `Review PASS` | `2026-03-07` | أُغلق بعد Review PASS؛ يدعم `360/768/1024+` وبدون أي offline financial behavior. |
 
-### Active Task Contract — PX-01-T01
+### Deferred Decision — PX-01-T03
 
-- **الهدف:** تثبيت baseline مشروع `Next.js + TypeScript` صالح للبناء بدون أي logic تجاري.
-- **In Scope:** bootstrap هيكل المشروع فقط، مع الحفاظ على التوافق مع هيكل التوثيق الحالي.
-- **Allowed Paths:** `app/`, `package.json`, `tsconfig.json`, `next.config.*`, `next-env.d.ts`, `.gitignore`, `aya-mobile-documentation/31_Execution_Live_Tracker.md`.
-- **Required Proofs:** نجاح تشغيل `npm run dev`، ظهور baseline project structure، وعدم إدخال features أو business flows.
-- **Stop Rules:** ممنوع بناء routes تجارية، ممنوع إضافة Supabase logic في هذه المهمة، ممنوع القفز إلى `PX-01-T02` قبل تقرير تنفيذ ومراجعة لهذه المهمة.
+- **الهدف الأصلي:** إكمال الربط المحلي الصحيح مع Supabase CLI لهذا المشروع فقط بدون تداخل مع أي مشروع آخر.
+- **ما تحقق فعليًا:** `supabase projects list` صار يُظهر مشروع `aya-mobile`، وملفا `project-ref` و`pooler-url` المحليان يشيران إلى المشروع الصحيح.
+- **سبب التأجيل:** أوامر الربط البعيد التي تعتمد على Postgres (`migration list --linked`) ما زالت تفشل بسبب `remote DB password auth` رغم صحة ربط المشروع نفسه.
+- **الأثر على التنفيذ:** التوقف الحالي لا يمنع إغلاق `PX-01`، لكنه يمنع فقط استخدام أوامر CLI التي تتطلب دخولًا فعليًا إلى قاعدة البيانات البعيدة.
+- **شرط إعادة الفتح:** نجاح `npx supabase migration list --linked` بدون `password authentication failed`.
 
-### Required Delivery For PX-01-T01
+### Required Delivery For PX-01-T03
 
-- `Execution Report — PX-01-T01`
-- `Review Prompt — PX-01-T01`
-- `Review Report — PX-01-T01`
-- `Close Decision — PX-01-T01`
+- `Execution Report — PX-01-T03`
+- `Review Prompt — PX-01-T03`
+- `Review Report — PX-01-T03`
+- `Close Decision — PX-01-T03`
+
+### Phase Execution Report — PX-01
+
+- **Phase:** `PX-01 — Workspace + Runtime Baseline`
+- **Execution Window:** `2026-03-07`
+- **Execution Status:** `Ready for Phase Review`
+- **Outcome Summary:** تم إنجاز baseline التشغيل المحلي كاملًا لهذه المرحلة، وإغلاق جميع المهام التنفيذية داخلها ما عدا `PX-01-T03` التي حُوّلت رسميًا إلى `Deferred` بقرار موثق لا يمنع الانتقال إلى `PX-02`.
+
+**Task Outcomes**
+
+- `PX-01-T01` = `Done`
+  - Bootstrap المشروع اكتمل مع baseline صالح للبناء.
+  - **Evidence:** `package.json`, `app/layout.tsx`, `app/page.tsx`, `app/globals.css`, `npm run check`, `npm run test:e2e`, `Re-review PASS`
+- `PX-01-T02` = `Done`
+  - تثبيت المكتبات الأساسية وتسلسل `check` أصبح يعمل على checkout نظيف.
+  - **Evidence:** `package.json`, `package-lock.json`, `npm run check`, `Re-review PASS`
+- `PX-01-T03` = `Deferred`
+  - ربط Supabase CLI بالمشروع الصحيح تم، لكن أوامر Postgres البعيدة ما زالت تفشل بمصادقة كلمة المرور.
+  - **Evidence:** `supabase/config.toml`, `supabase/.temp/project-ref`, `supabase/.temp/pooler-url`, `npx supabase projects list`, `npx supabase migration list --linked`, `npx supabase migration list --linked --debug`
+  - **Deferred Decision:** التوقف محصور في remote DB auth فقط، ولا يمنع إغلاق `PX-01` لأن نطاق المرحلة هو baseline التشغيل والاتصال الأساسي، وليس إدارة migrations البعيدة كشرط عبور إلى `PX-02`.
+- `PX-01-T04` = `Done`
+  - إنشاء browser/server/admin Supabase clients بحدود واضحة للمفاتيح.
+  - **Evidence:** `lib/env.ts`, `lib/supabase/admin.ts`, `lib/supabase/client.ts`, `lib/supabase/server.ts`, `Re-review PASS`
+- `PX-01-T05` = `Done`
+  - Health endpoint baseline أُنجز واختُبر.
+  - **Evidence:** `app/api/health/route.ts`, `tests/unit/health-route.test.ts`, `tests/e2e/smoke.spec.ts`, `npm run check`, `Re-review PASS`
+- `PX-01-T06` = `Done`
+  - baseline installability + responsive shell أُنجز وأغلق بعد مراجعة ناجحة.
+  - **Evidence:** `app/layout.tsx`, `app/manifest.ts`, `app/page.tsx`, `app/globals.css`, `app/unsupported-device/page.tsx`, `components/runtime/install-prompt.tsx`, `middleware.ts`, `tests/e2e/smoke.spec.ts`, `npm run build`, `npm run typecheck`, `npm run check`, `npm run test:e2e`, `Review PASS`
+
+**Gate Success Check**
+
+- `npm run dev` يعمل
+  - **Status:** `Covered by existing phase evidence`
+- `GET /api/health` يعمل
+  - **Status:** `Covered by T05 evidence`
+- حدود مفاتيح Supabase صحيحة
+  - **Status:** `Covered by T04 evidence`
+- baseline متعدد الأجهزة مثبت
+  - **Status:** `Covered by T06 evidence`
+
+**Phase Closure Assessment**
+
+- جميع مهام المرحلة = `Done` أو `Deferred` رسميًا: `Yes`
+- blocker المتبقي داخل `PX-01` تم تحويله إلى `Deferred` بقرار موثق: `Yes`
+- لا يوجد ما يمنع تقنيًا فتح `PX-02-T01` بعد حكم المراجعة: `Yes`
+- تم استكمال الحزمة الختامية لاحقًا عبر `Phase Review Report — PX-01` و`Phase Close Decision — PX-01`
+
+### Phase Review Prompt — PX-01
+
+أنت الآن `Review Agent (Review-Only)` لمراجعة إغلاق المرحلة `PX-01 — Workspace + Runtime Baseline`.
+
+مهمتك **قراءة + تحليل + مقارنة + تقديم تقرير فقط**.  
+ممنوع التنفيذ، ممنوع التعديل، ممنوع كتابة كود، ممنوع تشغيل أوامر تغيّر الحالة، وممنوع إعلان الإغلاق النهائي خارج تقرير المراجعة.
+
+راجع المخرجات الحالية مقابل:
+
+- `aya-mobile-documentation/31_Execution_Live_Tracker.md`
+- `aya-mobile-documentation/09_Implementation_Plan.md`
+- `aya-mobile-documentation/13_Tech_Config.md`
+- `aya-mobile-documentation/24_AI_Build_Playbook.md`
+- `aya-mobile-documentation/27_PreBuild_Verification_Matrix.md`
+- `aya-mobile-documentation/29_Device_Browser_Policy.md`
+
+تحقق تحديدًا من:
+
+1. هل تحققت `Gate Success` الخاصة بـ `PX-01` بالأدلة الموثقة؟
+2. هل جميع مهام `PX-01` أصبحت `Done` أو `Deferred` رسميًا؟
+3. هل قرار `Deferred` الخاص بـ `PX-01-T03` مبرر وموثق بشكل لا يكسر شروط عبور المرحلة؟
+4. هل الأدلة المذكورة لكل من `T01/T02/T04/T05/T06` كافية لدعم الإغلاق؟
+5. هل الانتقال إلى `PX-02-T01` آمن ومطابق للعقد دون ترك `P0/P1` مفتوح داخل `PX-01`؟
+
+أخرج تقريرك بصيغة:
+
+- `Phase Review Report — PX-01`
+- الحكم النهائي: `PASS` أو `PASS WITH FIXES` أو `FAIL`
+- قائمة findings مرتبة حسب الخطورة
+- تحديد واضح هل توصي بـ:
+  - `Close PX-01`
+  - أو `Close PX-01 with Deferred Items`
+  - أو `Keep PX-01 Open / Blocked`
+
+### Phase Review Report — PX-01
+
+- **Review Agent:** `Review Agent (Review-Only)`
+- **Review Date:** `2026-03-07`
+- **Final Verdict:** `PASS`
+- **Recommendation:** `Close PX-01 with Deferred Items`
+
+**Review Summary**
+
+- جميع شروط `Gate Success` الأربعة متحققة بالأدلة الموثقة.
+- جميع مهام `PX-01` أصبحت `Done` أو `Deferred` رسميًا.
+- قرار `Deferred` الخاص بـ `PX-01-T03` مبرر ولا يكسر شروط عبور المرحلة.
+- لا توجد findings بمستوى `P0` أو `P1`.
+- الانتقال إلى `PX-02-T01` آمن.
+
+**Gate Review**
+
+- `npm run dev` يعمل: `PASS`
+- `GET /api/health` يعمل: `PASS`
+- حدود مفاتيح Supabase صحيحة: `PASS`
+- baseline متعدد الأجهزة مثبت: `PASS`
+
+**Findings**
+
+- `P2 (Info)` ملف `.env.example` غير موجود في الجذر رغم ذكره ضمن بعض الأدلة السابقة؛ لا يمنع الإغلاق ويُعالج لاحقًا إذا لزم.
+- `P2 (Info)` أمثلة health في الوثائق ليست موحدة بالكامل مع `StandardEnvelope` الحالي؛ لا يوجد تعارض تنفيذي حرج.
+- `P2 (Info)` `check` لا يتضمن `typecheck` كخطوة مستقلة؛ مقبول حاليًا لأن `build` يغطي الأخطاء الحرجة.
+
+### Phase Close Decision — PX-01
+
+- **Decision:** `Closed with Deferred Items`
+- **Decision Date:** `2026-03-07`
+- **Basis:** `Phase Review Report — PX-01 = PASS`
+- **Deferred Items:** `PX-01-T03` فقط
+- **Deferred Reason:** ربط Supabase CLI بالمشروع الصحيح مكتمل، لكن remote Postgres auth ما زال يفشل بسبب كلمة المرور؛ هذا لا يكسر `Gate Success` الخاصة بـ `PX-01`.
+- **Reopen Condition:** نجاح `npx supabase migration list --linked` بدون `password authentication failed`.
+- **Next Active Phase:** `PX-02`
+- **Next Active Task:** `PX-02-T01`
 
 ---
 
@@ -291,13 +444,1234 @@
 - `Phase Review Report — PX-02`
 - `Phase Close Decision — PX-02`
 
+### Current Phase Status
+
+- **Phase State:** `Done`
+- **Active Task:** `PX-02 Closed`
+- **Started At:** `2026-03-07`
+- **Execution Owner:** `Execution Agent`
+- **Review Owner:** `Review Agent (Review-Only)`
+- **Next Gate:** بدء `PX-03-T01` وفق عقد `PX-03` بعد إغلاق `PX-02` مع عنصر مرحّل واحد موثق.
+
 | Task ID | المهمة | المرجع | Status | Evidence | Updated At | Notes / Blockers |
 |--------|--------|--------|--------|----------|------------|------------------|
-| `PX-02-T01` | تطبيق schema والمigrations الأساسية | `05`, `15` | `Open` |  |  |  |
-| `PX-02-T02` | تفعيل `REVOKE ALL` + RLS baseline | `10/ADR-044`, `24/TASK-00-05` | `Open` |  |  |  |
-| `PX-02-T03` | التحقق من Blind POS على `products/accounts/suppliers` | `18`, `05`, `13` | `Open` |  |  |  |
-| `PX-02-T04` | التحقق من wrappers الحساسة (`sale`, `return`, `debt`, `snapshot`) | `15`, `25` | `Open` |  |  |  |
-| `PX-02-T05` | إثبات عدم وجود shadow mutation paths | `27/VB-01`, `28` | `Open` |  |  |  |
+| `PX-02-T01` | تطبيق schema والمigrations الأساسية | `05`, `15` | `Done` | `supabase/migrations/001_foundation.sql`, `supabase/migrations/002_operations.sql`, `supabase/migrations/003_accounting.sql`, `supabase/migrations/004_functions_triggers.sql`, `supabase/migrations/005_rls_security.sql`, `supabase/migrations/006_system_settings_seed_alignment.sql`, `supabase/config.toml`, `supabase/seed.sql`, `npx supabase start --exclude ...`, `npx supabase db reset --local --debug`, `npx supabase db lint --local --fail-on error --level warning`, `docker exec ... schema_migrations/system_settings/accounts/expense_categories`, `Review Report — PX-02-T01`, `Close Decision — PX-02-T01` | `2026-03-08` | أُغلقت المهمة بحكم `PASS`. المراجعة اعتبرت counts المحلية ومواءمة `006` كافية، واعتبرت lint warnings داخل `004_functions_triggers.sql` ملاحظات `P3 Cosmetic` لا تمنع الإغلاق. |
+| `PX-02-T02` | تفعيل `REVOKE ALL` + RLS baseline | `10/ADR-044`, `24/TASK-00-05` | `Done` | `supabase/migrations/007_revoke_all_rls_baseline_alignment.sql`, `npx supabase start --exclude ...`, `npx supabase db reset --local --debug`, `npx supabase db lint --local --fail-on error --level warning`, `docker exec supabase_db_Aya_Mobile psql ... has_table_privilege / pg_policies / columns`, `psql ... v_pos_products / v_pos_accounts / suppliers / create_transfer`, `Execution Report — PX-02-T02`, `Review Prompt — PX-02-T02`, `Review Report — PX-02-T02`, `Close Decision — PX-02-T02` | `2026-03-08` | أُغلقت المهمة بحكم `PASS`. المراجعة اعتبرت `007` محققة لـ `ADR-044` بالكامل، وأكدت إغلاق write paths على safe views وصحة `Blind POS`, `Suppliers lockdown`, و`EXECUTE boundaries`. |
+| `PX-02-T03` | التحقق من Blind POS على `products/accounts/suppliers` | `18`, `05`, `13` | `Done` | `npx supabase start --exclude ...`, `npx supabase db reset --local --debug`, `docker exec supabase_db_Aya_Mobile psql ... auth.users/profiles/products/suppliers probes`, `psql ... t03_pos_probe queries`, `Execution Report — PX-02-T03`, `Review Prompt — PX-02-T03`, `Review Report — PX-02-T03`, `Close Decision — PX-02-T03` | `2026-03-08` | أُغلقت المهمة بحكم `PASS`. المراجعة اعتبرت أدلة `products/accounts/suppliers` كافية لإثبات Blind POS وعدم تسرب `suppliers` إلى POS، ولم تُظهر أي فجوة جديدة ضمن baseline `001..007`. |
+| `PX-02-T04` | التحقق من wrappers الحساسة (`sale`, `return`, `debt`, `snapshot`) | `15`, `25`, `13`, `10/ADR-042` | `Done` | `supabase/migrations/004_functions_triggers.sql`, `npx supabase db reset --local --debug`, `npx supabase db lint --local --fail-on error --level warning --debug`, `docker exec supabase_db_Aya_Mobile psql ... t04_verify queries`, `Execution Report — PX-02-T04`, `Review Prompt — PX-02-T04`, `Review Report — PX-02-T04`, `Close Decision — PX-02-T04` | `2026-03-08` | أُغلقت المهمة بحكم `PASS WITH FIXES`. الإصلاحات أغلقت الفجوات الثلاث الأصلية، لكن تم ترحيل العنصر `PX-02-T04-D01` لتوحيد بقية الدوال (`9`) على `fn_require_actor/fn_require_admin_actor` عند بناء API routes الخاصة بها. |
+| `PX-02-T05` | إثبات عدم وجود shadow mutation paths | `27/VB-01`, `28` | `Done` | `npx supabase start --exclude edge-runtime,gotrue,imgproxy,kong,logflare,mailpit,postgres-meta,postgrest,realtime,storage-api,studio,supavisor,vector --debug`, `npx supabase db reset --local --debug`, `npx supabase db lint --local --fail-on error --level warning --debug`, `docker exec supabase_db_Aya_Mobile psql ... role_table_grants / role_routine_grants / has_function_privilege / has_sequence_privilege / information_schema.views`, `docker exec supabase_db_Aya_Mobile psql ... shadow mutation probe notices`, `Execution Report — PX-02-T05`, `Review Prompt — PX-02-T05`, `Review Report — PX-02-T05`, `Close Decision — PX-02-T05` | `2026-03-08` | أُغلقت المهمة بحكم `PASS`. المراجعة اعتبرت audit الامتيازات + runtime probes كافية لإثبات `VB-01` وعدم وجود أي shadow mutation path فعلي، واعتبرت `fn_is_admin()` helper مقصودة وغير حاجبة. |
+
+### Required Delivery For PX-02-T01
+
+- `Execution Report — PX-02-T01`
+- `Review Prompt — PX-02-T01`
+- `Review Report — PX-02-T01`
+- `Close Decision — PX-02-T01`
+
+### Execution Report — PX-02-T01
+
+- **Task:** `PX-02-T01 — تطبيق schema والمigrations الأساسية`
+- **Execution Window:** `2026-03-08`
+- **Execution Status:** `Ready for Review`
+- **Review Scope:** `Migration-Only`
+- **Outcome Summary:** تم تشغيل Supabase local DB عبر Docker لهذا المشروع بصيغة DB-only، ثم نجح `db reset --local --debug` مع تطبيق `001..006` كاملًا، ونجح seed no-op، وتأكدت baseline counts محليًا. لا توجد أخطاء lint، لكن توجد warnings داخل دوال من `004_functions_triggers.sql` وتحتاج حكم مراجعة صريح قبل الإغلاق.
+
+**Execution Steps**
+
+- تشغيل قاعدة البيانات المحلية فقط:
+  - `npx supabase start --exclude gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor --debug`
+- إعادة بناء DB محليًا من الصفر:
+  - `npx supabase db reset --local --debug`
+- فحص lint محلي على الـ DB الناتجة:
+  - `npx supabase db lint --local --fail-on error --level warning`
+- استعلامات تحقق مباشرة:
+  - `schema_migrations = 001..006`
+  - `accounts = 4`
+  - `expense_categories = 8`
+  - `system_settings = 16`
+
+**Observed Results**
+
+- `supabase start` الكامل فشل بسبب health checks لخدمات جانبية (`realtime`, `storage`, `studio`) وليس بسبب DB أو SQL migrations.
+- تشغيل DB-only نجح، وهو كافٍ لهذا التحقق لأن المطلوب مراجعة migrations فقط.
+- `db reset --local --debug` نجح حتى النهاية وطبّق:
+  - `001 foundation`
+  - `002 operations`
+  - `003 accounting`
+  - `004 functions_triggers`
+  - `005 rls_security`
+  - `006 system_settings_seed_alignment`
+- seed path المحلي صالح:
+  - `supabase/config.toml` يشير إلى `supabase/seed.sql`
+  - `supabase/seed.sql` no-op تم تحميله بنجاح بعد migrations
+- counts بعد reset:
+  - `accounts = 4`
+  - `expense_categories = 8`
+  - `system_settings = 16`
+- `default_credit_limit = 100` موجود محليًا بعد `006`
+
+**Lint Warnings (No Errors)**
+
+- `public.edit_invoice`
+  - `never read variable "v_max_discount"`
+- `public.create_return`
+  - `target type is different type than source type`
+  - السياق: cast من `text` إلى `return_type`
+- `public.cancel_invoice`
+  - `unused variable "v_debt"`
+- `public.create_debt_payment`
+  - `target type is different type than source type`
+  - السياق: cast من `text` إلى `jsonb` للمتغير `v_allocations`
+  - `never read variable "v_customer"`
+- `public.create_transfer`
+  - `never read variable "v_from_balance"`
+
+**Task Closure Assessment**
+
+- بناء الـ schema baseline محليًا: `Pass`
+- تطبيق migrations `001..006` محليًا: `Pass`
+- seed baseline local counts: `Pass`
+- lint errors: `None`
+- lint warnings needing reviewer judgment: `Yes`
+- التوصية التنفيذية الحالية: `إحالة المهمة إلى Review Agent بحكم Migration-Only`
+- **Post-Check Cleanup:** تم إيقاف Supabase local stack بعد جمع الأدلة عبر `npx supabase stop --project-id Aya_Mobile`
+
+### Review Prompt — PX-02-T01 (Migration-Only)
+
+أنت الآن `Review Agent (Review-Only)` لمراجعة `PX-02-T01 — تطبيق schema والمigrations الأساسية`.
+
+مهمتك **قراءة + تحليل + مقارنة + تقديم تقرير فقط**.  
+ممنوع التنفيذ، ممنوع التعديل، ممنوع كتابة كود، وممنوع تشغيل Docker أو `supabase start/reset/lint` أو أي أمر يغير الحالة.
+
+هذه مراجعة **Migration-Only** وليست مراجعة phase كاملة.
+
+راجع فقط مقابل:
+
+- `aya-mobile-documentation/31_Execution_Live_Tracker.md`
+- `aya-mobile-documentation/05_Database_Design.md`
+- `aya-mobile-documentation/15_Seed_Data_Functions.md`
+- `supabase/migrations/001_foundation.sql`
+- `supabase/migrations/002_operations.sql`
+- `supabase/migrations/003_accounting.sql`
+- `supabase/migrations/004_functions_triggers.sql`
+- `supabase/migrations/005_rls_security.sql`
+- `supabase/migrations/006_system_settings_seed_alignment.sql`
+- `supabase/config.toml`
+- `supabase/seed.sql`
+
+اعتمد فقط على الأدلة التنفيذية الموثقة داخل التراكر من هذه الجلسة:
+
+- DB-only local start نجح
+- `db reset --local --debug` نجح وطبّق `001..006`
+- `accounts = 4`
+- `expense_categories = 8`
+- `system_settings = 16`
+- `db lint` أخرج warnings فقط، بدون errors
+
+تحقق تحديدًا من:
+
+1. هل `PX-02-T01` تحقق وظيفيًا كمهمة migrations baseline محلية؟
+2. هل المايجريشن `006_system_settings_seed_alignment.sql` أغلقت فجوة `system_settings` بشكل صحيح؟
+3. هل counts المحلية (`4/8/16`) كافية لدعم سلامة seed baseline؟
+4. هل warnings الصادرة من `db lint` في `004_functions_triggers.sql` مجرد ملاحظات غير حاجبة، أم أنها تمنع إغلاق `PX-02-T01`؟
+5. هل التوصية الصحيحة هي:
+   - `Close PX-02-T01`
+   - أو `Close PX-02-T01 with Fixes`
+   - أو `Keep PX-02-T01 Open`
+
+أخرج تقريرك بصيغة:
+
+- `Review Report — PX-02-T01`
+- الحكم النهائي: `PASS` أو `PASS WITH FIXES` أو `FAIL`
+- قائمة findings مرتبة حسب الخطورة
+- توصية إجرائية واضحة بخصوص إغلاق `PX-02-T01`
+
+### Review Report — PX-02-T01
+
+- **Review Agent:** `Review Agent (Review-Only)`
+- **Review Date:** `2026-03-08`
+- **Review Scope:** `Migration-Only`
+- **Final Verdict:** `PASS`
+- **Recommendation:** `Close PX-02-T01`
+
+**Review Summary**
+
+- تحققت مهمة `PX-02-T01` وظيفيًا كـ migrations baseline محلية.
+- الـ migrations الست (`001..006`) تُنشئ الجداول الموثقة في `05`، وتزرع البيانات الأولية حسب `15`، وتطبق الدوال والأمان.
+- `006_system_settings_seed_alignment.sql` أغلقت فجوة `system_settings` بشكل صحيح.
+- الأدلة التنفيذية الموثقة كافية ومتسقة.
+
+**Detailed Verification**
+
+1. **هل `PX-02-T01` تحقق وظيفيًا كمهمة migrations baseline محلية؟**
+   - `PASS`
+   - `db reset --local --debug` نجح وطبّق `001..006` بالتسلسل.
+   - `schema_migrations` يحوي ست migrations.
+   - `seed.sql` موجود كـ no-op لأن seed مضمّن في `001 + 006`.
+   - `config.toml` يشير إلى `./seed.sql` بشكل صحيح.
+
+2. **هل `006_system_settings_seed_alignment.sql` أغلقت فجوة `system_settings`؟**
+   - `PASS`
+   - تحقق مرجعي مقابل `15_Seed_Data_Functions.md` لقائمة `system_settings`:
+     - `max_pos_discount_percentage` = `001`
+     - `discount_warning_threshold` = `001`
+     - `allow_negative_stock` = `006`
+     - `prevent_sale_below_cost` = `006`
+     - `default_credit_limit` = `001` ثم تصحيح إلى `100` في `006`
+     - `default_due_date_days` = `001`
+     - `invoice_edit_window_hours` = `006`
+     - `pos_idle_timeout_minutes` = `006`
+     - `hide_cost_prices_pos` = `006`
+     - `require_reason_min_chars` = `006`
+     - `max_login_attempts` = `006`
+     - `low_stock_threshold` = `001`
+     - `store_name` = `001`
+     - `store_phone` = `001`
+     - `currency_symbol` = `001`
+     - `receipt_footer_text` = `006`
+   - النتيجة: `16/16` متطابقة.
+   - `ON CONFLICT (key) DO NOTHING` في `006` آمنة ولا تكسر إعادة التشغيل.
+
+3. **هل counts المحلية (`4/8/16`) كافية لدعم سلامة seed baseline؟**
+   - `PASS`
+   - `accounts = 4`
+   - `expense_categories = 8`
+   - `system_settings = 16`
+   - تحقق إضافي: seed الحسابات وفئات المصروفات في `001` يطابق `15`.
+
+4. **هل warnings `db lint` تمنع إغلاق `PX-02-T01`؟**
+   - `No`
+   - `public.edit_invoice`:
+     - `never read variable "v_max_discount"`
+     - التقييم: `P3 Cosmetic`
+   - `public.create_return`:
+     - `target type is different type than source type`
+     - التقييم: `P3 Cosmetic`
+     - السياق: cast ضمني من `text` إلى `return_type`
+   - `public.cancel_invoice`:
+     - `unused variable "v_debt"`
+     - التقييم: `P3 Cosmetic`
+   - `public.create_debt_payment`:
+     - `target type is different type than source type`
+     - `never read variable "v_customer"`
+     - التقييم: `P3 Cosmetic`
+   - `public.create_transfer`:
+     - `never read variable "v_from_balance"`
+     - التقييم: `P3 Cosmetic`
+   - الحكم: كلها `P3 Cosmetic` ولا تمنع الإغلاق. يُوصى بمعالجتها ضمن `PX-02-T04`.
+
+5. **التوصية الإجرائية**
+   - `Close PX-02-T01`
+
+**Findings**
+
+- `F1` `P3` توجد `6` lint warnings (`unused vars + implicit casts`) في `004_functions_triggers.sql`.
+  - القرار: لا تمنع الإغلاق. تُعالج ضمن `PX-02-T04` عند مراجعة wrappers الحساسة.
+- `F2` `P3` `seed.sql` هو `no-op` والبيانات الأولية مضمّنة في migrations.
+  - القرار: اختيار تصميمي صالح ومتسق مع baseline الحالي.
+
+**Final Operational Recommendation**
+
+- `Close PX-02-T01`
+
+### Close Decision — PX-02-T01
+
+- **Decision:** `Closed`
+- **Decision Date:** `2026-03-08`
+- **Basis:** `Review Report — PX-02-T01 = PASS`
+- **Open Findings Carried Forward:** lint warnings `P3 Cosmetic` فقط، وتُرحّل مرجعيًا إلى `PX-02-T04`
+- **Next Active Task:** `PX-02-T02`
+- **Next Task Scope:** `REVOKE ALL + RLS baseline` وفق `10/ADR-044` و`24/TASK-00-05`
+
+### Required Delivery For PX-02-T02
+
+- `Execution Report — PX-02-T02`
+- `Review Prompt — PX-02-T02`
+- `Review Report — PX-02-T02`
+- `Close Decision — PX-02-T02`
+
+### Execution Report — PX-02-T02
+
+- **Task:** `PX-02-T02 — تفعيل REVOKE ALL + RLS baseline`
+- **Execution Window:** `2026-03-08`
+- **Execution Status:** `Ready for Review`
+- **Review Scope:** `Migration-Only (RLS / Grants)`
+- **Outcome Summary:** أضيفت migration تصحيحية `007_revoke_all_rls_baseline_alignment.sql` لمواءمة `ADR-044` مع العقد المرجعية. بعد تشغيل Docker محليًا بصيغة DB-only، نجح `db reset --local --debug` مع تطبيق `001..007`. أثناء التحقق الأول ظهرت ثغرة كتابة عبر safe views بسبب صلاحيات موروثة؛ تم إغلاقها داخل `007` عبر `REVOKE ALL` صريح على `v_pos_*` و`admin_suppliers`، ثم أُعيد `reset/lint` واختبارات الصلاحيات حتى أصبح baseline جاهزًا للمراجعة.
+
+**Execution Steps**
+
+- إنشاء migration تصحيحية جديدة:
+  - `supabase/migrations/007_revoke_all_rls_baseline_alignment.sql`
+- تشغيل قاعدة البيانات المحلية فقط:
+  - `npx supabase start --exclude gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor --debug`
+- إعادة بناء DB محليًا:
+  - `npx supabase db reset --local --debug`
+- فحص lint محلي:
+  - `npx supabase db lint --local --fail-on error --level warning`
+- استعلامات تحقق بنيوية:
+  - `schema_migrations = 001..007`
+  - `pg_policies`
+  - `information_schema.columns` للـ safe views
+  - `has_table_privilege(...)`
+  - `has_function_privilege(...)`
+- استعلامات runtime بــ login probe محلي عضو في `authenticated`:
+  - `INSERT / UPDATE` على `v_pos_products`
+  - `SELECT` مباشر من `suppliers`
+  - `SELECT count(*)` من `accounts`, `v_pos_accounts`, `expense_categories`, `system_settings`
+  - استدعاء `create_transfer(...)`
+
+**Observed Results**
+
+- `db reset --local --debug` النهائي نجح وطبّق `001..007`.
+- `db lint` النهائي نجح بدون errors. warnings بقيت محصورة في `004_functions_triggers.sql` فقط، ولم تنتج warnings جديدة من `007`.
+- `schema_migrations` المحلي:
+  - `001,002,003,004,005,006,007`
+- safe views الموجودة محليًا:
+  - `v_pos_products`
+  - `v_pos_accounts`
+  - `v_pos_debt_customers`
+  - `admin_suppliers`
+- تحقق الأعمدة الحساسة:
+  - `v_pos_products` لا تعرض `cost_price` ولا `avg_cost_price`
+  - `v_pos_accounts` لا تعرض `opening_balance` ولا `current_balance`
+  - `v_pos_debt_customers` لا تعرض `credit_limit` ولا `national_id`
+- حدود grants المباشرة:
+  - `authenticated` لا يملك `SELECT` مباشر على `suppliers`
+  - `authenticated` يملك `SELECT` فقط على `v_pos_products`
+  - `authenticated` لا يملك `INSERT/UPDATE/DELETE` على `v_pos_products`
+  - `authenticated` لا يملك `INSERT/UPDATE/DELETE` على `admin_suppliers`
+- probes التشغيلية كمستخدم محلي عضو في `authenticated`:
+  - `INSERT INTO public.v_pos_products ...` = `permission denied for view v_pos_products`
+  - `UPDATE public.v_pos_products SET ...` = `permission denied for view v_pos_products`
+  - `SELECT count(*) FROM public.suppliers` = `permission denied for table suppliers`
+  - `SELECT count(*) FROM public.accounts` = `0`
+  - `SELECT count(*) FROM public.v_pos_accounts` = `4`
+  - `SELECT count(*) FROM public.expense_categories` = `8`
+  - `SELECT count(*) FROM public.system_settings` = `0`
+- حدود EXECUTE على الدوال:
+  - `authenticated` يملك `EXECUTE` على `fn_is_admin()` فقط
+  - `authenticated` لا يملك `EXECUTE` على:
+    - `create_sale(...)`
+    - `create_return(...)`
+    - `create_debt_payment(...)`
+    - `create_transfer(...)`
+  - probe runtime:
+    - `SELECT public.create_transfer(...)` = `permission denied for function create_transfer`
+
+**Lint Warnings (No Errors)**
+
+- بقيت warnings السابقة فقط في `004_functions_triggers.sql`:
+  - `public.edit_invoice`
+  - `public.create_debt_payment`
+  - `public.create_return`
+  - `public.cancel_invoice`
+  - `public.create_transfer`
+- لا توجد warnings جديدة من `007_revoke_all_rls_baseline_alignment.sql`
+
+**Task Closure Assessment**
+
+- `Revoke-All-First` baseline وفق `ADR-044`: `Pass`
+- direct writes من `authenticated` على safe views: `Blocked Successfully`
+- direct read على `suppliers`: `Blocked Successfully`
+- Blind POS عبر `v_pos_accounts / v_pos_products / v_pos_debt_customers`: `Pass`
+- منع `EXECUTE` على business RPCs من `authenticated`: `Pass`
+- الحاجة الحالية: `Review Agent` للتحقق من المطابقة مع العقد فقط
+- **Post-Check Cleanup:** تم حذف login probe المحلي `t02_auth_probe` بعد الاختبارات، ثم إيقاف Supabase local stack عبر `npx supabase stop --project-id Aya_Mobile`
+
+### Review Prompt — PX-02-T02 (Migration-Only / RLS-Grants)
+
+أنت الآن `Review Agent (Review-Only)` لمراجعة `PX-02-T02 — تفعيل REVOKE ALL + RLS baseline`.
+
+مهمتك **قراءة + تحليل + مقارنة + تقديم تقرير فقط**.  
+ممنوع التنفيذ، ممنوع التعديل، ممنوع كتابة كود، وممنوع تشغيل Docker أو `supabase start/reset/lint` أو أي أمر يغير الحالة.
+
+هذه مراجعة **Migration-Only (RLS / Grants)** وليست مراجعة phase كاملة.
+
+راجع فقط مقابل:
+
+- `aya-mobile-documentation/31_Execution_Live_Tracker.md`
+- `aya-mobile-documentation/05_Database_Design.md`
+- `aya-mobile-documentation/10_ADRs.md`
+- `aya-mobile-documentation/18_Data_Retention_Privacy.md`
+- `aya-mobile-documentation/24_AI_Build_Playbook.md`
+- `supabase/migrations/004_functions_triggers.sql`
+- `supabase/migrations/005_rls_security.sql`
+- `supabase/migrations/007_revoke_all_rls_baseline_alignment.sql`
+
+اعتمد فقط على الأدلة التنفيذية الموثقة داخل التراكر من هذه الجلسة:
+
+- DB-only local start نجح
+- `db reset --local --debug` النهائي نجح وطبّق `001..007`
+- `db lint` النهائي أخرج warnings فقط من `004_functions_triggers.sql` وبدون errors
+- أثناء التحقق الأول ظهرت كتابة مباشرة ممكنة عبر safe views، ثم أُغلقت داخل `007` بإضافة `REVOKE ALL` صريح على `v_pos_*` و`admin_suppliers`، ثم أُعيد `reset/lint`
+- `authenticated` لا يملك `SELECT` مباشر على `suppliers`
+- `authenticated` يملك `SELECT` على `v_pos_products` لكن `INSERT/UPDATE/DELETE = false`
+- `accounts` direct read = `0` و`v_pos_accounts = 4`
+- `expense_categories` direct read = `8`
+- `system_settings` direct read = `0`
+- `authenticated` يملك `EXECUTE` على `fn_is_admin()` فقط، ولا يملك `EXECUTE` على `create_sale/create_return/create_debt_payment/create_transfer`
+- probe runtime على `create_transfer(...)` أعاد `permission denied`
+
+تحقق تحديدًا من:
+
+1. هل `007_revoke_all_rls_baseline_alignment.sql` حققت `ADR-044 Revoke-All-First` بدون إعادة فتح أي write path مباشر؟
+2. هل Blind POS صار متوافقًا مع العقد على `products/accounts/debt_customers` عبر `v_pos_*` فقط؟
+3. هل عقد `suppliers` أصبح صحيحًا: لا direct table read لـ `Admin/POS`، و`admin_suppliers` فقط للقراءة التشغيلية؟
+4. هل إغلاق ثغرة الكتابة الموروثة على safe views عبر `REVOKE ALL` الصريح كافٍ ومطابق؟
+5. هل حدود `EXECUTE` على الدوال متوافقة مع `ADR-042/044` بحيث تبقى business RPCs غير قابلة للاستدعاء من `authenticated`؟
+6. هل التوصية الصحيحة هي:
+   - `Close PX-02-T02`
+   - أو `Close PX-02-T02 with Fixes`
+   - أو `Keep PX-02-T02 Open`
+
+أخرج تقريرك بصيغة:
+
+- `Review Report — PX-02-T02`
+- الحكم النهائي: `PASS` أو `PASS WITH FIXES` أو `FAIL`
+- قائمة findings مرتبة حسب الخطورة
+- توصية إجرائية واضحة بخصوص إغلاق `PX-02-T02`
+
+### Review Report — PX-02-T02
+
+- **Review Agent:** `Review Agent (Review-Only)`
+- **Review Date:** `2026-03-08`
+- **Review Scope:** `Migration-Only (RLS / Grants)`
+- **Final Verdict:** `PASS`
+- **Recommendation:** `Close PX-02-T02`
+
+**Review Summary**
+
+- `007_revoke_all_rls_baseline_alignment.sql` حققت `ADR-044 Revoke-All-First` بدون إعادة فتح أي write path مباشر.
+- Blind POS صار متوافقًا مع العقد على `products/accounts/debt_customers` عبر `v_pos_*` فقط.
+- عقد `suppliers` أصبح صحيحًا: لا direct table read لـ `Admin/POS`، و`admin_suppliers` فقط للقراءة التشغيلية.
+- إغلاق ثغرة الكتابة الموروثة على safe views عبر `REVOKE ALL` الصريح كافٍ ومطابق.
+- حدود `EXECUTE` على business RPCs متوافقة مع `ADR-042/044`.
+
+**Detailed Verification**
+
+1. **هل `007` حققت `ADR-044 Revoke-All-First` بدون إعادة فتح أي write path مباشر؟**
+   - `PASS`
+   - `REVOKE ALL ON ALL TABLES / SEQUENCES / ROUTINES` أُعيد تطبيقه بشكل كامل داخل `007`.
+   - `suppliers` خرجت من direct read عبر `REVOKE SELECT`.
+   - safe views (`v_pos_products`, `v_pos_accounts`, `v_pos_debt_customers`, `admin_suppliers`) أصبحت تحمل `REVOKE ALL` صريحًا ثم `GRANT SELECT` فقط.
+   - probes التشغيلية أثبتت أن `INSERT/UPDATE` على `v_pos_products` = `permission denied`.
+
+2. **هل Blind POS صار متوافقًا مع العقد على `products/accounts/debt_customers` عبر `v_pos_*` فقط؟**
+   - `PASS`
+   - `products`: direct read غير متاح لغير الـ Admin، و`v_pos_products` لا تعرض `cost_price` ولا `avg_cost_price`.
+   - `accounts`: direct read غير متاح لغير الـ Admin، و`v_pos_accounts` لا تعرض `opening_balance` ولا `current_balance`.
+   - `debt_customers`: direct read غير متاح لغير الـ Admin، و`v_pos_debt_customers` لا تعرض `credit_limit` ولا `national_id`.
+   - الدليل التشغيلي الموثق: `accounts direct = 0` مقابل `v_pos_accounts = 4`.
+
+3. **هل عقد `suppliers` أصبح صحيحًا؟**
+   - `PASS`
+   - direct table read على `suppliers` مغلق لـ `authenticated`.
+   - `admin_suppliers` تعتمد على `fn_is_admin()` فقط للقراءة التشغيلية.
+   - probe runtime: `SELECT count(*) FROM public.suppliers` = `permission denied`.
+
+4. **هل إغلاق ثغرة الكتابة الموروثة على safe views عبر `REVOKE ALL` الصريح كافٍ ومطابق؟**
+   - `PASS`
+   - إضافة `REVOKE ALL` صريح على `v_pos_*` و`admin_suppliers` ثم `GRANT SELECT` فقط عالجت الثغرة المكتشفة أثناء التنفيذ.
+   - `INSERT INTO public.v_pos_products ...` = `permission denied`
+   - `UPDATE public.v_pos_products ...` = `permission denied`
+
+5. **هل حدود `EXECUTE` متوافقة مع `ADR-042/044`؟**
+   - `PASS`
+   - `authenticated` لا يملك `EXECUTE` على business RPCs.
+   - الاستثناء الوحيد هو `fn_is_admin()` لأنها helper function لسياسات RLS.
+   - probe runtime: `SELECT public.create_transfer(...)` = `permission denied for function create_transfer`.
+
+**Findings**
+
+- `F1` `P3 Info` `expense_categories` direct read = `8` لكل `authenticated`.
+  - التقييم: مقبول. السياسة تعرض active categories فقط ولا تكسر أي عقد.
+- `F2` `P3 Info` warnings القديمة في `004_functions_triggers.sql` ما زالت موجودة.
+  - التقييم: مُرحّلة سابقًا إلى `PX-02-T04` ولا تمس نطاق `007`.
+- `F3` `P3 Info` `v_pos_debt_customers` يعرض `current_balance`, `phone`, `address`.
+  - التقييم: مطابق للعقد؛ المحجوب فقط `credit_limit` و`national_id`.
+
+**Contract Mismatches**
+
+- لا يوجد.
+
+**Required Remediation**
+
+- لا يوجد.
+
+**Final Operational Recommendation**
+
+- `Close PX-02-T02`
+
+### Close Decision — PX-02-T02
+
+- **Decision:** `Closed`
+- **Decision Date:** `2026-03-08`
+- **Basis:** `Review Report — PX-02-T02 = PASS`
+- **Open Findings Carried Forward:** `P3 Info` فقط، وwarnings `004_functions_triggers.sql` تبقى مرجعيًا ضمن `PX-02-T04`
+- **Next Active Task:** `PX-02-T03`
+- **Next Task Scope:** Blind POS direct probes على `products/accounts/suppliers` وفق `18`, `05`, `13`
+
+### Required Delivery For PX-02-T03
+
+- `Execution Report — PX-02-T03`
+- `Review Prompt — PX-02-T03`
+- `Review Report — PX-02-T03`
+- `Close Decision — PX-02-T03`
+
+### Execution Report — PX-02-T03
+
+- **Task:** `PX-02-T03 — التحقق من Blind POS على products/accounts/suppliers`
+- **Execution Window:** `2026-03-08`
+- **Execution Status:** `Ready for Review`
+- **Review Scope:** `Verification-Only (Blind POS Probes)`
+- **Outcome Summary:** تم تشغيل Supabase local DB بصيغة DB-only ثم إعادة `db reset` على baseline الحالي (`001..007`) بدون أي تغييرات SQL جديدة. بعد ذلك أُدخلت بيانات محلية مؤقتة لاختبار Blind POS فعليًا، ثم نُفذت probes مباشرة كمستخدم محلي عضو في `authenticated` لإثبات حدود الوصول على `products/accounts/suppliers`. لم تظهر فجوة جديدة؛ العقد المرجعية بقيت متحققة، ثم تم تنظيف probe data وإيقاف الـ stack.
+
+**Execution Steps**
+
+- تشغيل قاعدة البيانات المحلية فقط:
+  - `npx supabase start --exclude gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor --debug`
+- إعادة بناء DB محليًا:
+  - `npx supabase db reset --local --debug`
+- إدخال sample data محلية مؤقتة:
+  - `auth.users` + `profiles` لمالك probe
+  - منتجان probe داخل `products`:
+    - `T03 Probe Active Product`
+    - `T03 Probe Inactive Product`
+  - مورد probe داخل `suppliers`:
+    - `T03 Probe Supplier`
+- إنشاء login probe محلي:
+  - `t03_pos_probe`
+  - مع عضوية `authenticated`
+- تنفيذ probes مباشرة عبر `psql` كمستخدم `t03_pos_probe`
+- تنظيف sample data وlogin probe محليًا
+- إيقاف Supabase local stack
+
+**Observed Results**
+
+- sample data الأصلية كانت موجودة فعليًا وقت الاختبار:
+  - `probe_products_total = 2`
+  - `probe_suppliers_total = 1`
+- `products`:
+  - direct read كـ POS probe:
+    - `SELECT count(*) FROM public.products WHERE name LIKE 'T03 Probe%';` = `0`
+  - safe view:
+    - `SELECT name, sale_price, stock_quantity, is_active FROM public.v_pos_products WHERE name LIKE 'T03 Probe%';`
+    - النتيجة = صف واحد فقط:
+      - `T03 Probe Active Product | 120.000 | 5 | true`
+  - inactive filter:
+    - `SELECT count(*) FROM public.v_pos_products WHERE name = 'T03 Probe Inactive Product';` = `0`
+  - hidden columns:
+    - `SELECT cost_price FROM public.v_pos_products LIMIT 1;` = `column does not exist`
+    - `SELECT avg_cost_price FROM public.v_pos_products LIMIT 1;` = `column does not exist`
+- `accounts`:
+  - direct read كـ POS probe:
+    - `SELECT count(*) FROM public.accounts;` = `0`
+  - safe view:
+    - `SELECT count(*) FROM public.v_pos_accounts;` = `4`
+  - hidden columns:
+    - `SELECT opening_balance FROM public.v_pos_accounts LIMIT 1;` = `column does not exist`
+    - `SELECT current_balance FROM public.v_pos_accounts LIMIT 1;` = `column does not exist`
+- `suppliers`:
+  - direct table read كـ POS probe:
+    - `SELECT count(*) FROM public.suppliers;` = `permission denied for table suppliers`
+  - no POS supplier view:
+    - `to_regclass('public.v_pos_suppliers')` = `false`
+  - admin-only operating view does not leak rows to POS probe:
+    - `SELECT count(*) FROM public.admin_suppliers WHERE name = 'T03 Probe Supplier';` = `0`
+- safe view column contracts:
+  - `v_pos_products` columns = `id,name,category,sku,description,sale_price,stock_quantity,min_stock_level,track_stock,is_quick_add,is_active,created_at,updated_at,created_by`
+  - `v_pos_accounts` columns = `id,name,type,module_scope,fee_percentage,is_active,display_order,created_at,updated_at`
+  - `admin_suppliers` columns = `id,name,phone,address,current_balance,is_active,created_at,updated_at`
+
+**Task Closure Assessment**
+
+- `products` Blind POS via `v_pos_products` only: `Pass`
+- active-only visibility on POS products: `Pass`
+- `accounts` Blind POS via `v_pos_accounts` only: `Pass`
+- balances hidden from POS accounts view: `Pass`
+- `suppliers` no direct POS read: `Pass`
+- no POS supplier view exposed: `Pass`
+- admin supplier view does not leak rows to POS probe: `Pass`
+- الحاجة الحالية: `Review Agent` للتحقق من كفاية الأدلة وقرار الإغلاق
+- **Post-Check Cleanup:** تم حذف sample products/supplier/user probe، وحذف login probe `t03_pos_probe`، ثم إيقاف Supabase local stack عبر `npx supabase stop --project-id Aya_Mobile`
+
+### Review Prompt — PX-02-T03 (Verification-Only / Blind POS)
+
+أنت الآن `Review Agent (Review-Only)` لمراجعة `PX-02-T03 — التحقق من Blind POS على products/accounts/suppliers`.
+
+مهمتك **قراءة + تحليل + مقارنة + تقديم تقرير فقط**.  
+ممنوع التنفيذ، ممنوع التعديل، ممنوع كتابة كود، وممنوع تشغيل Docker أو `supabase start/reset/lint` أو أي أمر يغير الحالة.
+
+هذه مراجعة **Verification-Only (Blind POS Probes)** وليست مراجعة phase كاملة.
+
+راجع فقط مقابل:
+
+- `aya-mobile-documentation/31_Execution_Live_Tracker.md`
+- `aya-mobile-documentation/05_Database_Design.md`
+- `aya-mobile-documentation/13_Tech_Config.md`
+- `aya-mobile-documentation/18_Data_Retention_Privacy.md`
+- `supabase/migrations/007_revoke_all_rls_baseline_alignment.sql`
+
+اعتمد فقط على الأدلة التنفيذية الموثقة داخل التراكر من هذه الجلسة:
+
+- DB-only local start نجح
+- `db reset --local --debug` نجح على baseline `001..007`
+- تم إدخال sample data محلية مؤقتة:
+  - `probe_products_total = 2`
+  - `probe_suppliers_total = 1`
+- كـ POS probe (`t03_pos_probe`):
+  - `products direct = 0`
+  - `v_pos_products` أظهرت `T03 Probe Active Product` فقط
+  - `inactive_visible = 0`
+  - `SELECT cost_price FROM v_pos_products` = `column does not exist`
+  - `SELECT avg_cost_price FROM v_pos_products` = `column does not exist`
+  - `accounts direct = 0`
+  - `v_pos_accounts = 4`
+  - `SELECT opening_balance FROM v_pos_accounts` = `column does not exist`
+  - `SELECT current_balance FROM v_pos_accounts` = `column does not exist`
+  - `SELECT count(*) FROM suppliers` = `permission denied`
+  - `to_regclass('public.v_pos_suppliers') = false`
+  - `admin_suppliers_visible = 0`
+- تم تنظيف sample data وlogin probe بعد الاختبارات
+
+تحقق تحديدًا من:
+
+1. هل أدلة `products` كافية لإثبات Blind POS الصحيح:
+   - لا direct read
+   - active products فقط
+   - إخفاء `cost_price` و`avg_cost_price`
+2. هل أدلة `accounts` كافية لإثبات Blind POS الصحيح:
+   - لا direct read
+   - القراءة عبر `v_pos_accounts` فقط
+   - إخفاء `opening_balance` و`current_balance`
+3. هل أدلة `suppliers` كافية لإثبات أن POS لا يملك direct read ولا safe view خاصة به؟
+4. هل كون `admin_suppliers` تعيد `0` rows للـ POS probe كافٍ لإثبات عدم تسرب بيانات الموردين في النطاق الحالي؟
+5. هل التوصية الصحيحة هي:
+   - `Close PX-02-T03`
+   - أو `Close PX-02-T03 with Fixes`
+   - أو `Keep PX-02-T03 Open`
+
+أخرج تقريرك بصيغة:
+
+- `Review Report — PX-02-T03`
+- الحكم النهائي: `PASS` أو `PASS WITH FIXES` أو `FAIL`
+- قائمة findings مرتبة حسب الخطورة
+- توصية إجرائية واضحة بخصوص إغلاق `PX-02-T03`
+
+### Review Report — PX-02-T03
+
+- **Review Agent:** `Review Agent (Review-Only)`
+- **Review Date:** `2026-03-08`
+- **Review Scope:** `Verification-Only (Blind POS Probes)`
+- **Final Verdict:** `PASS`
+- **Recommendation:** `Close PX-02-T03`
+
+**Review Summary**
+
+- أدلة `products/accounts/suppliers` كافية لإثبات Blind POS ضمن baseline الحالي.
+- `products` و`accounts` لا تُقرآن مباشرة من POS، وvisibility تمر عبر views الآمنة فقط.
+- `suppliers` direct read محجوبة تمامًا، ولا يوجد `v_pos_suppliers`، و`admin_suppliers` لا تُسرّب rows إلى POS probe.
+
+**Detailed Verification**
+
+1. هل `products` مطابقة لعقد Blind POS؟
+   - `PASS`
+   - direct read = `0`
+   - `v_pos_products` تعرض المنتج النشط فقط
+   - `cost_price` و`avg_cost_price` غير موجودتين في view
+2. هل `accounts` مطابقة لعقد Blind POS؟
+   - `PASS`
+   - direct read = `0`
+   - `v_pos_accounts = 4`
+   - `opening_balance` و`current_balance` غير موجودتين في view
+3. هل `suppliers` محجوبة عن POS بالشكل الصحيح؟
+   - `PASS`
+   - direct read = `permission denied`
+   - لا يوجد `v_pos_suppliers`
+   - `admin_suppliers = 0` للـ POS probe
+4. هل توجد فجوة جديدة ظهرت بعد `007`؟
+   - `PASS`
+   - لا يوجد evidence على bypass جديد؛ probes الحالية أكدت استمرار `Blind POS` و`Suppliers lockdown`
+
+**Findings**
+
+- لا توجد findings بمستوى `P0/P1/P2`
+- `P3 Info`: التحقق اعتمد على probe data محلية مؤقتة ثم تنظيفها، وهو نطاق كافٍ لهذه المهمة ولا يحتاج تشغيلًا إضافيًا
+
+**Operational Recommendation**
+
+- `Close PX-02-T03`
+
+### Close Decision — PX-02-T03
+
+- **Decision:** `Closed`
+- **Date:** `2026-03-08`
+- **Basis:** `Review Report — PX-02-T03 = PASS`
+- **Open Findings Carried Forward:** لا يوجد
+- **Next Active Task:** `PX-02-T04`
+
+### Required Delivery For PX-02-T04
+
+- `Execution Report — PX-02-T04`
+- `Review Prompt — PX-02-T04`
+- `Review Report — PX-02-T04`
+- `Close Decision — PX-02-T04`
+
+### Execution Report — PX-02-T04
+
+- **Task:** `PX-02-T04 — التحقق من wrappers الحساسة (sale, return, debt, snapshot)`
+- **Execution Window:** `2026-03-08`
+- **Execution Status:** `Ready for Review`
+- **Review Scope:** `Verification + Corrective Alignment (Sensitive Wrappers / service_role Contract)`
+- **Outcome Summary:** probes البداية على `004_functions_triggers.sql` كشفت ثلاث فجوات تعاقدية حقيقية: استدعاء `service_role` بدون actor كان يفشل (`null created_by`)، و`cancel_invoice` كانت قابلة للتنفيذ من POS، و`create_daily_snapshot` كانت قابلة للتنفيذ من POS أيضًا. تم إصلاح baseline مباشرة داخل `supabase/migrations/004_functions_triggers.sql` بإضافة `fn_require_actor` و`fn_require_admin_actor`، ثم إضافة `p_created_by` للدوال الحساسة (`create_sale`, `create_return`, `create_debt_payment`, `cancel_invoice`, `create_daily_snapshot`, `edit_invoice`) وربط authorization بها. بعد ذلك أُعيد `db reset` وأُعيد التحقق runtime على العقد المصححة.
+
+**Execution Steps**
+
+- تشغيل Supabase local DB بصيغة DB-only
+  - `npx supabase start --exclude gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor --debug`
+- إعادة بناء DB بعد تعديل `004_functions_triggers.sql`
+  - `npx supabase db reset --local --debug`
+- فحص lint بعد التعديل
+  - `npx supabase db lint --local --fail-on error --level warning --debug`
+- إدخال probe users وsample data محلية:
+  - `T04 Admin`
+  - `T04 POS`
+  - `T04 Product`
+  - `T04 Debt Customer`
+- تنفيذ probes مباشرة عبر `psql` تحت `service_role` **بدون** `request.jwt.claim.sub` ومع `p_created_by` صريح
+
+**Observed Results**
+
+- actor resolution:
+  - `create_sale(..., p_created_by = POS)` نجحت تحت `service_role` بدون `sub`
+  - `create_sale(...)` بدون `sub` وبدون `p_created_by` أعادت `ERR_UNAUTHORIZED`
+- `sale`:
+  - نجاح بيع baseline
+  - `created_by` في الفاتورة = POS probe id
+  - `unit_price = 100.000` رغم تمرير `unit_price = 9999` من العميل
+  - duplicate `idempotency_key` = `ERR_IDEMPOTENCY`
+- `return`:
+  - بدون `refund_account_id` = `ERR_RETURN_REFUND_ACCOUNT_REQUIRED`
+  - مع `refund_account_id` صحيح = success
+- `debt`:
+  - debt sale baseline نجحت
+  - `create_debt_payment` نجحت مع FIFO allocation واحد بمقدار `60.000`
+- `cancel/edit`:
+  - `cancel_invoice(..., p_created_by = POS)` = `ERR_UNAUTHORIZED`
+  - `cancel_invoice(..., p_created_by = Admin)` = success
+  - `edit_invoice(..., p_created_by = POS)` = `ERR_UNAUTHORIZED`
+- `snapshot`:
+  - `create_daily_snapshot(..., p_created_by = POS)` = `ERR_UNAUTHORIZED`
+  - `create_daily_snapshot(..., p_created_by = Admin)` = success
+  - replay لنفس اليوم = success مع `is_replay = true`
+- `db lint`:
+  - لا توجد `errors`
+  - بقيت warnings `P3` فقط:
+    - `cancel_invoice`: `unused variable v_debt`
+    - `create_return`: implicit cast إلى `return_type`
+    - `create_debt_payment`: implicit cast لـ `v_allocations` + `unused variable v_customer`
+    - `create_transfer`: `unused variable v_from_balance`
+    - `edit_invoice`: `unused variable v_max_discount`
+
+**Task Closure Assessment**
+
+- service-role mutation contract صار قابلًا للتنفيذ عبر `p_created_by`: `Pass`
+- `sale` server-authoritative + idempotent: `Pass`
+- `return` refund-account guard: `Pass`
+- `debt payment` FIFO baseline: `Pass`
+- `cancel/edit/snapshot` admin boundaries: `Pass`
+- lint blocking issues: `Pass` (`warnings` فقط)
+- الحاجة الحالية: `Review Agent` لتقرير كفاية الإصلاح وملاءمة تعديل baseline داخل `004`
+
+### Review Prompt — PX-02-T04 (Sensitive Wrappers / service_role Contract)
+
+أنت الآن `Review Agent (Review-Only)` لمراجعة `PX-02-T04 — التحقق من wrappers الحساسة (sale, return, debt, snapshot)`.
+
+مهمتك **قراءة + تحليل + مقارنة + تقديم تقرير فقط**.  
+ممنوع التنفيذ، ممنوع التعديل، ممنوع كتابة كود، وممنوع تشغيل Docker أو `supabase start/reset/lint` أو أي أمر يغير الحالة.
+
+هذه مراجعة **Verification + Corrective Alignment** وليست مراجعة phase كاملة.
+
+راجع فقط مقابل:
+
+- `aya-mobile-documentation/31_Execution_Live_Tracker.md`
+- `aya-mobile-documentation/10_ADRs.md`
+- `aya-mobile-documentation/13_Tech_Config.md`
+- `aya-mobile-documentation/15_Seed_Data_Functions.md`
+- `aya-mobile-documentation/24_AI_Build_Playbook.md`
+- `aya-mobile-documentation/25_API_Contracts.md`
+- `supabase/migrations/004_functions_triggers.sql`
+
+اعتمد فقط على الأدلة التنفيذية الموثقة داخل التراكر من هذه الجلسة:
+
+- قبل الإصلاح ظهرت ثلاث فجوات:
+  - `service_role` بدون actor يفشل في `create_sale` بسبب `created_by`
+  - `cancel_invoice` كانت تنجح للـ POS
+  - `create_daily_snapshot` كانت تنجح للـ POS
+- تم إصلاح `004_functions_triggers.sql` بإضافة:
+  - `fn_require_actor`
+  - `fn_require_admin_actor`
+  - `p_created_by` إلى `create_sale/create_return/create_debt_payment/cancel_invoice/create_daily_snapshot/edit_invoice`
+- بعد `db reset --local --debug` النهائي:
+  - `create_sale(..., p_created_by = POS)` نجحت تحت `service_role` بدون `sub`
+  - `sale` تجاهلت `unit_price` المرسل وأخذت `unit_price = 100.000` من DB
+  - duplicate sale idempotency = `ERR_IDEMPOTENCY`
+  - `create_return` بدون refund account = `ERR_RETURN_REFUND_ACCOUNT_REQUIRED`
+  - `create_return` مع refund account = success
+  - debt sale + `create_debt_payment` = success مع FIFO allocation `60.000`
+  - `cancel_invoice(..., POS)` = `ERR_UNAUTHORIZED`
+  - `cancel_invoice(..., Admin)` = success
+  - `edit_invoice(..., POS)` = `ERR_UNAUTHORIZED`
+  - `create_daily_snapshot(..., POS)` = `ERR_UNAUTHORIZED`
+  - `create_daily_snapshot(..., Admin)` = success
+  - replay snapshot لنفس اليوم = success مع `is_replay = true`
+- `db lint` النهائي = بدون errors، مع warnings `P3` فقط في `cancel_invoice/create_return/create_debt_payment/create_transfer/edit_invoice`
+
+تحقق تحديدًا من:
+
+1. هل baseline الحالي صار متوافقًا مع عقد `service_role + created_by` الموثق في `13/15/25`؟
+2. هل `create_sale` يحقق server-authoritative pricing وidempotency كما هو موثق؟
+3. هل `create_return` و`create_debt_payment` يحققان guards الأساسية (`refund_account_id`, FIFO) دون كسر العقد؟
+4. هل حدود `Admin-only` أصبحت صحيحة فعليًا في `cancel_invoice`, `edit_invoice`, و`create_daily_snapshot`؟
+5. هل تعديل baseline مباشرة داخل `004_functions_triggers.sql` مقبول لإغلاق `PX-02-T04` ضمن المرحلة الحالية، أم يجب اعتباره `Fixes` أو blocker؟
+6. هل التوصية الصحيحة هي:
+   - `Close PX-02-T04`
+   - أو `Close PX-02-T04 with Fixes`
+   - أو `Keep PX-02-T04 Open`
+
+أخرج تقريرك بصيغة:
+
+- `Review Report — PX-02-T04`
+- الحكم النهائي: `PASS` أو `PASS WITH FIXES` أو `FAIL`
+- قائمة findings مرتبة حسب الخطورة
+- توصية إجرائية واضحة بخصوص إغلاق `PX-02-T04`
+
+### Review Report — PX-02-T04
+
+- **Review Agent:** `Review Agent (Review-Only)`
+- **Review Date:** `2026-03-08`
+- **Review Scope:** `Verification + Corrective Alignment (Sensitive Wrappers / service_role Contract)`
+- **Final Verdict:** `PASS WITH FIXES`
+- **Recommendation:** `Close PX-02-T04 with Fixes`
+
+**Review Summary**
+
+- الإصلاحات المطبقة على `004_functions_triggers.sql` أغلقت الفجوات الثلاث الأصلية بنجاح.
+- الدوال الست المستهدفة (`create_sale`, `create_return`, `create_debt_payment`, `cancel_invoice`, `edit_invoice`, `create_daily_snapshot`) أصبحت متوافقة مع عقد `service_role + p_created_by`.
+- توجد فجوة مرحّلة فقط: بقية الدوال التي ستُستدعى أيضًا عبر `service_role` لا تزال تستخدم `auth.uid()` المباشر، ويجب توثيقها كعمل مؤجل.
+
+**Detailed Verification**
+
+1. هل baseline الحالي متوافق مع عقد `service_role + created_by` الموثق في `13/15/25`؟
+   - `PASS` للدوال المستهدفة
+   - `fn_require_actor` يحقق `COALESCE(p_created_by, auth.uid())` ثم يتحقق من `profiles.is_active`
+   - `fn_require_admin_actor` يضيف تحقق `role = 'admin'`
+   - `create_sale(..., p_created_by = POS)` نجحت تحت `service_role` بدون `JWT sub`
+2. هل `create_sale` يحقق server-authoritative pricing وidempotency؟
+   - `PASS`
+   - `unit_price = 100.000` رغم تمرير `9999` من العميل
+   - duplicate `idempotency_key` = `ERR_IDEMPOTENCY`
+   - حماية التزامن (`SELECT FOR UPDATE` + retry loop) بقيت فعالة
+3. هل `create_return` و`create_debt_payment` يحققان guards الأساسية؟
+   - `PASS`
+   - `create_return` بدون `refund_account_id` = `ERR_RETURN_REFUND_ACCOUNT_REQUIRED`
+   - `create_return` مع refund account = success
+   - `create_debt_payment` نجحت مع FIFO allocation `60.000`
+4. هل حدود `Admin-only` صحيحة فعليًا؟
+   - `PASS`
+   - `cancel_invoice(POS)` = `ERR_UNAUTHORIZED`
+   - `cancel_invoice(Admin)` = success
+   - `edit_invoice(POS)` = `ERR_UNAUTHORIZED`
+   - `create_daily_snapshot(POS)` = `ERR_UNAUTHORIZED`
+   - `create_daily_snapshot(Admin)` = success مع replay `is_replay = true`
+5. هل تعديل baseline مباشرة داخل `004` مقبول؟
+   - `PASS`
+   - مقبول ضمن هذه المرحلة لأن baseline لم تُثبت كإصدار إنتاجي، وتمت إعادة `db reset` بنجاح بعد التعديل
+
+**Findings**
+
+- `P2`: الدوال التالية لا تزال تعتمد `auth.uid()` المباشر، وبالتالي ستفشل تحت `service_role` بدون `JWT sub` عند تفعيل API routes الخاصة بها:
+  - `create_expense`
+  - `create_purchase`
+  - `create_supplier_payment`
+  - `create_topup`
+  - `create_transfer`
+  - `reconcile_account`
+  - `create_maintenance_job`
+  - `complete_inventory_count`
+  - `create_debt_manual`
+- `P3`: بقيت lint warnings غير حاجبة في `cancel_invoice`, `create_return`, `create_debt_payment`, `create_transfer`, `edit_invoice`
+- `P3`: replay في `create_daily_snapshot` يعيد اللقطة الأصلية بدون إعادة حساب، وهو سلوك صحيح ومتوافق مع `Natural-Key Idempotency`
+
+**Operational Recommendation**
+
+- `Close PX-02-T04 with Fixes`
+
+### Deferred Item — PX-02-T04-D01
+
+- **Title:** توحيد بقية RPC wrappers على `fn_require_actor/fn_require_admin_actor`
+- **Severity:** `P2`
+- **Reason:** `9` دوال ما زالت تستخدم `auth.uid()` المباشر، وهو غير متوافق مع نموذج `service_role + created_by` عند تفعيل API routes الخاصة بها
+- **Deferred To:** slices التنفيذية التي ستبني routes لهذه الدوال (`PX-03+`)
+- **Functions In Scope:**
+  - `create_expense`
+  - `create_purchase`
+  - `create_supplier_payment`
+  - `create_topup`
+  - `create_transfer`
+  - `reconcile_account`
+  - `create_maintenance_job`
+  - `complete_inventory_count`
+  - `create_debt_manual`
+- **Required Future Action:** إضافة `p_created_by` أو equivalent actor propagation لكل دالة قبل فتح route الإنتاجية الخاصة بها
+
+### Close Decision — PX-02-T04
+
+- **Decision:** `Closed with Fixes`
+- **Date:** `2026-03-08`
+- **Basis:** `Review Report — PX-02-T04 = PASS WITH FIXES`
+- **Open Findings Carried Forward:** `PX-02-T04-D01` + lint warnings `P3` غير الحاجبة
+- **Next Active Task:** `PX-02-T05`
+
+### Required Delivery For PX-02-T05
+
+- `Execution Report — PX-02-T05`
+- `Review Prompt — PX-02-T05`
+- `Review Report — PX-02-T05`
+- `Close Decision — PX-02-T05`
+
+### Execution Report — PX-02-T05
+
+- **Task:** `PX-02-T05 — إثبات عدم وجود shadow mutation paths`
+- **Execution Date:** `2026-03-08`
+- **Review Scope:** `Verification-Only (Privilege Audit + Runtime Probes)`
+- **Outcome Summary:** أُعيد تشغيل Supabase local DB بصيغة DB-only ثم أُعيد `db reset` على baseline الحالي (`001..007`) بدون أي تغييرات SQL جديدة. بعد ذلك نُفذ audit امتيازات شامل على `tables/views/routines/sequences/schema` ثم نُفذت probes فعلية تحت `SET ROLE authenticated` لإثبات عدم وجود مسار كتابة مباشر أو shadow mutation path خارج طبقة API/RPC المصرح بها. لم تظهر أي فجوة جديدة، لذلك رُفعت المهمة إلى `Review`.
+
+**Evidence Collected**
+
+- إعادة بناء baseline الحالية:
+  - `npx supabase start --exclude edge-runtime,gotrue,imgproxy,kong,logflare,mailpit,postgres-meta,postgrest,realtime,storage-api,studio,supavisor,vector --debug`
+  - `npx supabase db reset --local --debug`
+- تدقيق grants على الجداول والـ views:
+  - `information_schema.role_table_grants` أعاد **0 rows** لأي privilege من نوع `INSERT/UPDATE/DELETE/TRUNCATE/REFERENCES/TRIGGER` على schema `public` للـ `PUBLIC`, `authenticated`, `anon`
+- تدقيق grants على الدوال:
+  - `information_schema.role_routine_grants` أعاد أن `authenticated` يملك `EXECUTE` على `public.fn_is_admin()` فقط
+  - `anon` لا يملك `EXECUTE` على أي routine في `public`
+  - تدقيق `has_function_privilege` على كل دوال schema `public` أثبت أن جميع business routines (`create_sale/create_return/create_expense/create_transfer/update_settings/...`) = `false` لكل من `authenticated/anon`
+- تدقيق sequences:
+  - `has_sequence_privilege` على كل sequences في schema `public` أعاد **0 grants** للـ `authenticated/anon`
+- تدقيق schema privileges:
+  - `has_schema_privilege('authenticated', 'public', 'USAGE') = true`
+  - `has_schema_privilege('authenticated', 'public', 'CREATE') = false`
+  - `has_schema_privilege('anon', 'public', 'USAGE') = true`
+  - `has_schema_privilege('anon', 'public', 'CREATE') = false`
+- تدقيق قابلية الكتابة النظرية على الـ views:
+  - `information_schema.views` أظهر أن `v_pos_products`, `v_pos_accounts`, `v_pos_debt_customers`, `admin_suppliers` تحمل `is_insertable_into = YES` و`is_updatable = YES`
+  - لكن `is_trigger_updatable/is_trigger_insertable_into/is_trigger_deletable = NO` لكل هذه الـ views
+  - وهذا يعني عدم وجود `INSTEAD OF` trigger path أو trigger-based mutation bypass
+- probes تشغيلية مباشرة تحت `SET ROLE authenticated`:
+  - `products.insert/update/delete` = `permission denied`
+  - `invoices.insert` = `permission denied`
+  - `v_pos_products.insert/update/delete` = `permission denied`
+  - `v_pos_accounts.insert/update/delete` = `permission denied`
+  - `admin_suppliers.insert/update/delete` = `permission denied`
+  - `create_expense()` = `permission denied for function`
+  - `create_transfer()` = `permission denied for function`
+  - `update_settings()` = `permission denied for function`
+- lint:
+  - `npx supabase db lint --local --fail-on error --level warning --debug` نجح بدون errors
+  - warnings بقيت محصورة في `004_functions_triggers.sql` فقط (`P3` قديمة ومعروفة)
+
+**Assessment**
+
+- `PUBLIC/authenticated/anon` لا يملكون write grants مباشرة على جداول `public`: `Pass`
+- لا يوجد `EXECUTE` خفي على business routines من المتصفح: `Pass`
+- لا يوجد `sequence usage/update` يسمح بمسار كتابة غير مباشر: `Pass`
+- لا يوجد `schema CREATE` يسمح ببناء bypass objects داخل `public`: `Pass`
+- كون بعض الـ views auto-updatable نظريًا لا يفتح shadow path فعليًا لأن probes الكتابة عليها كلها محجوبة بالصلاحيات: `Pass`
+
+### Review Prompt — PX-02-T05 (Shadow Mutation Path Audit)
+
+أنت الآن `Review Agent (Review-Only)` لمراجعة `PX-02-T05 — إثبات عدم وجود shadow mutation paths`.
+
+مهمتك **قراءة + تحليل + مقارنة + تقديم تقرير فقط**.  
+ممنوع التنفيذ، ممنوع التعديل، ممنوع كتابة كود، وممنوع تشغيل Docker أو `supabase start/reset/lint` أو أي أمر يغير الحالة.
+
+هذه مراجعة **Verification-Only (Privilege Audit + Runtime Probes)** وليست مراجعة phase كاملة.
+
+راجع فقط مقابل:
+
+- `aya-mobile-documentation/31_Execution_Live_Tracker.md`
+- `aya-mobile-documentation/10_ADRs.md`
+- `aya-mobile-documentation/13_Tech_Config.md`
+- `aya-mobile-documentation/27_PreBuild_Verification_Matrix.md`
+- `aya-mobile-documentation/28_Reference_Implementation.md`
+- `supabase/migrations/004_functions_triggers.sql`
+- `supabase/migrations/005_rls_security.sql`
+- `supabase/migrations/007_revoke_all_rls_baseline_alignment.sql`
+
+اعتمد فقط على الأدلة التنفيذية الموثقة داخل التراكر من هذه الجلسة:
+
+- DB-only local start نجح باستخدام:
+  - `npx supabase start --exclude edge-runtime,gotrue,imgproxy,kong,logflare,mailpit,postgres-meta,postgrest,realtime,storage-api,studio,supavisor,vector --debug`
+- `npx supabase db reset --local --debug` النهائي نجح وطبّق baseline الحالية `001..007`
+- `db lint` النهائي نجح بدون errors، والwarnings بقيت محصورة في `004_functions_triggers.sql`
+- `information_schema.role_table_grants` أعاد **0 rows** لأي write privilege (`INSERT/UPDATE/DELETE/TRUNCATE/REFERENCES/TRIGGER`) للـ `PUBLIC/authenticated/anon` على schema `public`
+- `information_schema.role_routine_grants` أعاد أن `authenticated` يملك `EXECUTE` على `fn_is_admin()` فقط، و`anon` لا يملك أي routine
+- `has_function_privilege` على جميع routines في schema `public` أثبت أن كل business routines = `false` للـ `authenticated/anon`
+- `has_sequence_privilege` أعاد **0 grants** على كل sequences للـ `authenticated/anon`
+- `has_schema_privilege(..., 'public', 'CREATE') = false` لكل من `authenticated/anon`
+- `information_schema.views` أظهر أن `v_pos_products`, `v_pos_accounts`, `v_pos_debt_customers`, `admin_suppliers` auto-updatable نظريًا (`YES/YES`) لكن بدون trigger-based mutation path (`is_trigger_* = NO`)
+- probes runtime تحت `SET ROLE authenticated` أعادت:
+  - `products.insert/update/delete` = `permission denied`
+  - `invoices.insert` = `permission denied`
+  - `v_pos_products.insert/update/delete` = `permission denied`
+  - `v_pos_accounts.insert/update/delete` = `permission denied`
+  - `admin_suppliers.insert/update/delete` = `permission denied`
+  - `create_expense()` = `permission denied for function`
+  - `create_transfer()` = `permission denied for function`
+  - `update_settings()` = `permission denied for function`
+
+تحقق تحديدًا من:
+
+1. هل أدلة الامتيازات الحالية كافية لإثبات `VB-01`: لا يوجد direct write path من `Browser/authenticated/anon`؟
+2. هل توجد أي صلاحيات متبقية عبر `PUBLIC` أو `authenticated` أو `anon` على `tables/views/routines/sequences` يمكن أن تشكل shadow mutation path؟
+3. هل كون بعض الـ views auto-updatable نظريًا لا يشكل bypass فعليًا بعد grants الحالية ونتائج probes الكتابة؟
+4. هل business RPCs الحساسة كلها غير قابلة للاستدعاء من `authenticated/anon` باستثناء `fn_is_admin()` helper؟
+5. هل التوصية الصحيحة هي:
+   - `Close PX-02-T05`
+   - أو `Close PX-02-T05 with Fixes`
+   - أو `Keep PX-02-T05 Open`
+
+أخرج تقريرك بصيغة:
+
+- `Review Report — PX-02-T05`
+- الحكم النهائي: `PASS` أو `PASS WITH FIXES` أو `FAIL`
+- قائمة findings مرتبة حسب الخطورة
+- توصية إجرائية واضحة بخصوص إغلاق `PX-02-T05`
+
+### Review Report — PX-02-T05
+
+- **Review Agent:** `Review Agent (Review-Only)`
+- **Review Date:** `2026-03-08`
+- **Review Scope:** `Verification-Only (Privilege Audit + Runtime Probes)`
+- **Final Verdict:** `PASS`
+- **Recommendation:** `Close PX-02-T05`
+
+**Detailed Verification**
+
+1. **هل أدلة الامتيازات الحالية كافية لإثبات `VB-01`: لا يوجد direct write path من `Browser/authenticated/anon`؟**
+   - `PASS`
+   - `007` ينفذ `REVOKE ALL ON ALL TABLES/SEQUENCES/ROUTINES` من `PUBLIC, authenticated, anon` ثم يعيد منح `SELECT` فقط حيث يلزم
+   - `information_schema.role_table_grants` أعاد `0 rows` لأي write privilege على schema `public`
+   - probes runtime أثبتت أن `products.insert/update/delete` و`invoices.insert` = `permission denied`
+   - النتيجة: لا يوجد direct write path من المتصفح
+
+2. **هل توجد أي صلاحيات متبقية عبر `PUBLIC/authenticated/anon` على `tables/views/routines/sequences` يمكن أن تشكل shadow mutation path؟**
+   - `PASS`
+   - `Tables`: لا توجد write grants
+   - `Routines`: `authenticated` يملك `EXECUTE` على `fn_is_admin()` فقط، و`anon` لا يملك أي routine
+   - `has_function_privilege` أثبت أن كل business RPCs = `false` للـ `authenticated/anon`
+   - `Sequences`: لا توجد grants
+   - `Schema CREATE`: `false` لكل من `authenticated/anon`
+   - `USAGE = true` طبيعي للقراءة ولا يفتح مسار كتابة
+
+3. **هل كون بعض الـ views auto-updatable نظريًا يشكل bypass فعليًا؟**
+   - `PASS`
+   - `v_pos_products`, `v_pos_accounts`, `v_pos_debt_customers`, `admin_suppliers` تظهر `is_insertable_into = YES` و`is_updatable = YES` نظريًا في `information_schema.views`
+   - لكنها تحمل `is_trigger_updatable/is_trigger_insertable_into/is_trigger_deletable = NO`
+   - probes الكتابة الفعلية أثبتت أن `INSERT/UPDATE/DELETE` على `v_pos_products`, `v_pos_accounts`, `admin_suppliers` = `permission denied`
+   - النتيجة: لا يوجد bypass فعلي لأن write grants على الجداول الأساسية مسحوبة بالكامل
+
+4. **هل business RPCs الحساسة كلها غير قابلة للاستدعاء من `authenticated/anon` باستثناء `fn_is_admin()`؟**
+   - `PASS`
+   - `007` تنفذ `REVOKE EXECUTE ON ALL ROUTINES ... FROM authenticated, anon`
+   - `fn_is_admin()` فقط مُمنوحة للـ `authenticated` كـ helper لسياسات RLS
+   - probes أكدت أن `create_expense()`, `create_transfer()`, `update_settings()` = `permission denied for function`
+   - لا يوجد أي business RPC قابل للاستدعاء من المتصفح
+
+5. **التوصية الإجرائية**
+   - `Close PX-02-T05`
+
+**Findings**
+
+- `P3 Info`: الـ views الأربعة تحمل `is_updatable = YES` نظريًا في `information_schema`، لكن هذا غير مؤثر لأن write grants على الجداول الأساسية مسحوبة بالكامل وprobes الكتابة أثبتت `permission denied`
+- `P3 Info`: `fn_is_admin()` مكشوفة لـ `authenticated` بشكل مقصود وضروري لعمل RLS policies، والدالة لا تعدل بيانات
+
+**Operational Recommendation**
+
+- `Close PX-02-T05`
+
+### Close Decision — PX-02-T05
+
+- **Decision:** `Closed`
+- **Date:** `2026-03-08`
+- **Basis:** `Review Report — PX-02-T05 = PASS`
+- **Open Findings Carried Forward:** لا يوجد عنصر مؤجل جديد من هذه المهمة؛ الملاحظات `P3 Info` فقط وغير حاجبة
+- **Next Gate:** تجهيز `Phase Execution Report — PX-02` و`Phase Review Prompt — PX-02` للمراجعة النهائية على مستوى المرحلة
+
+### Phase Execution Report — PX-02
+
+- **Phase:** `PX-02 — DB Security Foundation`
+- **Execution Window:** `2026-03-07 → 2026-03-08`
+- **Execution Status:** `Ready for Phase Review`
+- **Outcome Summary:** اكتملت طبقة حماية قاعدة البيانات لهذه المرحلة على baseline الحالية. تم تثبيت schema والمهاجرات الأساسية، وتطبيق `Revoke-All-First`، وإثبات `Blind POS`، وتصحيح wrappers الحساسة لتوافق `service_role + p_created_by`، ثم إثبات عدم وجود shadow mutation paths عبر audit امتيازات وتشغيل probes مباشرة. لا توجد findings مفتوحة بمستوى `P0/P1`.
+
+**Task Outcomes**
+
+- `PX-02-T01` = `Done`
+  - baseline schema والمهاجرات `001..006` طُبقت محليًا بنجاح
+  - counts الأساسية = `accounts 4 / expense_categories 8 / system_settings 16`
+- `PX-02-T02` = `Done`
+  - `007` طبّقت `ADR-044 Revoke-All-First`
+  - أُغلقت write paths على `v_pos_*` و`admin_suppliers`
+- `PX-02-T03` = `Done`
+  - `Blind POS` على `products/accounts/suppliers` ثبت بالأدلة التشغيلية
+- `PX-02-T04` = `Done`
+  - wrappers الحساسة (`sale/return/debt/snapshot`) صارت متوافقة مع `service_role + p_created_by`
+  - **Carried Forward:** `PX-02-T04-D01` فقط لتوحيد `9` دوال أخرى على `fn_require_actor/fn_require_admin_actor` عند بناء API routes الخاصة بها
+- `PX-02-T05` = `Done`
+  - لا توجد shadow mutation paths فعلية عبر `tables/views/routines/sequences/schema`
+
+**Gate Success Check**
+
+- لا direct writes من العميل
+  - **Status:** `Covered by T02 + T05`
+- wrappers فقط قابلة للاستدعاء
+  - **Status:** `Covered by T02 + T04 + T05`
+- RLS وBlind POS يعملان حسب العقد
+  - **Status:** `Covered by T02 + T03`
+- idempotency وadmin guards مفروضتان داخل DB boundary
+  - **Status:** `Covered by T04`
+
+**Phase Closure Assessment**
+
+- جميع مهام المرحلة = `Done` رسميًا: `Yes`
+- لا توجد findings بمستوى `P0/P1` مفتوحة: `Yes`
+- العنصر المرحّل `PX-02-T04-D01` موثق ولا يكسر Gate Success الحالية: `Yes`
+- warnings `P3` داخل `004_functions_triggers.sql` غير حاجبة: `Yes`
+- الانتقال إلى `PX-03-T01` آمن من منظور DB boundary: `Yes`
+
+### Phase Review Prompt — PX-02
+
+أنت الآن `Review Agent (Review-Only)` لمراجعة إغلاق المرحلة `PX-02 — DB Security Foundation`.
+
+مهمتك **قراءة + تحليل + مقارنة + تقديم تقرير فقط**.  
+ممنوع التنفيذ، ممنوع التعديل، ممنوع كتابة كود، وممنوع تشغيل Docker أو `supabase start/reset/lint` أو أي أمر يغير الحالة.
+
+راجع المخرجات الحالية مقابل:
+
+- `aya-mobile-documentation/31_Execution_Live_Tracker.md`
+- `aya-mobile-documentation/05_Database_Design.md`
+- `aya-mobile-documentation/10_ADRs.md`
+- `aya-mobile-documentation/13_Tech_Config.md`
+- `aya-mobile-documentation/15_Seed_Data_Functions.md`
+- `aya-mobile-documentation/18_Data_Retention_Privacy.md`
+- `aya-mobile-documentation/27_PreBuild_Verification_Matrix.md`
+- `aya-mobile-documentation/28_Reference_Implementation.md`
+- `supabase/migrations/001_foundation.sql`
+- `supabase/migrations/004_functions_triggers.sql`
+- `supabase/migrations/005_rls_security.sql`
+- `supabase/migrations/006_system_settings_seed_alignment.sql`
+- `supabase/migrations/007_revoke_all_rls_baseline_alignment.sql`
+
+تحقق تحديدًا من:
+
+1. هل تحققت `Gate Success` الخاصة بـ `PX-02` بالأدلة الموثقة؟
+2. هل جميع مهام `PX-02` (`T01..T05`) أصبحت `Done` رسميًا؟
+3. هل العنصر المرحّل `PX-02-T04-D01` موثق بشكل لا يكسر شروط عبور المرحلة؟
+4. هل الأدلة المجمعة عبر `T01..T05` كافية لإثبات:
+   - `Revoke-All-First`
+   - `Blind POS`
+   - حدود `EXECUTE`
+   - عدم وجود shadow mutation paths
+   - توافق wrappers الحساسة مع `service_role + p_created_by`
+5. هل الانتقال إلى `PX-03-T01` آمن دون ترك `P0/P1` مفتوح داخل `PX-02`؟
+
+أخرج تقريرك بصيغة:
+
+- `Phase Review Report — PX-02`
+- الحكم النهائي: `PASS` أو `PASS WITH FIXES` أو `FAIL`
+- قائمة findings مرتبة حسب الخطورة
+- تحديد واضح هل التوصية:
+  - `Close PX-02`
+  - أو `Close PX-02 with Deferred / Carried Forward Items`
+  - أو `Keep PX-02 Open / Blocked`
+
+### Phase Review Report — PX-02
+
+- **Review Agent:** `Review Agent (Review-Only)`
+- **Review Date:** `2026-03-08`
+- **Review Scope:** `Phase Closure Review — PX-02 (DB Security Foundation)`
+- **Final Verdict:** `PASS`
+- **Recommendation:** `Close PX-02 with Deferred / Carried Forward Items`
+
+**Gate Success Verification**
+
+- لا direct writes من العميل: `PASS`
+  - الأدلة: `T02` + `T05`
+  - `REVOKE ALL` مطبقة على `tables/sequences/routines`
+  - `role_table_grants = 0 write rows`
+  - probes على `products/invoices/v_pos_*/admin_suppliers` أعادت `permission denied`
+- wrappers فقط قابلة للاستدعاء: `PASS`
+  - الأدلة: `T02` + `T05`
+  - `EXECUTE` محجوبة عن `authenticated/anon` لكل business RPCs
+  - `has_function_privilege = false` لكل الدوال ما عدا `fn_is_admin()`
+  - probes على `create_expense/create_transfer/update_settings` أعادت `permission denied for function`
+- RLS وBlind POS يعملان حسب العقد: `PASS`
+  - الأدلة: `T02` + `T03`
+  - `products` direct = `0`
+  - `v_pos_products` = active only
+  - `cost_price/avg_cost_price` غير مكشوفتين للـ POS
+  - `accounts` direct = `0`
+  - `v_pos_accounts = 4`
+  - `opening_balance/current_balance` غير مكشوفتين للـ POS
+  - `suppliers` direct = `permission denied`
+  - `admin_suppliers = 0 rows` للـ POS probe
+- idempotency وadmin guards مفروضان داخل DB boundary: `PASS`
+  - الأدلة: `T04`
+  - duplicate `idempotency_key` = `ERR_IDEMPOTENCY`
+  - `cancel_invoice/edit_invoice/create_daily_snapshot` للـ POS = `ERR_UNAUTHORIZED`
+  - replay snapshot = `is_replay = true`
+
+**Task Status Verification**
+
+- `PX-02-T01` = `PASS / Closed`
+- `PX-02-T02` = `PASS / Closed`
+- `PX-02-T03` = `PASS / Closed`
+- `PX-02-T04` = `PASS WITH FIXES / Closed with Fixes`
+- `PX-02-T05` = `PASS / Closed`
+- جميع حزم الإغلاق مكتملة لكل المهام: `Yes`
+
+**Deferred / Carried Forward Item Assessment**
+
+- `PX-02-T04-D01` لا يكسر شروط العبور الحالية
+- السبب:
+  - الدوال `9` غير قابلة للاستدعاء من `authenticated/anon` أصلًا
+  - لا توجد API routes مبنية لها حاليًا
+  - الخطر سيظهر فقط عند بناء routes الإنتاجية الخاصة بها
+- الحكم: التأجيل مقبول ومشروط بإصلاحها قبل فتح routes هذه الدوال في `PX-03+`
+
+**Findings**
+
+- `P2 Carried Forward`: `PX-02-T04-D01` — `9` دوال ما زالت تعتمد `auth.uid()` بدل `fn_require_actor/fn_require_admin_actor`
+- `P3 Info`: lint warnings (`unused vars + implicit casts`) في `004_functions_triggers.sql`
+- `P3 Info`: `4` views تحمل `is_updatable = YES` نظريًا في `information_schema` لكن `permission denied` فعليًا
+- `P3 Info`: `fn_is_admin()` مكشوفة لـ `authenticated` بشكل مقصود وضروري لـ RLS
+
+**Operational Recommendation**
+
+- `Close PX-02 with Deferred / Carried Forward Items`
+
+### Phase Close Decision — PX-02
+
+- **Decision:** `Closed with Deferred / Carried Forward Items`
+- **Decision Date:** `2026-03-08`
+- **Basis:** `Phase Review Report — PX-02 = PASS`
+- **Carried Forward Items:** `PX-02-T04-D01` فقط
+- **Open Findings Carried Forward:** `PX-02-T04-D01` + `P3 Info` غير الحاجبة
+- **Next Active Phase:** `PX-03`
+- **Next Active Task:** `PX-03-T01`
 
 ---
 
@@ -341,14 +1715,177 @@
 - `Phase Review Report — PX-03`
 - `Phase Close Decision — PX-03`
 
+### Current Phase Status
+
+- **Phase State:** `Done`
+- **Active Task:** `None`
+- **Started At:** `2026-03-08`
+- **Execution Owner:** `Execution Agent`
+- **Review Owner:** `Review Agent (Review-Only)`
+- **Closed At:** `2026-03-08`
+- **Next Active Phase:** `PX-04`
+- **Next Active Task:** `PX-04-T01`
+
 | Task ID | المهمة | المرجع | Status | Evidence | Updated At | Notes / Blockers |
 |--------|--------|--------|--------|----------|------------|------------------|
-| `PX-03-T01` | قراءة المنتجات للـ POS مع Blind POS | `24/TASK-MVP-01` | `Open` |  |  |  |
-| `PX-03-T02` | سلة محلية + بحث سريع + Auto-Focus | `24/TASK-MVP-02`, `02/GAP-03` | `Open` |  |  |  |
-| `PX-03-T03` | Route + validation + RPC لـ `create_sale` | `24/TASK-MVP-03`, `25` | `Open` |  |  |  |
-| `PX-03-T04` | إثبات idempotency في البيع | `16`, `17/UAT-21` | `Open` |  |  |  |
-| `PX-03-T05` | إثبات concurrency بين جهازين POS | `17/UAT-21b` | `Open` |  |  |  |
-| `PX-03-T06` | حفظ سلة POS محليًا | `02/GAP-02` | `Open` |  |  |  |
+| `PX-03-T01` | قراءة المنتجات للـ POS مع Blind POS | `24/TASK-MVP-01` | `Done` | `app/(dashboard)/products/page.tsx`, `components/pos/products-browser.tsx`, `hooks/use-products.ts`, `supabase/migrations/008_auth_profile_trigger_search_path_fix.sql`, local POS JWT probe (`products = 0`, `v_pos_products = 4`, `hidden = 0`, `cost_price does not exist`) | `2026-03-08` | تم إصلاح blocker المصادقة المحلي عبر `008` ثم إثبات Blind POS بقراءة حقيقية عبر جلسة POS محلية. |
+| `PX-03-T02` | سلة محلية + بحث سريع + Auto-Focus | `24/TASK-MVP-02`, `02/GAP-03` | `Done` | `app/(dashboard)/pos/page.tsx`, `components/pos/pos-workspace.tsx`, `stores/pos-cart.ts`, `tests/unit/pos-workspace.test.tsx` | `2026-03-08` | البحث محلي مع `debounce = 200ms`، و`autoFocus` مثبت، وإضافة المنتج إلى السلة لا تطلق أي طلب كتابة أثناء الكتابة أو التصفية. |
+| `PX-03-T03` | Route + validation + RPC لـ `create_sale` | `24/TASK-MVP-03`, `25` | `Done` | `app/api/sales/route.ts`, `lib/validations/sales.ts`, `tests/unit/sales-route.test.ts`, `tests/unit/sales-validation.test.ts`, local `create_sale` happy path, `invoice_items.unit_price = 100.000` | `2026-03-08` | تم إثبات نجاح البيع فعليًا مع `service_role + p_created_by` وبسعر سيرفري فقط رغم تمرير `unit_price = 9999` من العميل. |
+| `PX-03-T04` | إثبات idempotency في البيع | `16`, `17/UAT-21` | `Done` | local replay probe (`ERR_IDEMPOTENCY`), `invoices count by idempotency_key = 1`, `tests/unit/sales-route.test.ts` | `2026-03-08` | إعادة نفس `idempotency_key` لم تنشئ فاتورة جديدة، وتم توثيق replay الفعلي على DB المحلية. |
+| `PX-03-T05` | إثبات concurrency بين جهازين POS | `17/UAT-21b` | `Done` | local single-stock race (`1 success + 1 ERR_STOCK_INSUFFICIENT`), reversed-order race (`2 success`), final stock probe (`4/0/0/0`) | `2026-03-08` | تم إثبات عدم وجود `stock negative` ونجاح التزامن/ترتيب الأقفال على سيناريو جهازين بترتيب عناصر معكوس. |
+| `PX-03-T06` | حفظ سلة POS محليًا | `02/GAP-02` | `Done` | `stores/pos-cart.ts`, `tests/unit/pos-cart.test.ts`, `tests/unit/pos-workspace.test.tsx` | `2026-03-08` | `zustand persist` يحفظ السلة ويستعيدها بعد `rehydrate` مع بقاء `selectedAccountId`, `notes`, `posTerminalCode`, و`idempotency_key` المحلية. |
+
+### Phase Execution Report — PX-03
+
+- **Phase:** `PX-03 — Sales Core Slice`
+- **Execution Window:** `2026-03-08`
+- **Execution Status:** `Ready for Phase Review`
+- **Outcome Summary:** اكتملت أول slice بيع تشغيلية كاملة: قراءة POS الآمنة، سلة محلية، route بيع موثقة، replay protection، concurrency proof، وعدم وجود `stock negative`. كما تم إغلاق blocker المصادقة المحلي بإضافة migration `008_auth_profile_trigger_search_path_fix.sql`.
+
+**Task Outcomes**
+
+- `PX-03-T01` = `Done`
+- `PX-03-T02` = `Done`
+- `PX-03-T03` = `Done`
+- `PX-03-T04` = `Done`
+- `PX-03-T05` = `Done`
+- `PX-03-T06` = `Done`
+
+**Key Evidence**
+
+- `T01`: `app/(dashboard)/products/page.tsx`, `components/pos/products-browser.tsx`, `hooks/use-products.ts`, local POS JWT probe, `supabase/migrations/008_auth_profile_trigger_search_path_fix.sql`
+- `T02`: `app/(dashboard)/pos/page.tsx`, `components/pos/pos-workspace.tsx`, `stores/pos-cart.ts`, `tests/unit/pos-workspace.test.tsx`
+- `T03`: `app/api/sales/route.ts`, `lib/validations/sales.ts`, `tests/unit/sales-route.test.ts`, `tests/unit/sales-validation.test.ts`, local `create_sale` happy path, `invoice_items.unit_price = 100.000`
+- `T04`: local replay probe (`ERR_IDEMPOTENCY`), `invoices count by idempotency_key = 1`
+- `T05`: local race probes (`single stock` + `reversed-order lock ordering`), final stock verification
+- `T06`: `stores/pos-cart.ts`, `tests/unit/pos-cart.test.ts`, `tests/unit/pos-workspace.test.tsx`
+- phase-wide verification: `npx supabase db reset --local --debug`, `npx supabase db lint --local --fail-on error --level warning --debug`, `npm run typecheck`, `npm run lint`, `npm run test`, `npm run build`, `npm run test:e2e`
+
+**Gate Success Check**
+
+- شاشة POS تعمل سريعًا: `Covered by T02 + unit proofs + build/e2e pass`
+- `create_sale` ناجح: `Covered by T03`
+- replay محمي: `Covered by T04`
+- لا `stock negative`: `Covered by T05`
+- السعر authoritative من السيرفر فقط: `Covered by T03`
+
+**Closure Assessment**
+
+- جميع مهام المرحلة = `Done`: `Yes`
+- لا يوجد `P0/P1` مفتوح داخل `PX-03`: `Yes`
+- blocker المصادقة المحلي أُغلق عبر `008`: `Yes`
+- الانتقال إلى `PX-04-T01` آمن: `Yes`
+
+### Phase Review Prompt — PX-03
+
+أنت الآن `Review Agent (Review-Only)` لمراجعة إغلاق المرحلة `PX-03 — Sales Core Slice`.
+
+مهمتك **قراءة + تحليل + مقارنة + تقديم تقرير فقط**.
+ممنوع التنفيذ، ممنوع التعديل، ممنوع كتابة كود، وممنوع تشغيل Docker أو `supabase start/reset/lint` أو أي أمر يغير الحالة.
+
+راجع المخرجات الحالية مقابل:
+
+- `aya-mobile-documentation/31_Execution_Live_Tracker.md`
+- `aya-mobile-documentation/04_Core_Flows.md`
+- `aya-mobile-documentation/16_Error_Codes.md`
+- `aya-mobile-documentation/17_UAT_Scenarios.md`
+- `aya-mobile-documentation/24_AI_Build_Playbook.md`
+- `aya-mobile-documentation/25_API_Contracts.md`
+- `supabase/migrations/004_functions_triggers.sql`
+- `supabase/migrations/008_auth_profile_trigger_search_path_fix.sql`
+- `app/(dashboard)/products/page.tsx`
+- `app/(dashboard)/pos/page.tsx`
+- `components/pos/products-browser.tsx`
+- `components/pos/pos-workspace.tsx`
+- `app/api/sales/route.ts`
+- `stores/pos-cart.ts`
+
+تحقق تحديدًا من:
+
+1. هل تحققت `Gate Success` الخاصة بـ `PX-03` بالأدلة الموثقة؟
+2. هل جميع مهام `PX-03` (`T01..T06`) أصبحت `Done` رسميًا؟
+3. هل أدلة `Blind POS`, `create_sale`, `idempotency`, `concurrency`, و`local cart persistence` كافية لدعم الإغلاق؟
+4. هل إثبات `server-authoritative pricing` كافٍ مع وجود `invoice_items.unit_price = 100.000` رغم تمرير `unit_price = 9999` من العميل؟
+5. هل الانتقال إلى `PX-04-T01` آمن دون ترك `P0/P1` مفتوح داخل `PX-03`؟
+
+أخرج تقريرك بصيغة:
+
+- `Phase Review Report — PX-03`
+- الحكم النهائي: `PASS` أو `PASS WITH FIXES` أو `FAIL`
+- قائمة findings مرتبة حسب الخطورة
+- تحديد واضح هل التوصية:
+  - `Close PX-03`
+  - أو `Close PX-03 with Deferred / Carried Forward Items`
+  - أو `Keep PX-03 Open / Blocked`
+
+### Phase Review Report — PX-03
+
+- **Review Date:** `2026-03-08`
+- **Final Verdict:** `PASS`
+- **Recommendation:** `Close PX-03`
+
+**Gate Success Verification**
+
+| Gate Criterion | Verdict | Evidence Source |
+|----------------|---------|-----------------|
+| شاشة POS تعمل سريعًا | `PASS` | `PX-03-T02`: `pos-workspace.tsx` يستخدم بحثًا محليًا + `debounce = 200ms` + `useDeferredValue` + `autoFocus`، و`build` و`test:e2e` مجتازان |
+| `create_sale` ناجح | `PASS` | `PX-03-T03`: `app/api/sales/route.ts` يمر عبر `getSession -> role check -> Zod validation -> supabase.rpc("create_sale", { p_created_by })` عبر `service_role` فقط، وhappy path ناجح محليًا |
+| replay محمي | `PASS` | `PX-03-T04`: duplicate `idempotency_key` أعاد `ERR_IDEMPOTENCY` و`invoices count = 1` بنفس المفتاح |
+| لا `stock negative` | `PASS` | `PX-03-T05`: single-stock race (`1 success + 1 ERR_STOCK_INSUFFICIENT`) وreversed-order race (`2 success`) مع final stock probe (`4/0/0/0`) |
+| السعر authoritative من السيرفر فقط | `PASS` | `PX-03-T03`: `invoice_items.unit_price = 100.000` رغم تمرير `unit_price = 9999` من العميل، و`createSaleSchema` لا يحتوي `unit_price` أصلًا |
+
+**Task Status Verification**
+
+| Task | Status | Verdict |
+|------|--------|---------|
+| `PX-03-T01 — قراءة المنتجات مع Blind POS` | `Done` | `PASS` — POS JWT probe: `products = 0`، `v_pos_products = 4`، `cost_price does not exist`، وblocker `008` مغلق |
+| `PX-03-T02 — سلة محلية + بحث + Auto-Focus` | `Done` | `PASS` — `zustand + persist + debounce 200ms + autoFocus + no write calls during browsing` |
+| `PX-03-T03 — Route + validation + RPC` | `Done` | `PASS` — `route.ts` يستخدم `StandardEnvelope` و`Zod` و`service_role RPC`، ولا يقبل `unit_price` من العميل |
+| `PX-03-T04 — Idempotency` | `Done` | `PASS` — replay probe + frontend handling for `ERR_IDEMPOTENCY` + `ERR_CONCURRENT_STOCK_UPDATE` |
+| `PX-03-T05 — Concurrency` | `Done` | `PASS` — single stock + reversed lock ordering probes |
+| `PX-03-T06 — Cart persistence` | `Done` | `PASS` — `zustand/persist` مع `localStorage` و`partialize` يحفظ `items/selectedAccountId/posTerminalCode/notes/currentIdempotencyKey/lastCompletedSale` |
+
+**Evidence Sufficiency**
+
+- `Blind POS`: كافٍ. القراءة عبر `v_pos_products` فقط، ولا `cost_price`، ولا direct table access. مؤكد عبر `PX-03-T01` و`PX-02-T03`.
+- `create_sale`: كافٍ. الـ route يطبق `session -> role -> Zod -> RPC` عبر `service_role` مع `p_created_by = session.user.id`.
+- `Idempotency`: كافٍ. DB-level `ERR_IDEMPOTENCY` مع `findExistingInvoiceByIdempotencyKey` وعدم إنشاء فاتورة ثانية.
+- `Concurrency`: كافٍ. `SELECT ... FOR UPDATE` + lock ordering + retry loop، مع probes فعلية على سيناريو stock واحد وسيناريو ترتيب عناصر معكوس.
+- `Local cart persistence`: كافٍ. `zustand/persist` مع `createJSONStorage(() => localStorage)` + hydration check + unit tests.
+- `Server-authoritative pricing`: كافٍ ومتسق. SQL يقرأ `sale_price` من `products`، وAPI لا يقبل `unit_price`، وواجهة POS لا ترسله أصلًا.
+
+**Server-Authoritative Pricing — Deep Check**
+
+- **SQL layer (`004`)**: `sale_price` يُقرأ من `products` ويُستخدم في حساب subtotal و`INSERT INTO invoice_items`، ولا يوجد أي اعتماد على سعر قادم من المستدعي.
+- **API layer (`route.ts`)**: `createSaleSchema` يقبل `product_id`, `quantity`, `discount_percentage` فقط.
+- **Frontend (`pos-workspace.tsx`)**: payload البيع يرسل `product_id`, `quantity`, `discount_percentage` فقط.
+- **Runtime proof:** `invoice_items.unit_price = 100.000` رغم تمرير `unit_price = 9999`.
+
+**Safety of Transition to `PX-04-T01`**
+
+- لا يوجد أي `P0` أو `P1` مفتوح داخل `PX-03`.
+- العنصر المرحّل `PX-02-T04-D01` لا يمس `PX-03` لأن `create_sale` نفسه وُحّد على `p_created_by`.
+- `PX-04-T01 (create_return)` يعتمد على `create_sale` المغلق وعلى `fn_require_actor` المجهز مسبقًا.
+
+**Findings**
+
+- `P3 Info`: `db lint` ما زال يعيد warnings قديمة داخل `004_functions_triggers.sql` (`unused vars / implicit casts`) وهي موروثة من `PX-02` وغير حاجبة.
+- `P3 Info`: العنصر المرحّل `PX-02-T04-D01` ما يزال موجودًا مشروعياً للدوال التي لم تُفتح لها API routes بعد، لكنه لا يمس `PX-03`.
+- `P3 Info`: `products-browser.tsx` ما زال يحتوي عنوانًا تطويريًا مرتبطًا بـ `PX-03 / T01`، وهو غير وظيفي ويمكن تنظيفه لاحقًا.
+
+**Operational Recommendation**
+
+- `Close PX-03`
+
+### Phase Close Decision — PX-03
+
+- **Decision:** `Closed`
+- **Decision Date:** `2026-03-08`
+- **Basis:** `Phase Review Report — PX-03 = PASS`
+- **PX-03 Deferred Items:** `None`
+- **Project Carried Forward Items (External to PX-03):** `PX-02-T04-D01` فقط
+- **Next Active Phase:** `PX-04`
+- **Next Active Task:** `PX-04-T01`
 
 ---
 
@@ -568,6 +2105,38 @@
 | التاريخ | Phase / Task | التغيير | الحالة بعد التحديث | الدليل |
 |---------|--------------|---------|--------------------|--------|
 | 2026-03-07 | `PX-01` | تم فتح المرحلة الأولى للتنفيذ الفعلي وتحديد `PX-01-T01` كمهمة نشطة | `In Progress` | `31_Execution_Live_Tracker.md` |
+| 2026-03-07 | `PX-01-T01/T04/T05` | تم تنفيذ remediation للحزمة المقبولة من مراجعة `PX-01`: توحيد عقد env مع الوثائق، تحديث `.env.example`، إزالة shim غير الضروري، وتوثيق health baseline وTailwind deferral داخل المرحلة الحالية | `Review` | `.env.example`, `lib/env.ts`, `lib/supabase/admin.ts`, `aya-mobile-documentation/09_Implementation_Plan.md`, `aya-mobile-documentation/13_Tech_Config.md` |
+| 2026-03-07 | `PX-01-T02` | تم تثبيت تسلسل `npm run check` ليعمل على checkout نظيف دون الاعتماد على `.next/types` غير المولدة مسبقاً | `Review` | `package.json`, `npm run check` |
+| 2026-03-07 | `PX-01-T01/T02/T04/T05` | re-review عاد بحكم `PASS`؛ تم إغلاق المهام الأربع رسميًا ونقل التركيز إلى `PX-01-T06` مع بقاء `PX-01-T03` في حالة `Blocked / Deferred` | `Done / In Progress` | `Re-Review Report — PX-01` |
+| 2026-03-07 | `PX-01-T06` | تم تنفيذ baseline installability + responsive shell: metadata/viewport مضبوطان، manifest صالح، install prompt handling أضيف، صفحة unsupported-device عُرّبت، واختبارات `360/768/1280 + manifest` اجتازت بنجاح | `Review` | `app/layout.tsx`, `app/manifest.ts`, `app/page.tsx`, `components/runtime/install-prompt.tsx`, `tests/e2e/smoke.spec.ts`, `npm run build`, `npm run typecheck`, `npm run check`, `npm run test:e2e` |
+| 2026-03-07 | `PX-01-T06` | Review Agent أعاد الحكم `PASS`؛ تم إغلاق `T06` رسميًا. لم يبق داخل `PX-01` إلا `T03` كـ blocker خارجي متعلق بربط Supabase CLI. | `Done / Blocked` | `Review Report — PX-01-T06` |
+| 2026-03-07 | `PX-01-T03` | تم التحقق أن CLI linked إلى مشروع `aya-mobile` الصحيح، وأن الفشل انحصر في `remote Postgres password authentication` عند `migration list --linked`. وبقرار تنفيذ + طلب المستخدم تم تحويل المهمة إلى `Deferred` بدل إبقاء المرحلة كلها `Blocked`. | `Deferred / Review` | `supabase/.temp/project-ref`, `supabase/.temp/pooler-url`, `npx supabase projects list`, `npx supabase migration list --linked`, `npx supabase migration list --linked --debug` |
+| 2026-03-07 | `PX-01` | Phase Review Report عاد بحكم `PASS` مع توصية `Close PX-01 with Deferred Items`. لا توجد findings بمستوى `P0/P1`. | `Review PASS` | `Phase Review Report — PX-01` |
+| 2026-03-07 | `PX-01` | تم إغلاق المرحلة رسميًا بقرار `Closed with Deferred Items` مع إبقاء `PX-01-T03` مؤجلة حتى نجاح `npx supabase migration list --linked`. | `Done` | `Phase Close Decision — PX-01` |
+| 2026-03-07 | `PX-02` | تم فتح المرحلة التالية رسميًا وتعيين `PX-02-T01` كمهمة نشطة للتنفيذ. | `In Progress` | `31_Execution_Live_Tracker.md` |
+| 2026-03-07 | `PX-02-T01` | تم تدقيق schema baseline static مقابل `05/15`: جميع الجداول الموثقة موجودة داخل migrations الحالية، ثم أضيفت migration `006_system_settings_seed_alignment.sql` لسد فجوة `system_settings` وإضافة `supabase/seed.sql` no-op لتصحيح مسار seed المحلي. | `In Progress` | `supabase/migrations/001_foundation.sql`, `supabase/migrations/002_operations.sql`, `supabase/migrations/003_accounting.sql`, `supabase/migrations/006_system_settings_seed_alignment.sql`, `supabase/seed.sql` |
+| 2026-03-08 | `PX-02-T01` | اكتمل التدقيق الثابت للـ seed baseline: الحسابات الافتراضية (`4/4`) وفئات المصروفات (`8/8`) متطابقة مع `15`، و`system_settings` أصبحت متوافقة بالكامل (`16/16`) عبر `001 + 006`. كما تم تثبيت أن `supabase/config.toml` يشير إلى `seed.sql` الصحيح. | `In Progress` | `supabase/migrations/001_foundation.sql`, `supabase/migrations/006_system_settings_seed_alignment.sql`, `supabase/config.toml`, `supabase/seed.sql` |
+| 2026-03-08 | `PX-02-T01` | تم تشغيل Supabase local DB عبر Docker بصيغة DB-only، ثم نجح `db reset --local --debug` مع تطبيق `001..006` كاملًا، ونجح `db lint` بدون errors مع warnings محصورة في `004_functions_triggers.sql`. بناءً على ذلك رُفعت المهمة إلى `Review` وتم تجهيز `Execution Report` و`Review Prompt` للمراجعة الخاصة بالمايجريشن فقط دون السماح للمراجع بتشغيل Docker. | `Review` | `npx supabase start --exclude ...`, `npx supabase db reset --local --debug`, `npx supabase db lint --local --fail-on error --level warning`, `docker exec supabase_db_Aya_Mobile psql ...` |
+| 2026-03-08 | `PX-02-T01` | Review Agent أعاد الحكم `PASS` مع توصية `Close PX-02-T01`. اعتُبرت مواءمة `006` وسلامة counts المحلية (`4/8/16`) كافية، واعتُبرت lint warnings في `004_functions_triggers.sql` ملاحظات `P3 Cosmetic` فقط. | `Review PASS` | `Review Report — PX-02-T01` |
+| 2026-03-08 | `PX-02-T01` | تم إغلاق المهمة رسميًا بقرار `Closed` وفتح `PX-02-T02` كمهمة نشطة تالية داخل المرحلة. | `Done / In Progress` | `Close Decision — PX-02-T01` |
+| 2026-03-08 | `PX-02-T02` | تم تنفيذ migration `007` لمواءمة `ADR-044`، ثم تشغيل Docker محليًا بصيغة DB-only وإعادة `db reset` و`db lint`. أثناء التحقق الأول ظهرت كتابة مباشرة عبر safe views؛ أُغلقت داخل `007` بإضافة `REVOKE ALL` صريح على `v_pos_*` و`admin_suppliers`، ثم أُعيد التحقق حتى ثبت: `suppliers` direct read = blocked، `accounts` direct read = `0` مقابل `v_pos_accounts = 4`، و`EXECUTE` على business RPCs = blocked. بناءً على ذلك رُفعت المهمة إلى `Review` وتم تجهيز `Execution Report` و`Review Prompt` للمراجعة المقيدة بدون Docker. | `Review` | `supabase/migrations/007_revoke_all_rls_baseline_alignment.sql`, `npx supabase start --exclude ...`, `npx supabase db reset --local --debug`, `npx supabase db lint --local --fail-on error --level warning`, `docker exec supabase_db_Aya_Mobile psql ...`, `psql ... v_pos_products / v_pos_accounts / suppliers / create_transfer` |
+| 2026-03-08 | `PX-02-T02` | Review Agent أعاد الحكم `PASS` مع توصية `Close PX-02-T02`. اعتُبر `007` متوافقًا مع `ADR-044`، وثبت أن `Blind POS`, `Suppliers lockdown`, وإغلاق write paths على safe views وحدود `EXECUTE` كلها صحيحة. | `Review PASS` | `Review Report — PX-02-T02` |
+| 2026-03-08 | `PX-02-T02` | تم إغلاق المهمة رسميًا بقرار `Closed` وفتح `PX-02-T03` كمهمة نشطة تالية داخل المرحلة. | `Done / In Progress` | `Close Decision — PX-02-T02` |
+| 2026-03-08 | `PX-02-T03` | تم تشغيل Supabase local DB بصيغة DB-only وإعادة `db reset` على baseline الحالي، ثم إدخال sample data محلية مؤقتة لاختبار Blind POS فعليًا على `products/accounts/suppliers`. أثبتت probes أن `products/accounts` لا تُقرأ مباشرة من POS وأن visibility تمر عبر views الآمنة فقط، وأن المنتج غير النشط لا يظهر، وأعمدة التكلفة/الأرصدة غير موجودة في views. كما ثبت أن `suppliers` direct read = `permission denied`، ولا يوجد `v_pos_suppliers`, و`admin_suppliers` تعيد `0` rows للـ POS probe. بعد جمع الأدلة تم تنظيف probe data ورفع المهمة إلى `Review` مع `Execution Report` و`Review Prompt` للمراجعة فقط. | `Review` | `npx supabase start --exclude ...`, `npx supabase db reset --local --debug`, `docker exec supabase_db_Aya_Mobile psql ...`, `psql ... t03_pos_probe queries`, `Execution Report — PX-02-T03`, `Review Prompt — PX-02-T03` |
+| 2026-03-08 | `PX-02-T03` | تمت مراجعة أدلة Blind POS على `products/accounts/suppliers` وحصلت المهمة على حكم `PASS`. لم تظهر أي فجوة جديدة بعد `007`، واعتُبرت أدلة `direct read = 0/permission denied` وabsence of safe supplier view كافية للإغلاق. | `Review PASS` | `Review Report — PX-02-T03` |
+| 2026-03-08 | `PX-02-T03` | تم إغلاق المهمة رسميًا بقرار `Closed` وفتح `PX-02-T04` كمهمة نشطة تالية داخل المرحلة. | `Done / In Progress` | `Close Decision — PX-02-T03` |
+| 2026-03-08 | `PX-02-T04` | probes البداية على wrappers الحساسة كشفت ثلاث فجوات تعاقدية: فشل `service_role` بدون actor في `create_sale`، ونجاح `cancel_invoice` و`create_daily_snapshot` للـ POS. تم تعديل `004_functions_triggers.sql` مباشرة لإضافة `fn_require_actor` و`fn_require_admin_actor` و`p_created_by` للدوال الحساسة، ثم أُعيد `db reset` والتحقق runtime حتى ثبت أن `sale/return/debt` تعمل مع `created_by` فقط، وأن `cancel/edit/snapshot` صارت تعيد `ERR_UNAUTHORIZED` للـ POS وتنجح فقط حسب العقد. رُفعت المهمة إلى `Review` مع `Execution Report` و`Review Prompt`. | `Review` | `supabase/migrations/004_functions_triggers.sql`, `npx supabase db reset --local --debug`, `npx supabase db lint --local --fail-on error --level warning --debug`, `docker exec supabase_db_Aya_Mobile psql ... t04_verify queries`, `Execution Report — PX-02-T04`, `Review Prompt — PX-02-T04` |
+| 2026-03-08 | `PX-02-T04` | Review Agent أعاد الحكم `PASS WITH FIXES` مع توصية `Close PX-02-T04 with Fixes`. اعتُبرت الدوال الست المستهدفة متوافقة مع عقد `service_role + p_created_by`، لكن تم ترحيل `PX-02-T04-D01` لتوحيد بقية الدوال (`9`) التي ما زالت تعتمد `auth.uid()` المباشر عند تفعيل API routes الخاصة بها. | `Review PASS WITH FIXES` | `Review Report — PX-02-T04` |
+| 2026-03-08 | `PX-02-T04` | تم إغلاق المهمة رسميًا بقرار `Closed with Fixes` وفتح `PX-02-T05` كمهمة نشطة تالية داخل المرحلة. | `Done / Next` | `Close Decision — PX-02-T04` |
+| 2026-03-08 | `PX-02-T05` | تم تشغيل Supabase local DB بصيغة DB-only وإعادة `db reset` على baseline الحالية (`001..007`) دون أي تغييرات SQL. بعد ذلك نُفذ audit امتيازات شامل على `role_table_grants / role_routine_grants / has_function_privilege / has_sequence_privilege / information_schema.views` ثم نُفذت probes كتابة وتشغيل مباشرة تحت `SET ROLE authenticated`. النتيجة: لا توجد write grants على الجداول أو الـ views، لا توجد routine grants تشغيلية إلا `fn_is_admin()`، ولا توجد sequence/schema bypass grants. ورغم أن بعض الـ views ما زالت auto-updatable نظريًا، فإن `INSERT/UPDATE/DELETE` عليها فشلت كلها بـ `permission denied`. رُفعت المهمة إلى `Review` مع `Execution Report` و`Review Prompt`. | `Review` | `npx supabase start --exclude edge-runtime,gotrue,imgproxy,kong,logflare,mailpit,postgres-meta,postgrest,realtime,storage-api,studio,supavisor,vector --debug`, `npx supabase db reset --local --debug`, `npx supabase db lint --local --fail-on error --level warning --debug`, `docker exec supabase_db_Aya_Mobile psql ... role_table_grants / role_routine_grants / has_function_privilege / has_sequence_privilege / information_schema.views`, `docker exec supabase_db_Aya_Mobile psql ... shadow mutation probe notices`, `Execution Report — PX-02-T05`, `Review Prompt — PX-02-T05` |
+| 2026-03-08 | `PX-02-T05` | Review Agent أعاد الحكم `PASS` مع توصية `Close PX-02-T05`. اعتُبرت أدلة الامتيازات + runtime probes كافية لإثبات `VB-01` وعدم وجود أي shadow mutation path فعلي. لا توجد findings بمستوى `P0/P1/P2`. | `Review PASS` | `Review Report — PX-02-T05` |
+| 2026-03-08 | `PX-02-T05` | تم إغلاق المهمة رسميًا بقرار `Closed`. أصبحت جميع مهام `PX-02` مغلقة، وتم تجهيز `Phase Execution Report — PX-02` و`Phase Review Prompt — PX-02` لبدء مراجعة إغلاق المرحلة نفسها. | `Done / Phase Review` | `Close Decision — PX-02-T05`, `Phase Execution Report — PX-02`, `Phase Review Prompt — PX-02` |
+| 2026-03-08 | `PX-02` | Review Agent أعاد الحكم `PASS` مع توصية `Close PX-02 with Deferred / Carried Forward Items`. اعتُبرت جميع شروط Gate Success متحققة، وجميع مهام `T01..T05` مغلقة، وأن `PX-02-T04-D01` لا يكسر عبور المرحلة لأنه غير قابل للاستدعاء حاليًا ولا توجد routes إنتاجية مفتوحة له بعد. | `Review PASS` | `Phase Review Report — PX-02` |
+| 2026-03-08 | `PX-02` | تم إغلاق المرحلة رسميًا بقرار `Closed with Deferred / Carried Forward Items` وفتح `PX-03` كمرحلة نشطة تالية مع تعيين `PX-03-T01` كبداية التنفيذ. | `Done / In Progress` | `Phase Close Decision — PX-02` |
+| 2026-03-08 | `PX-03-T01/T03/T04/T05` | أُعيد `db reset --local --debug` على baseline الحالية (`001..008`) ثم تم إنشاء مستخدمي Admin/POS محليين وإغلاق blocker المصادقة عبر `008_auth_profile_trigger_search_path_fix.sql`. بعد ذلك ثُبتت قراءة `Blind POS` بجلسة POS حقيقية (`products direct = 0`, `v_pos_products = 4`, `hidden = 0`, `cost_price does not exist`)، ثم ثُبت `create_sale` happy path، و`replay = ERR_IDEMPOTENCY` مع `invoice count = 1`، كما ثُبت التزامن على سيناريو stock واحد وسيناريو ترتيب عناصر معكوس بدون `stock negative`. | `Done` | `supabase/migrations/008_auth_profile_trigger_search_path_fix.sql`, `npx supabase db reset --local --debug`, local POS JWT probe, local `create_sale`/replay/race probes, `invoice_items.unit_price = 100.000` |
+| 2026-03-08 | `PX-03-T02/T06` | أُضيفت اختبارات واجهة مباشرة لـ `PosWorkspace` لإثبات `autoFocus` والبحث المحلي وعدم وجود أي طلب كتابة أثناء التصفية أو الإضافة للسلة، مع بقاء إثبات `persist/rehydrate` في `pos-cart` مجتازًا. | `Done` | `components/pos/pos-workspace.tsx`, `tests/unit/pos-workspace.test.tsx`, `tests/unit/pos-cart.test.ts` |
+| 2026-03-08 | `PX-03` | اكتملت حزمة التحقق النهائية: `db lint` بدون errors (warnings `P3` فقط)، `typecheck`, `lint`, `test`, `build`, و`test:e2e` جميعها مجتازة. نتج فشل أولي غير حقيقي عند تشغيل `build` و`Playwright` بالتوازي بسبب الكتابة المشتركة على `.next`، ثم أُعيد التشغيل بشكل متسلسل واجتاز بالكامل. | `Review PASS` | `npx supabase db lint --local --fail-on error --level warning --debug`, `npm run typecheck`, `npm run lint`, `npm run test`, `npm run build`, `npm run test:e2e` |
+| 2026-03-08 | `PX-03` | تم اعتماد `Phase Review Report — PX-03 = PASS` وإغلاق المرحلة رسميًا بقرار `Closed`. لا توجد عناصر مؤجلة خاصة بـ `PX-03`، والانتقال التالي أصبح إلى `PX-04-T01`. | `Done / In Progress` | `Phase Close Decision — PX-03` |
 | YYYY-MM-DD | `PX-XX-TXX` | مثال: تم إنشاء route / تم إغلاق bug / تم اجتياز UAT | `In Progress / Done / Blocked` | file path / test / screenshot / SQL |
 
 ---
