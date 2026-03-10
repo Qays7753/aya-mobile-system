@@ -316,6 +316,168 @@ code {
   display: grid;
 }
 
+.login-grid,
+.summary-grid,
+.detail-grid,
+.filters-grid,
+.inline-form-grid,
+.stack-form,
+.stack-list,
+.action-row {
+  display: grid;
+  gap: 1rem;
+}
+
+.login-grid,
+.detail-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.detail-grid--thirds {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.summary-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.filters-grid {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  align-items: end;
+}
+
+.inline-form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.stack-form {
+  align-content: start;
+}
+
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.action-row--end {
+  justify-content: flex-end;
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 680px;
+}
+
+.data-table th,
+.data-table td {
+  padding: 0.85rem 0.75rem;
+  border-bottom: 1px solid rgba(23, 33, 43, 0.08);
+  text-align: right;
+  vertical-align: top;
+}
+
+.data-table th {
+  color: var(--aya-muted);
+  font-weight: 700;
+  font-size: 0.92rem;
+}
+
+.table-empty {
+  text-align: center;
+  color: var(--aya-muted);
+}
+
+.list-card {
+  padding: 1rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(23, 33, 43, 0.08);
+  background: rgba(255, 255, 255, 0.82);
+  text-align: right;
+}
+
+.list-card--interactive {
+  cursor: pointer;
+  transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
+}
+
+.list-card--interactive:hover,
+.list-card--interactive.is-selected {
+  transform: translateY(-1px);
+  border-color: rgba(182, 81, 45, 0.25);
+  background: rgba(182, 81, 45, 0.08);
+}
+
+.list-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.list-card p {
+  margin: 0;
+  color: var(--aya-muted);
+  line-height: 1.6;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 88px;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: rgba(23, 33, 43, 0.08);
+  color: var(--aya-ink);
+}
+
+.status-badge--active {
+  background: rgba(63, 107, 82, 0.14);
+  color: var(--aya-leaf);
+}
+
+.status-badge--partially_returned,
+.status-badge--returned {
+  background: rgba(227, 185, 109, 0.18);
+  color: #7b5a18;
+}
+
+.status-badge--cancelled {
+  background: rgba(182, 81, 45, 0.15);
+  color: var(--aya-accent-deep);
+}
+
+.login-panel {
+  min-height: 100%;
+}
+
+.login-panel--accent {
+  background: linear-gradient(145deg, rgba(63, 107, 82, 0.12), rgba(255, 252, 244, 0.92));
+}
+
+.print-receipt {
+  display: grid;
+  gap: 1rem;
+}
+
 .workspace-stack {
   display: grid;
   gap: 1rem;
@@ -634,6 +796,12 @@ code {
     grid-template-columns: 1fr;
   }
 
+  .login-grid,
+  .detail-grid,
+  .detail-grid--thirds {
+    grid-template-columns: 1fr;
+  }
+
   .pos-grid {
     grid-template-columns: 1fr;
   }
@@ -659,12 +827,16 @@ code {
   .baseline-grid,
   .baseline-actions,
   .product-grid,
-  .cart-line-card__controls {
+  .cart-line-card__controls,
+  .filters-grid,
+  .summary-grid,
+  .inline-form-grid {
     grid-template-columns: 1fr;
   }
 
   .workspace-toolbar,
-  .cart-panel__header {
+  .cart-panel__header,
+  .section-heading {
     flex-direction: column;
     align-items: stretch;
   }
@@ -681,5 +853,44 @@ code {
   .product-grid--compact,
   .cart-line-list {
     max-height: none;
+  }
+
+  .data-table {
+    min-width: 560px;
+  }
+}
+
+@media print {
+  body {
+    background: #fff;
+  }
+
+  .dashboard-header,
+  .workspace-search,
+  .workspace-toolbar,
+  .workspace-hero,
+  .secondary-button,
+  .primary-button,
+  .empty-panel,
+  .action-row,
+  .compatibility-strip,
+  .install-card {
+    display: none !important;
+  }
+
+  .dashboard-shell,
+  .dashboard-main,
+  .workspace-stack,
+  .workspace-panel {
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+    border: 0;
+    background: #fff;
+  }
+
+  .print-receipt {
+    display: grid;
+    gap: 0.5rem;
   }
 }

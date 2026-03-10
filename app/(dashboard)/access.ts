@@ -2,7 +2,7 @@ import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type WorkspaceAccessResult =
-  | { state: "ok"; role: "admin" | "pos_staff"; fullName: string | null }
+  | { state: "ok"; userId: string; role: "admin" | "pos_staff"; fullName: string | null }
   | { state: "unauthenticated" }
   | { state: "forbidden" };
 
@@ -41,6 +41,7 @@ export async function getWorkspaceAccess(): Promise<WorkspaceAccessResult> {
 
   return {
     state: "ok",
+    userId: user.id,
     role: profile.role,
     fullName: profile.full_name
   };

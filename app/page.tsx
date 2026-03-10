@@ -6,11 +6,12 @@ export default function HomePage() {
     <main className="baseline-shell">
       <section className="hero-panel">
         <div className="hero-panel__copy">
-          <p className="eyebrow">PX-03 Sales Core Slice</p>
+          <p className="eyebrow">PX-05 Reports + Snapshot + Integrity + Device</p>
           <h1>Aya Mobile</h1>
           <p className="hero-panel__lead">
-            خط الأساس الحالي يثبت أن التطبيق يعمل كتطبيق ويب واحد عبر الهاتف والتابلت واللابتوب
-            والديسكتوب، ومعه الآن نقطة دخول واضحة لمسارات القراءة الآمنة ونقطة البيع الأساسية.
+            خط الأساس الحالي لا يقتصر على البيع فقط. المرحلة الحالية تضيف اللقطة اليومية، تقارير
+            التشغيل، فحص النزاهة، ومسارات الدين والفواتير بشكل جاهز للتشغيل على الهاتف والتابلت
+            واللابتوب.
           </p>
         </div>
 
@@ -32,44 +33,74 @@ export default function HomePage() {
 
       <section className="baseline-grid" aria-label="baseline sections">
         <article className="baseline-card">
-          <p className="eyebrow">Responsive Shell</p>
-          <h2>واجهة أساسية مرنة</h2>
+          <p className="eyebrow">Daily Ops</p>
+          <h2>تشغيل يومي حقيقي</h2>
           <p>
-            الهيكل الحالي يحافظ على قراءة واضحة ولمس مريح على الشاشات الصغيرة، ويبقى مناسبًا للوحة
-            المفاتيح والفأرة على الشاشات الأكبر.
+            صفحة الإعدادات والإدارة أصبحت نقطة تشغيل للّقطة اليومية، فحص الأرصدة، التسوية، وإكمال
+            الجرد بدون القفز خارج العقد المالي.
           </p>
         </article>
 
         <article className="baseline-card">
-          <p className="eyebrow">Blind POS</p>
-          <h2>قراءة آمنة للمنتجات</h2>
+          <p className="eyebrow">Reports</p>
+          <h2>ملخصات وتقارير قابلة للفلترة</h2>
           <p>
-            مسار المنتجات الحالي مبني فوق <code>v_pos_products</code> فقط، لذلك لا تتسرب التكلفة أو
-            أي أعمدة حساسة إلى واجهة نقطة البيع.
+            أصبح هناك سطح واضح لهيستوري المبيعات، أحدث اللقطات، الديون، الحسابات، وتنبيهات المخزون
+            المنخفض مع فلاتر تاريخ/موظف/جهاز/حالة.
           </p>
         </article>
 
         <article className="baseline-card">
-          <p className="eyebrow">Safety Guardrails</p>
-          <h2>بدون Offline مالي</h2>
+          <p className="eyebrow">Device Readiness</p>
+          <h2>جاهزية التشغيل على كل الأجهزة</h2>
           <p>
-            installability لا تعني أوضاع تخزين محلي للمعاملات المالية. كل كتابة ما تزال تمر من الخادم
-            عبر API + RPC فقط.
+            نفس المسارات التشغيلية الرئيسية أصبحت قابلة للمراجعة على الهاتف والتابلت واللابتوب،
+            مع baseline للطباعة وتثبيت التطبيق والجلسة الموحدة.
           </p>
         </article>
       </section>
 
-      <section className="baseline-actions" aria-label="px-03 entry points">
+      <section className="baseline-actions" aria-label="px-05 entry points">
+        <Link href="/login" className="baseline-link-card">
+          <p className="eyebrow">Access</p>
+          <h2>تسجيل الدخول</h2>
+          <p>فتح الجلسة التشغيلية لاختبار Admin/POS على المسارات المحمية.</p>
+        </Link>
+
         <Link href="/products" className="baseline-link-card">
-          <p className="eyebrow">PX-03-T01</p>
+          <p className="eyebrow">PX-03 Baseline</p>
           <h2>قائمة المنتجات الآمنة</h2>
           <p>قراءة مباشرة من المسار الآمن مع الحفاظ على Blind POS.</p>
         </Link>
 
         <Link href="/pos" className="baseline-link-card baseline-link-card--accent">
-          <p className="eyebrow">PX-03-T02..T06</p>
+          <p className="eyebrow">PX-03 + PX-05</p>
           <h2>شاشة نقطة البيع</h2>
-          <p>سلة محلية + create_sale + idempotency + local persistence.</p>
+          <p>سلة محلية + create_sale + idempotency + نقطة انطلاق لاختبار الأجهزة.</p>
+        </Link>
+
+        <Link href="/invoices" className="baseline-link-card">
+          <p className="eyebrow">PX-04 / PX-05</p>
+          <h2>الفواتير والمرتجعات</h2>
+          <p>قائمة فواتير حديثة مع مرتجع وتشغيل baseline للطباعة.</p>
+        </Link>
+
+        <Link href="/debts" className="baseline-link-card">
+          <p className="eyebrow">PX-04 / PX-05</p>
+          <h2>الديون والتسديد</h2>
+          <p>عرض العملاء المستحقين مع دين يدوي وتسديد FIFO من نفس الواجهة.</p>
+        </Link>
+
+        <Link href="/reports" className="baseline-link-card">
+          <p className="eyebrow">PX-05-T01</p>
+          <h2>التقارير</h2>
+          <p>فلاتر مبيعات + آخر اللقطات + حسابات + ديون + مخزون منخفض.</p>
+        </Link>
+
+        <Link href="/settings" className="baseline-link-card">
+          <p className="eyebrow">PX-05-T02..T06</p>
+          <h2>الإعدادات التشغيلية</h2>
+          <p>حفظ لقطة يومية، فحص الأرصدة، التسوية، وإكمال الجرد من سطح واحد.</p>
         </Link>
       </section>
 

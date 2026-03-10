@@ -125,14 +125,13 @@
 
 ### المرحلة الحالية
 
-- `مغلق` `PX-03-T01` قراءة المنتجات للـ POS مع Blind POS
-- `مغلق` `PX-03-T02` سلة محلية + بحث سريع + Auto-Focus
-- `مغلق` `PX-03-T03` Route + validation + RPC لـ `create_sale`
-- `مغلق` `PX-03-T04` إثبات idempotency في البيع
-- `مغلق` `PX-03-T05` إثبات concurrency بين جهازين POS
-- `مغلق` `PX-03-T06` حفظ سلة POS محليًا
-- `مغلق` `PX-03` أُغلقت بنجاح
-- `التالي` `PX-04-T01` `create_return` مع قواعد partial/debt refund
+- `مغلق` `PX-04-T01` `create_return` مع قواعد partial/debt refund
+- `مغلق` `PX-04-T02` `create_debt_manual` و`create_debt_payment`
+- `مغلق` `PX-04-T03` `cancel_invoice` و`edit_invoice`
+- `مغلق` `PX-04-T04` اختبار `FIFO + overpay + debt return`
+- `مغلق` `PX-04-T05` إثبات `audit coverage` للمسارات الحساسة
+- `مغلق` `PX-04` أُغلقت بنجاح
+- `التالي` `PX-05-T01` `create_daily_snapshot` + report filters
 
 ---
 
@@ -188,8 +187,8 @@
 | `PX-01` | Workspace + Runtime Baseline | تجهيز المشروع وبيئة التنفيذ والاتصال الأساسي | `09:26+`, `24:41+` | التطبيق يعمل محليًا + Health + Device baseline | `Done` |
 | `PX-02` | DB Security Foundation | تطبيق schema/RLS/RPC boundaries ومنع direct writes | `05`, `10`, `13`, `15` | كل write عبر RPC wrappers فقط | `Done` |
 | `PX-03` | Sales Core Slice | المنتجات + POS + `create_sale` + concurrency | `04`, `16`, `25` | بيع كامل ناجح + replay محمي + لا stock drift | `Done` |
-| `PX-04` | Invoice Control + Debt | المرتجعات + الديون + الإلغاء + التعديل | `04`, `06`, `08`, `15` | flows الحرجة تمر بدون تناقض مالي | `In Progress` |
-| `PX-05` | Reports + Snapshot + Integrity + Device | اللقطة اليومية + التقارير + فحص النزاهة + جودة الأجهزة | `03`, `09`, `17`, `29` | Device/UAT/Integrity checks ناجحة | `Open` |
+| `PX-04` | Invoice Control + Debt | المرتجعات + الديون + الإلغاء + التعديل | `04`, `06`, `08`, `15` | flows الحرجة تمر بدون تناقض مالي | `Done` |
+| `PX-05` | Reports + Snapshot + Integrity + Device | اللقطة اليومية + التقارير + فحص النزاهة + جودة الأجهزة | `03`, `09`, `17`, `29` | Device/UAT/Integrity checks ناجحة | `In Progress` |
 | `PX-06` | MVP Release Gate | فحص قبول MVP وإعلان الجاهزية | `17`, `24`, `27` | اجتياز جميع اختبارات MVP المطلوبة | `Open` |
 | `PX-07` | V1 Expansion | الموردون/المشتريات/الشحن/الجرد/التسوية/الصيانة | `09`, `24` | تسليم V1 بدون كسر عقود MVP | `Open` |
 
@@ -1311,7 +1310,7 @@
 
 - **Title:** توحيد بقية RPC wrappers على `fn_require_actor/fn_require_admin_actor`
 - **Severity:** `P2`
-- **Reason:** `9` دوال ما زالت تستخدم `auth.uid()` المباشر، وهو غير متوافق مع نموذج `service_role + created_by` عند تفعيل API routes الخاصة بها
+- **Reason:** `8` دوال ما زالت تستخدم `auth.uid()` المباشر، وهو غير متوافق مع نموذج `service_role + created_by` عند تفعيل API routes الخاصة بها
 - **Deferred To:** slices التنفيذية التي ستبني routes لهذه الدوال (`PX-03+`)
 - **Functions In Scope:**
   - `create_expense`
@@ -1322,7 +1321,6 @@
   - `reconcile_account`
   - `create_maintenance_job`
   - `complete_inventory_count`
-  - `create_debt_manual`
 - **Required Future Action:** إضافة `p_created_by` أو equivalent actor propagation لكل دالة قبل فتح route الإنتاجية الخاصة بها
 
 ### Close Decision — PX-02-T04
@@ -1928,13 +1926,190 @@
 - `Phase Review Report — PX-04`
 - `Phase Close Decision — PX-04`
 
+### Current Phase Status
+
+- **Phase State:** `Done`
+- **Active Task:** `None`
+- **Started At:** `2026-03-08`
+- **Execution Owner:** `Execution Agent`
+- **Review Owner:** `Review Agent (Review-Only)`
+- **Closed At:** `2026-03-08`
+- **Next Active Phase:** `PX-05`
+- **Next Active Task:** `PX-05-T01`
+
 | Task ID | المهمة | المرجع | Status | Evidence | Updated At | Notes / Blockers |
 |--------|--------|--------|--------|----------|------------|------------------|
-| `PX-04-T01` | `create_return` مع قواعد partial/debt refund | `24/TASK-MVP-04` | `Open` |  |  |  |
-| `PX-04-T02` | `create_debt_manual` و`create_debt_payment` | `24/TASK-MVP-05` | `Open` |  |  |  |
-| `PX-04-T03` | `cancel_invoice` و`edit_invoice` | `24/TASK-MVP-06` | `Open` |  |  |  |
-| `PX-04-T04` | اختبار FIFO + overpay + debt return scenarios | `26`, `08` | `Open` |  |  |  |
-| `PX-04-T05` | إثبات audit coverage للمسارات الحساسة | `18`, `16` | `Open` |  |  |  |
+| `PX-04-T01` | `create_return` مع قواعد partial/debt refund | `24/TASK-MVP-04` | `Done` | `supabase/migrations/004_functions_triggers.sql`, `app/api/returns/route.ts`, `lib/validations/returns.ts`, `tests/unit/returns-route.test.ts`, `tests/unit/returns-validation.test.ts`, local proofs (`partial_return`, `debt_return`) | `2026-03-08` | `create_return` صار يدعم `partial + debt-first refund` مع `p_created_by` ويُرجع `return_type/total_amount/refunded_amount/debt_reduction` بعقد موحد. |
+| `PX-04-T02` | `create_debt_manual` و`create_debt_payment` | `24/TASK-MVP-05` | `Done` | `supabase/migrations/004_functions_triggers.sql`, `app/api/debts/manual/route.ts`, `app/api/payments/debt/route.ts`, `lib/validations/debts.ts`, `tests/unit/debt-manual-route.test.ts`, `tests/unit/debt-payment-route.test.ts`, `tests/unit/debts-validation.test.ts`, local proofs (`manual_debt`, `fifo`, `overpay`) | `2026-03-08` | تم توحيد `create_debt_manual` على `fn_require_admin_actor(p_created_by)` وتقليص العنصر المرحّل الخارجي من `9` إلى `8` دوال. |
+| `PX-04-T03` | `cancel_invoice` و`edit_invoice` | `24/TASK-MVP-06` | `Done` | `supabase/migrations/004_functions_triggers.sql`, `app/api/invoices/cancel/route.ts`, `app/api/invoices/edit/route.ts`, `lib/validations/invoices.ts`, `tests/unit/invoice-cancel-route.test.ts`, `tests/unit/invoice-edit-route.test.ts`, local proofs (`cancel_admin_only_guard`, `edit_admin_only_guard`, `cancel_edit_success`) | `2026-03-08` | `cancel/edit` محصوران فعليًا بالـ Admin، و`cancel_invoice` يعيد `reversed_entries_count` لتوثيق reverse entries داخل الرد نفسه. |
+| `PX-04-T04` | اختبار FIFO + overpay + debt return scenarios | `26`, `08` | `Done` | local proof table (`PX-04-T04.overpay = PASS`, `PX-04-T04.debt_return = PASS`), `supabase/migrations/004_functions_triggers.sql`, `app/api/returns/route.ts`, `app/api/payments/debt/route.ts` | `2026-03-08` | ثُبتت أولوية سداد الدين أولًا في المرتجع، و`ERR_DEBT_OVERPAY` في overpay، و`FIFO allocation = 30 ثم 20` على سيناريو الدين اليدوي. |
+| `PX-04-T05` | إثبات audit coverage للمسارات الحساسة | `18`, `16` | `Done` | `supabase/migrations/004_functions_triggers.sql`, local proof table (`create_return_logs = 2`, `create_debt_manual_logs = 1`, `create_debt_payment_logs = 1`, `cancel_invoice_logs = 1`, `edit_invoice_logs = 1`), `npm run test`, `npm run build`, `npm run test:e2e` | `2026-03-08` | كل المسارات الحساسة في `PX-04` تترك audit trail واضحًا، مع بقاء ledger truth = `PASS` وعدم وجود drift على الحسابات الأساسية. |
+
+### Phase Execution Report — PX-04
+
+- **Phase:** `PX-04 — Invoice Control + Debt`
+- **Execution Window:** `2026-03-08`
+- **Execution Status:** `Ready for Phase Review`
+- **Outcome Summary:** اكتملت slice ما بعد البيع كاملة: المرتجع الجزئي ومرتجع الدين، إنشاء الدين اليدوي وسداد الدين مع `FIFO`, حماية `overpay`, حصر `cancel/edit` بالـ Admin, وتغطية audit للمسارات الحساسة بدون أي تناقض بين stored balances و`ledger truth`.
+
+**Task Outcomes**
+
+- `PX-04-T01` = `Done`
+- `PX-04-T02` = `Done`
+- `PX-04-T03` = `Done`
+- `PX-04-T04` = `Done`
+- `PX-04-T05` = `Done`
+
+**Key Evidence**
+
+- `T01`: `supabase/migrations/004_functions_triggers.sql`, `app/api/returns/route.ts`, `lib/validations/returns.ts`, `tests/unit/returns-route.test.ts`, `tests/unit/returns-validation.test.ts`, local proofs (`partial_return`, `debt_return`)
+- `T02`: `supabase/migrations/004_functions_triggers.sql`, `app/api/debts/manual/route.ts`, `app/api/payments/debt/route.ts`, `lib/validations/debts.ts`, `tests/unit/debt-manual-route.test.ts`, `tests/unit/debt-payment-route.test.ts`, `tests/unit/debts-validation.test.ts`, local proofs (`manual_debt`, `fifo`, `overpay`)
+- `T03`: `supabase/migrations/004_functions_triggers.sql`, `app/api/invoices/cancel/route.ts`, `app/api/invoices/edit/route.ts`, `lib/validations/invoices.ts`, `tests/unit/invoice-cancel-route.test.ts`, `tests/unit/invoice-edit-route.test.ts`, local proofs (`cancel_admin_only_guard`, `edit_admin_only_guard`, `cancel_edit_success`)
+- `T04`: local proof table (`PX-04-T04.overpay = PASS`, `PX-04-T04.debt_return = PASS`, `FIFO allocation = 30 ثم 20`, `remaining_balance = 60.000`)
+- `T05`: local audit proof table (`create_return_logs = 2`, `create_debt_manual_logs = 1`, `create_debt_payment_logs = 1`, `cancel_invoice_logs = 1`, `edit_invoice_logs = 1`), `PX-04.ledger_truth = PASS`
+- phase-wide verification: `npx supabase db reset --local --debug`, `npx supabase db lint --local --fail-on error --level warning --debug`, `npm run typecheck`, `npm run lint`, `npm run test`, `npm run build`, `npm run test:e2e`, `playwright.config.ts`
+
+**Gate Success Check**
+
+- المرتجع الكامل/الجزئي يعمل: `Covered by T01`
+- الدين `FIFO` يعمل: `Covered by T02 + T04`
+- الإلغاء والتعديل محكومان بصلاحيات وAudit: `Covered by T03 + T05`
+- لا يظهر تناقض بين stored balances والـ `ledger truth`: `Covered by T05`
+
+**Closure Assessment**
+
+- جميع مهام المرحلة = `Done`: `Yes`
+- لا يوجد `P0/P1` مفتوح داخل `PX-04`: `Yes`
+- العنصر المرحّل الخارجي `PX-02-T04-D01` تقلّص إلى `8` دوال ولا يكسر `PX-04`: `Yes`
+- الانتقال إلى `PX-05-T01` آمن: `Yes`
+
+### Phase Review Prompt — PX-04
+
+أنت الآن `Review Agent (Review-Only)` لمراجعة إغلاق المرحلة `PX-04 — Invoice Control + Debt`.
+
+مهمتك **قراءة + تحليل + مقارنة + تقديم تقرير فقط**.
+ممنوع التنفيذ، ممنوع التعديل، ممنوع كتابة كود، وممنوع تشغيل Docker أو `supabase start/reset/lint` أو أي أمر يغير الحالة.
+
+راجع المخرجات الحالية مقابل:
+
+- `aya-mobile-documentation/31_Execution_Live_Tracker.md`
+- `aya-mobile-documentation/04_Core_Flows.md`
+- `aya-mobile-documentation/06_Financial_Ledger.md`
+- `aya-mobile-documentation/08_SOPs.md`
+- `aya-mobile-documentation/15_Seed_Data_Functions.md`
+- `aya-mobile-documentation/16_Error_Codes.md`
+- `aya-mobile-documentation/25_API_Contracts.md`
+- `aya-mobile-documentation/26_Dry_Run_Financial_Scenarios.md`
+- `supabase/migrations/004_functions_triggers.sql`
+- `app/api/returns/route.ts`
+- `app/api/debts/manual/route.ts`
+- `app/api/payments/debt/route.ts`
+- `app/api/invoices/cancel/route.ts`
+- `app/api/invoices/edit/route.ts`
+- `lib/validations/returns.ts`
+- `lib/validations/debts.ts`
+- `lib/validations/invoices.ts`
+
+تحقق تحديدًا من:
+
+1. هل تحققت `Gate Success` الخاصة بـ `PX-04` بالأدلة الموثقة؟
+2. هل جميع مهام `PX-04` (`T01..T05`) أصبحت `Done` رسميًا؟
+3. هل أدلة `partial return`, `debt-first refund`, `manual debt + FIFO payment`, `cancel/edit admin guards`, و`audit coverage` كافية لدعم الإغلاق؟
+4. هل إثبات `ledger truth = PASS` كافٍ مع بقاء الحسابات الأساسية دون drift بعد سيناريوهات المرتجع والدين والإلغاء والتعديل؟
+5. هل الانتقال إلى `PX-05-T01` آمن دون ترك `P0/P1` مفتوح داخل `PX-04`؟
+
+أخرج تقريرك بصيغة:
+
+- `Phase Review Report — PX-04`
+- الحكم النهائي: `PASS` أو `PASS WITH FIXES` أو `FAIL`
+- قائمة findings مرتبة حسب الخطورة
+- تحديد واضح هل التوصية:
+  - `Close PX-04`
+  - أو `Close PX-04 with Deferred / Carried Forward Items`
+  - أو `Keep PX-04 Open / Blocked`
+
+### Phase Review Report — PX-04
+
+- **Review Agent:** `Review Agent (Review-Only)`
+- **Review Date:** `2026-03-08`
+- **Review Scope:** `Phase Closure Review — PX-04 (Invoice Control + Debt)`
+- **Final Verdict:** `PASS`
+- **Recommendation:** `Close PX-04`
+
+**Gate Success Verification**
+
+| Gate Criterion | Verdict | Evidence Source |
+|----------------|---------|-----------------|
+| المرتجع الكامل/الجزئي يعمل | `PASS` | `PX-04-T01`: `create_return()` في `004` عند `L533` يستخدم `fn_require_actor(p_created_by)` ويدعم `partial + debt-first refund`. Local proofs: `partial_return = PASS` (`returned_quantity = 1`, `invoice_status = partially_returned`, `refunded_amount = 100.000`), `debt_return = PASS` (`debt_reduction = 60.000`, `cash_refund = 20.000`). Route [route.ts](C:/Users/Qaysk/OneDrive/Desktop/Aya%20Mobile/app/api/returns/route.ts#L16) يمرر `p_created_by: authorization.userId` عبر `service_role`. Validation [returns.ts](C:/Users/Qaysk/OneDrive/Desktop/Aya%20Mobile/lib/validations/returns.ts) يتطلب `items.min(1)`, `reason.min(1)`, `idempotency_key`, و`refund_account_id` اختياري. |
+| الدين `FIFO` يعمل | `PASS` | `PX-04-T02/T04`: `create_debt_manual()` في `004` عند `L1510` يستخدم `fn_require_admin_actor(p_created_by)`. `create_debt_payment()` في `004` عند `L721` يستخدم `fn_require_actor(p_created_by)`. Local proofs: `FIFO allocation = 30 ثم 20`, `remaining_balance = 60.000`, و`ERR_DEBT_OVERPAY` في سيناريو overpay. Routes [route.ts](C:/Users/Qaysk/OneDrive/Desktop/Aya%20Mobile/app/api/debts/manual/route.ts#L33) و[route.ts](C:/Users/Qaysk/OneDrive/Desktop/Aya%20Mobile/app/api/payments/debt/route.ts#L19) متسقتان مع عقود `25_API_Contracts.md`. |
+| الإلغاء والتعديل محكومان بصلاحيات وAudit | `PASS` | `PX-04-T03/T05`: `cancel_invoice()` في `004` عند `L431` يستخدم `fn_require_admin_actor(p_created_by)`. `edit_invoice()` في `004` عند `L1572` يستخدم `fn_require_admin_actor(p_created_by)`. Routes [route.ts](C:/Users/Qaysk/OneDrive/Desktop/Aya%20Mobile/app/api/invoices/cancel/route.ts#L12) و[route.ts](C:/Users/Qaysk/OneDrive/Desktop/Aya%20Mobile/app/api/invoices/edit/route.ts#L13) تستدعيان `authorizeRequest(["admin"])` فقط. Local proofs: `cancel_invoice(POS) = ERR_UNAUTHORIZED`, `edit_invoice(POS) = ERR_UNAUTHORIZED`, و`cancel_invoice(Admin) = success + reversed_entries_count = 1`. Audit counts: `cancel_invoice_logs = 1`, `edit_invoice_logs = 1`. |
+| لا يظهر تناقض بين stored balances والـ `ledger truth` | `PASS` | `PX-04-T05`: `PX-04.ledger_truth = PASS`, `cash account current vs expected = 210.000 / 210.000`, و`zero drift` على الحسابات الأساسية بعد كامل سيناريوهات المرتجع والدين والإلغاء والتعديل. |
+
+**Task Status Verification**
+
+| Task | Status | Verdict |
+|------|--------|---------|
+| `PX-04-T01 — create_return` | `Done` | `PASS` — SQL يدعم `partial + debt-first refund` مع `fn_require_actor`. Route/validation/tests موجودة ومتسقة. |
+| `PX-04-T02 — create_debt_manual/create_debt_payment` | `Done` | `PASS` — `create_debt_manual` يستخدم `fn_require_admin_actor` مع تقليص عنصر `PX-02-T04-D01` من `9` إلى `8`. `create_debt_payment` يدعم `FIFO + ERR_DEBT_OVERPAY`. |
+| `PX-04-T03 — cancel/edit invoice` | `Done` | `PASS` — كلاهما `fn_require_admin_actor`. Routes تحصر الصلاحية بـ `["admin"]`. `cancel` يعيد `reversed_entries_count`. `edit` يدعم `reverse+reapply pattern` مع `ERR_CANCEL_HAS_RETURN` guard. |
+| `PX-04-T04 — FIFO/overpay/debt return scenarios` | `Done` | `PASS` — سيناريوهات `DR-03/DR-04` من `26_Dry_Run_Financial_Scenarios.md` مغطاة بأدلة تشغيلية. |
+| `PX-04-T05 — audit coverage` | `Done` | `PASS` — `create_return_logs = 2`, `create_debt_manual_logs = 1`, `create_debt_payment_logs = 1`, `cancel_invoice_logs = 1`, `edit_invoice_logs = 1`. `ledger_truth = PASS`. |
+
+**Evidence Sufficiency — Deep Checks**
+
+- `Partial return / debt-first refund`: كافٍ. SQL `create_return` يحسب `debt_reduction = MIN(return_total, remaining_debt)` و`cash_refund = return_total - debt_reduction`، ويشترط `refund_account_id` عند `cash_refund > 0` وفق `ERR_RETURN_REFUND_ACCOUNT_REQUIRED`، وهو متطابق مع `04_Core_Flows.md` و`06_Financial_Ledger.md`.
+- `Manual debt + FIFO payment`: كافٍ. `create_debt_manual` يتطلب `p_idempotency_key` وفق `25_API_Contracts.md`، و`create_debt_payment` يوزع `ORDER BY due_date ASC` بما يطابق `06_Financial_Ledger.md`.
+- `Cancel/Edit admin guards`: كافٍ. DB-level `fn_require_admin_actor` + API-level `authorizeRequest(["admin"])` يحققان طبقتي الحماية وفق `08_SOPs.md`.
+- `Audit coverage`: كافٍ. كل مسار حساس يسجل داخل `audit_logs` مع counts قابلة للتحقق. `ledger_entries` append-only محمي وفق `06_Financial_Ledger.md`.
+- `Ledger truth`: كافٍ. `zero drift` بعد سلسلة `sale -> partial return -> debt return -> manual debt -> FIFO payment -> cancel -> edit` يثبت بقاء `accounts.current_balance` متطابقًا مع مجموع `ledger_entries`.
+
+**Validation Schemas vs. API Contracts Cross-Check**
+
+| Route | Schema Fields | Contract `25` Match |
+|-------|---------------|---------------------|
+| `POST /api/returns` | `invoice_id`, `items[{invoice_item_id, quantity}]`, `refund_account_id?`, `return_type`, `reason`, `idempotency_key` | `✅` |
+| `POST /api/debts/manual` | `debt_customer_id`, `amount`, `description?`, `idempotency_key` | `✅` |
+| `POST /api/payments/debt` | `debt_customer_id`, `amount`, `account_id`, `notes?`, `idempotency_key`, `debt_entry_id?` | `✅` |
+| `POST /api/invoices/cancel` | `invoice_id`, `cancel_reason` | `✅` |
+| `POST /api/invoices/edit` | `invoice_id`, `items[{product_id, quantity, discount_percentage}]`, `payments[{account_id, amount}]`, `customer_id?`, `edit_reason`, `idempotency_key` | `✅` |
+
+**Safety of Transition to `PX-05-T01`**
+
+- لا يوجد أي `P0` أو `P1` مفتوح داخل `PX-04`.
+- العنصر المرحّل الخارجي `PX-02-T04-D01` تقلّص إلى `8` دوال بعد إصلاح `create_debt_manual` في هذه المرحلة، ولا يمس أي مسار مفعّل حاليًا.
+- `PX-05-T01` (`create_daily_snapshot + report filters`) يعتمد على baseline مالي أصبح متماسكًا بعد إثبات `ledger truth = PASS`.
+- حزمة التحقق النهائية (`db lint`, `typecheck`, `lint`, `test`, `build`, `test:e2e`) كلها مجتازة.
+
+**Findings**
+
+| # | Severity | Finding |
+|---|----------|---------|
+| `1` | `P3 Info` | `db lint` يعيد warnings قديمة في `004_functions_triggers.sql` (`unused vars: v_debt, v_customer, v_from_balance, v_max_discount + implicit casts`) وهي غير حاجبة وموروثة من `PX-02`. |
+| `2` | `P3 Info` | العنصر المرحّل الخارجي `PX-02-T04-D01` = `8` دوال (`create_expense`, `create_purchase`, `create_supplier_payment`, `create_topup`, `create_transfer`, `reconcile_account`, `create_maintenance_job`, `complete_inventory_count`) ولا يكسر إغلاق `PX-04` لأن لا routes إنتاجية مفتوحة لها بعد. |
+| `3` | `P3 Info` | `Playwright` مثبت على تشغيل غير متوازٍ بسبب `next dev compile-on-demand`، وليس بسبب خلل وظيفي. |
+
+**Operational Recommendation**
+
+- `Close PX-04`
+
+**Close Decision Recommendation**
+
+- **Decision:** `Closed`
+- **Basis:** `Phase Review Report — PX-04 = PASS`
+- **PX-04 Deferred Items:** `None`
+- **Project Carried Forward Items (External to PX-04):** `PX-02-T04-D01` فقط (`8` دوال)
+- **Next Active Phase:** `PX-05`
+- **Next Active Task:** `PX-05-T01`
+
+### Phase Close Decision — PX-04
+
+- **Decision:** `Closed`
+- **Decision Date:** `2026-03-08`
+- **Basis:** `Phase Review Report — PX-04 = PASS`
+- **PX-04 Deferred Items:** `None`
+- **Project Carried Forward Items (External to PX-04):** `PX-02-T04-D01` فقط بعد تقليصه إلى `8` دوال
+- **Next Active Phase:** `PX-05`
+- **Next Active Task:** `PX-05-T01`
 
 ---
 
@@ -2137,6 +2312,10 @@
 | 2026-03-08 | `PX-03-T02/T06` | أُضيفت اختبارات واجهة مباشرة لـ `PosWorkspace` لإثبات `autoFocus` والبحث المحلي وعدم وجود أي طلب كتابة أثناء التصفية أو الإضافة للسلة، مع بقاء إثبات `persist/rehydrate` في `pos-cart` مجتازًا. | `Done` | `components/pos/pos-workspace.tsx`, `tests/unit/pos-workspace.test.tsx`, `tests/unit/pos-cart.test.ts` |
 | 2026-03-08 | `PX-03` | اكتملت حزمة التحقق النهائية: `db lint` بدون errors (warnings `P3` فقط)، `typecheck`, `lint`, `test`, `build`, و`test:e2e` جميعها مجتازة. نتج فشل أولي غير حقيقي عند تشغيل `build` و`Playwright` بالتوازي بسبب الكتابة المشتركة على `.next`، ثم أُعيد التشغيل بشكل متسلسل واجتاز بالكامل. | `Review PASS` | `npx supabase db lint --local --fail-on error --level warning --debug`, `npm run typecheck`, `npm run lint`, `npm run test`, `npm run build`, `npm run test:e2e` |
 | 2026-03-08 | `PX-03` | تم اعتماد `Phase Review Report — PX-03 = PASS` وإغلاق المرحلة رسميًا بقرار `Closed`. لا توجد عناصر مؤجلة خاصة بـ `PX-03`، والانتقال التالي أصبح إلى `PX-04-T01`. | `Done / In Progress` | `Phase Close Decision — PX-03` |
+| 2026-03-08 | `PX-04-T01/T02/T03` | تم تنفيذ baseline ما بعد البيع كاملًا داخل `004_functions_triggers.sql` وطبقة API/validation: `create_return` صار يدعم `partial + debt-first refund`, `create_debt_manual` صار يعتمد `p_created_by` و`fn_require_admin_actor`, وأضيفت routes/validations لـ `returns`, `manual debt`, `debt payment`, `cancel`, و`edit` مع اختبارات unit مباشرة. | `Done` | `supabase/migrations/004_functions_triggers.sql`, `app/api/returns/route.ts`, `app/api/debts/manual/route.ts`, `app/api/payments/debt/route.ts`, `app/api/invoices/cancel/route.ts`, `app/api/invoices/edit/route.ts`, `lib/api/common.ts`, `lib/validations/returns.ts`, `lib/validations/debts.ts`, `lib/validations/invoices.ts`, `tests/unit/*route.test.ts`, `tests/unit/*validation.test.ts` |
+| 2026-03-08 | `PX-04-T01..T05` | أُعيد `db reset --local --debug` على baseline الحالية ثم نُفذ local proof مالي كامل لسيناريوهات `partial return`, `manual debt + FIFO payment`, `overpay`, `debt return`, `cancel/edit admin guards`, و`audit coverage`. جميع بنود proof table عادت `PASS`, بما فيها `PX-04.ledger_truth = PASS` و`cash account current vs expected = 210.000 / 210.000`. | `Review PASS` | `npx supabase db reset --local --debug`, `docker exec supabase_db_Aya_Mobile psql ... px04 proof table`, `PX-04-T01.partial_return = PASS`, `PX-04-T04.debt_return = PASS`, `PX-04.ledger_truth = PASS` |
+| 2026-03-08 | `PX-04` | اكتملت حزمة التحقق النهائية: `db lint` بدون errors مع warnings `P3` فقط، و`typecheck`, `lint`, `test`, `build`, و`test:e2e` جميعها مجتازة. تم أيضًا تثبيت `Playwright` على تشغيل غير متوازٍ لأن `next dev` مع compile-on-demand كان يسبب flakiness اختباريًا على `/products` و`/pos` دون وجود خلل وظيفي في التطبيق. | `Review PASS` | `npx supabase db lint --local --fail-on error --level warning --debug`, `npm run typecheck`, `npm run lint`, `npm run test`, `npm run build`, `npm run test:e2e`, `playwright.config.ts` |
+| 2026-03-08 | `PX-04` | تم اعتماد `Phase Review Report — PX-04 = PASS` وإغلاق المرحلة رسميًا بقرار `Closed`. لا توجد عناصر مؤجلة خاصة بـ `PX-04`، وتم نقل الحالة إلى `PX-05 = In Progress` مع تعيين `PX-05-T01` كمهمة نشطة تالية. كما تقلّص العنصر المرحّل الخارجي `PX-02-T04-D01` إلى `8` دوال بعد إصلاح `create_debt_manual`. | `Done / In Progress` | `Phase Close Decision — PX-04`, `Phase Execution Report — PX-04` |
 | YYYY-MM-DD | `PX-XX-TXX` | مثال: تم إنشاء route / تم إغلاق bug / تم اجتياز UAT | `In Progress / Done / Blocked` | file path / test / screenshot / SQL |
 
 ---

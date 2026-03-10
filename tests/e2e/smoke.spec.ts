@@ -7,14 +7,16 @@ const viewports = [
 ] as const;
 
 for (const viewport of viewports) {
-  test(`home page renders the sales core launcher on ${viewport.label}`, async ({ page }) => {
+  test(`home page renders the PX-05 launcher on ${viewport.label}`, async ({ page }) => {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
     await page.goto("/");
 
     await expect(page.getByRole("heading", { name: "Aya Mobile" })).toBeVisible();
-    await expect(page.getByText("PX-03 Sales Core Slice")).toBeVisible();
-    await expect(page.getByRole("link", { name: "قائمة المنتجات الآمنة" })).toBeVisible();
+    await expect(page.getByText("PX-05 Reports + Snapshot + Integrity + Device")).toBeVisible();
+    await expect(page.getByRole("link", { name: "تسجيل الدخول" })).toBeVisible();
     await expect(page.getByRole("link", { name: "شاشة نقطة البيع" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "التقارير" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "الإعدادات التشغيلية" })).toBeVisible();
     await expect(page.getByRole("button", { name: "تثبيت Aya Mobile" })).toBeVisible();
   });
 }
@@ -51,4 +53,25 @@ test("pos route shows access guard when there is no active session", async ({ pa
 
   await expect(page.getByRole("heading", { name: "يلزم تسجيل الدخول لفتح نقطة البيع" })).toBeVisible();
   await expect(page.getByText("الوصول يتطلب جلسة صالحة")).toBeVisible();
+});
+
+for (const route of [
+  { path: "/reports", title: "يلزم تسجيل الدخول لفتح التقارير" },
+  { path: "/settings", title: "يلزم تسجيل الدخول لفتح الإعدادات التشغيلية" },
+  { path: "/debts", title: "يلزم تسجيل الدخول لفتح شاشة الديون" },
+  { path: "/invoices", title: "يلزم تسجيل الدخول لفتح شاشة الفواتير" }
+] as const) {
+  test(`${route.path} shows protected access guard when there is no session`, async ({ page }) => {
+    await page.goto(route.path);
+
+    await expect(page.getByRole("heading", { name: route.title })).toBeVisible();
+    await expect(page.getByText("الوصول يتطلب جلسة وصلاحية مناسبة")).toBeVisible();
+  });
+}
+
+test("login route renders the runtime access form", async ({ page }) => {
+  await page.goto("/login");
+
+  await expect(page.getByRole("heading", { name: "تسجيل الدخول للتشغيل الحقيقي" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "الدخول إلى بيئة التشغيل" })).toBeVisible();
 });

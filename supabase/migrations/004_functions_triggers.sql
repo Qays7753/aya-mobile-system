@@ -436,11 +436,12 @@ CREATE OR REPLACE FUNCTION cancel_invoice(
 RETURNS JSONB
 LANGUAGE plpgsql SECURITY DEFINER AS $$
 DECLARE
-  v_user_id  UUID;
-  v_invoice  RECORD;
-  v_payment  RECORD;
-  v_item     RECORD;
-  v_debt     RECORD;
+  v_user_id                 UUID;
+  v_invoice                 RECORD;
+  v_payment                 RECORD;
+  v_item                    RECORD;
+  v_debt                    RECORD;
+  v_reversed_entries_count  INTEGER := 0;
 BEGIN
   v_user_id := fn_require_admin_actor(p_created_by);
 
@@ -483,6 +484,7 @@ BEGIN
       'reversal', p_invoice_id,
       'عكس فاتورة ملغية ' || v_invoice.invoice_number, v_user_id
     );
+    v_reversed_entries_count := v_reversed_entries_count + 1;
     UPDATE accounts SET current_balance = current_balance - v_payment.net_amount
       WHERE id = v_payment.account_id;
   END LOOP;
@@ -511,7 +513,11 @@ BEGIN
     'إلغاء فاتورة ' || v_invoice.invoice_number,
     jsonb_build_object('total', v_invoice.total_amount, 'reason', p_cancel_reason));
 
-  RETURN jsonb_build_object('success', true, 'invoice_number', v_invoice.invoice_number);
+  RETURN jsonb_build_object(
+    'success', true,
+    'invoice_number', v_invoice.invoice_number,
+    'reversed_entries_count', v_reversed_entries_count
+  );
 END;
 $$;
 
@@ -521,11 +527,14 @@ $$;
 -- └─────────────────────────────────────────────┘
 
 DROP FUNCTION IF EXISTS create_return(UUID, JSONB, UUID, VARCHAR, UUID);
+DROP FUNCTION IF EXISTS create_return(UUID, JSONB, UUID, VARCHAR, UUID, UUID);
+DROP FUNCTION IF EXISTS create_return(UUID, JSONB, UUID, return_type, VARCHAR, UUID, UUID);
 
 CREATE OR REPLACE FUNCTION create_return(
   p_invoice_id      UUID,
   p_items           JSONB,
   p_refund_account_id UUID DEFAULT NULL,
+  p_return_type     return_type DEFAULT NULL,
   p_reason          VARCHAR DEFAULT '',
   p_idempotency_key UUID DEFAULT NULL,
   p_created_by      UUID DEFAULT NULL
@@ -533,17 +542,21 @@ CREATE OR REPLACE FUNCTION create_return(
 RETURNS JSONB
 LANGUAGE plpgsql SECURITY DEFINER AS $$
 DECLARE
-  v_user_id        UUID;
-  v_return_id      UUID := gen_random_uuid();
-  v_return_number  VARCHAR;
-  v_invoice        RECORD;
-  v_item           JSONB;
-  v_inv_item       RECORD;
-  v_return_total   DECIMAL(12,3) := 0;
-  v_item_unit_price DECIMAL(12,3);
-  v_item_total     DECIMAL(12,3);
-  v_return_type    return_type;
-  v_all_returned   BOOLEAN := true;
+  v_user_id          UUID;
+  v_return_id        UUID := gen_random_uuid();
+  v_return_number    VARCHAR;
+  v_invoice          RECORD;
+  v_item             JSONB;
+  v_inv_item         RECORD;
+  v_return_total     DECIMAL(12,3) := 0;
+  v_item_unit_price  DECIMAL(12,3);
+  v_item_total       DECIMAL(12,3);
+  v_return_type      return_type;
+  v_all_returned     BOOLEAN := true;
+  v_debt_entry       RECORD;
+  v_alloc_amount     DECIMAL(12,3);
+  v_debt_reduction   DECIMAL(12,3) := 0;
+  v_cash_refund      DECIMAL(12,3) := 0;
 BEGIN
   v_user_id := fn_require_actor(p_created_by);
 
@@ -565,7 +578,7 @@ BEGIN
     id, return_number, original_invoice_id, return_type,
     total_amount, refund_account_id, reason, idempotency_key, created_by
   ) VALUES (
-    v_return_id, v_return_number, p_invoice_id, 'partial',
+    v_return_id, v_return_number, p_invoice_id, COALESCE(p_return_type, 'partial'),
     0, p_refund_account_id, p_reason, p_idempotency_key, v_user_id
   );
 
@@ -624,44 +637,76 @@ BEGIN
     UPDATE invoices SET status = 'partially_returned' WHERE id = p_invoice_id;
   END IF;
 
-  -- ═══ قيد محاسبي: استرداد مالي أو خصم من الدين (Fix #3) ═══
-  IF p_refund_account_id IS NOT NULL THEN
+  -- ═══ خصم الدين غير المسدد أولاً عند فواتير الدين ═══
+  IF v_invoice.debt_customer_id IS NOT NULL THEN
+    FOR v_debt_entry IN
+      SELECT *
+      FROM debt_entries
+      WHERE invoice_id = p_invoice_id
+        AND entry_type = 'from_invoice'
+        AND is_paid = false
+      ORDER BY due_date ASC
+      FOR UPDATE
+    LOOP
+      EXIT WHEN v_debt_reduction >= v_return_total;
+
+      v_alloc_amount := LEAST(v_return_total - v_debt_reduction, v_debt_entry.remaining_amount);
+
+      UPDATE debt_entries
+      SET paid_amount = paid_amount + v_alloc_amount,
+          remaining_amount = remaining_amount - v_alloc_amount,
+          is_paid = CASE
+            WHEN remaining_amount - v_alloc_amount = 0 THEN true
+            ELSE false
+          END
+      WHERE id = v_debt_entry.id;
+
+      v_debt_reduction := v_debt_reduction + v_alloc_amount;
+    END LOOP;
+
+    IF v_debt_reduction > 0 THEN
+      UPDATE debt_customers
+        SET current_balance = current_balance - v_debt_reduction
+      WHERE id = v_invoice.debt_customer_id;
+    END IF;
+  END IF;
+
+  -- ═══ قيد محاسبي: فقط للمبلغ النقدي المعاد فعليًا ═══
+  v_cash_refund := v_return_total - v_debt_reduction;
+
+  IF v_cash_refund > 0 THEN
+    IF p_refund_account_id IS NULL THEN
+      RAISE EXCEPTION 'ERR_RETURN_REFUND_ACCOUNT_REQUIRED';
+    END IF;
+
     INSERT INTO ledger_entries (
       account_id, entry_type, amount, reference_type, reference_id, description, created_by
     ) VALUES (
-      p_refund_account_id, 'expense', v_return_total, 'return', v_return_id,
+      p_refund_account_id, 'expense', v_cash_refund, 'return', v_return_id,
       'مرتجع ' || v_return_number || ' من فاتورة ' || v_invoice.invoice_number, v_user_id
     );
-    UPDATE accounts SET current_balance = current_balance - v_return_total
+    UPDATE accounts SET current_balance = current_balance - v_cash_refund
       WHERE id = p_refund_account_id;
-  ELSIF v_invoice.debt_customer_id IS NOT NULL THEN
-    UPDATE debt_customers
-      SET current_balance = current_balance - v_return_total
-      WHERE id = v_invoice.debt_customer_id;
-
-    -- Fix #3: تحديث سجل الدين التفصيلي حتى لا يبقى معلقاً ويخصم من مدفوعات العميل بغير حق
-    UPDATE debt_entries
-      SET paid_amount = LEAST(amount, paid_amount + v_return_total),
-          remaining_amount = amount - LEAST(amount, paid_amount + v_return_total),
-          is_paid = CASE
-            WHEN amount - LEAST(amount, paid_amount + v_return_total) = 0 THEN true
-            ELSE is_paid
-          END
-    WHERE invoice_id = p_invoice_id AND entry_type = 'from_invoice';
-  ELSE
-    -- ⛔ لا حساب استرداد ولا عميل دين — مرتجع بدون أثر مالي ممنوع
-    RAISE EXCEPTION 'ERR_RETURN_REFUND_ACCOUNT_REQUIRED';
   END IF;
 
   -- Audit
   INSERT INTO audit_logs (user_id, action_type, table_name, record_id, description, new_values)
   VALUES (v_user_id, 'create_return', 'returns', v_return_id,
     'مرتجع ' || v_return_number,
-    jsonb_build_object('type', v_return_type, 'total', v_return_total));
+    jsonb_build_object(
+      'type', v_return_type,
+      'total', v_return_total,
+      'cash_refund', v_cash_refund,
+      'debt_reduction', v_debt_reduction
+    ));
 
   RETURN jsonb_build_object(
-    'return_id', v_return_id, 'return_number', v_return_number,
-    'return_type', v_return_type, 'total', v_return_total
+    'return_id', v_return_id,
+    'return_number', v_return_number,
+    'return_type', v_return_type,
+    'total_amount', v_return_total,
+    'refunded_amount', v_cash_refund,
+    'debt_reduction', v_debt_reduction
   );
 END;
 $$;
@@ -1159,19 +1204,39 @@ $$;
 -- │  11. reconcile_account() — تسوية حساب        │
 -- └─────────────────────────────────────────────┘
 
+DROP FUNCTION IF EXISTS reconcile_account(UUID, NUMERIC, TEXT);
+DROP FUNCTION IF EXISTS reconcile_account(UUID, NUMERIC, TEXT, UUID);
+
 CREATE OR REPLACE FUNCTION reconcile_account(
   p_account_id     UUID,
   p_actual_balance DECIMAL,
-  p_notes          TEXT DEFAULT NULL
+  p_notes          TEXT DEFAULT NULL,
+  p_created_by     UUID DEFAULT NULL
 )
 RETURNS JSONB
 LANGUAGE plpgsql SECURITY DEFINER AS $$
 DECLARE
-  v_user_id     UUID := auth.uid();
+  v_user_id     UUID;
   v_recon_id    UUID := gen_random_uuid();
   v_expected    DECIMAL(12,3);
   v_difference  DECIMAL(12,3);
+  v_unresolved  RECORD;
 BEGIN
+  v_user_id := fn_require_admin_actor(p_created_by);
+
+  SELECT id, COUNT(*) OVER () AS unresolved_count
+    INTO v_unresolved
+    FROM reconciliation_entries
+   WHERE account_id = p_account_id
+     AND reconciliation_date = CURRENT_DATE
+     AND is_resolved = false
+   ORDER BY created_at DESC
+   LIMIT 1;
+
+  IF v_unresolved IS NOT NULL THEN
+    RAISE EXCEPTION 'ERR_RECONCILIATION_UNRESOLVED';
+  END IF;
+
   SELECT fn_calc_account_ledger_balance(p_account_id) INTO v_expected;
   IF v_expected IS NULL THEN RAISE EXCEPTION 'ERR_ACCOUNT_NOT_FOUND'; END IF;
 
@@ -1179,10 +1244,12 @@ BEGIN
 
   INSERT INTO reconciliation_entries (
     id, account_id, expected_balance, actual_balance,
-    difference, difference_reason, created_by
+    difference, difference_reason, is_resolved, created_by
   ) VALUES (
     v_recon_id, p_account_id, v_expected, p_actual_balance,
-    v_difference, COALESCE(p_notes, 'بدون ملاحظات'), v_user_id
+    v_difference, COALESCE(p_notes, 'بدون ملاحظات'),
+    CASE WHEN v_difference = 0 THEN true ELSE false END,
+    v_user_id
   );
 
   -- إذا يوجد فرق: تسوية + إشعار
@@ -1377,14 +1444,18 @@ $$;
 -- │  14. complete_inventory_count() — إكمال جرد  │
 -- └─────────────────────────────────────────────┘
 
+DROP FUNCTION IF EXISTS complete_inventory_count(UUID, JSONB);
+DROP FUNCTION IF EXISTS complete_inventory_count(UUID, JSONB, UUID);
+
 CREATE OR REPLACE FUNCTION complete_inventory_count(
   p_inventory_count_id UUID,
-  p_items              JSONB
+  p_items              JSONB,
+  p_created_by         UUID DEFAULT NULL
 )
 RETURNS JSONB
 LANGUAGE plpgsql SECURITY DEFINER AS $$
 DECLARE
-  v_user_id       UUID := auth.uid();
+  v_user_id       UUID;
   v_count         RECORD;
   v_item          JSONB;
   v_adjusted      INT := 0;
@@ -1393,6 +1464,8 @@ DECLARE
   v_act_qty       INT;
   v_diff          INT;
 BEGIN
+  v_user_id := fn_require_admin_actor(p_created_by);
+
   SELECT * INTO v_count FROM inventory_counts WHERE id = p_inventory_count_id FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'ERR_COUNT_NOT_FOUND'; END IF;
   IF v_count.status = 'completed' THEN RAISE EXCEPTION 'ERR_COUNT_ALREADY_COMPLETED'; END IF;
@@ -1460,19 +1533,24 @@ $$;
 -- │  15. create_debt_manual() — دين يدوي         │
 -- └─────────────────────────────────────────────┘
 
+DROP FUNCTION IF EXISTS create_debt_manual(UUID, NUMERIC, VARCHAR, UUID);
+
 CREATE OR REPLACE FUNCTION create_debt_manual(
   p_debt_customer_id UUID,
   p_amount           DECIMAL,
   p_description      VARCHAR DEFAULT NULL,
-  p_idempotency_key  UUID DEFAULT NULL
+  p_idempotency_key  UUID DEFAULT NULL,
+  p_created_by       UUID DEFAULT NULL
 )
 RETURNS JSONB
 LANGUAGE plpgsql SECURITY DEFINER AS $$
 DECLARE
-  v_user_id UUID := auth.uid();
+  v_user_id  UUID;
   v_entry_id UUID := gen_random_uuid();
   v_customer RECORD;
 BEGIN
+  v_user_id := fn_require_admin_actor(p_created_by);
+
   IF p_amount <= 0 THEN RAISE EXCEPTION 'ERR_VALIDATION_NEGATIVE_AMOUNT'; END IF;
 
   IF p_idempotency_key IS NULL THEN
@@ -1493,7 +1571,7 @@ BEGIN
     ) VALUES (
       v_entry_id, p_debt_customer_id, 'manual', p_amount,
       CURRENT_DATE + v_customer.due_date_days,
-      COALESCE(p_description, 'Manual debt'), p_amount,
+      COALESCE(p_description, 'دين يدوي'), p_amount,
       p_idempotency_key, v_user_id
     );
   EXCEPTION
@@ -1885,17 +1963,12 @@ CREATE OR REPLACE FUNCTION check_balance_drift()
 RETURNS JSONB
 LANGUAGE plpgsql SECURITY DEFINER AS $$
 DECLARE
-  v_user_id  UUID := auth.uid();
+  v_user_id  UUID := fn_require_admin_actor();
   v_drift    JSONB := '[]'::jsonb;
   v_acc      RECORD;
   v_calc     DECIMAL(12,3);
   v_diff     DECIMAL(12,3);
 BEGIN
-  -- التأكد من الصلاحيات (Admin فقط)
-  IF NOT EXISTS (SELECT 1 FROM profiles WHERE id = v_user_id AND role = 'admin') THEN
-    RAISE EXCEPTION 'ERR_UNAUTHORIZED';
-  END IF;
-
   FOR v_acc IN SELECT id, name, opening_balance, current_balance FROM accounts LOOP
     -- حساب الرصيد المدرج دفترياً
     SELECT COALESCE(SUM(
@@ -1940,11 +2013,71 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS check_balance_drift(UUID);
+CREATE OR REPLACE FUNCTION check_balance_drift(p_created_by UUID)
+RETURNS JSONB
+LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+  v_user_id  UUID := fn_require_admin_actor(p_created_by);
+  v_drift    JSONB := '[]'::jsonb;
+  v_acc      RECORD;
+  v_calc     DECIMAL(12,3);
+  v_diff     DECIMAL(12,3);
+BEGIN
+  FOR v_acc IN SELECT id, name, opening_balance, current_balance FROM accounts LOOP
+    SELECT COALESCE(SUM(
+      CASE
+        WHEN entry_type = 'income' THEN amount
+        WHEN entry_type = 'expense' THEN -amount
+        WHEN entry_type = 'adjustment' AND adjustment_direction = 'increase' THEN amount
+        WHEN entry_type = 'adjustment' AND adjustment_direction = 'decrease' THEN -amount
+        ELSE 0
+      END), 0) INTO v_calc
+    FROM ledger_entries WHERE account_id = v_acc.id;
+
+    v_calc := v_calc + v_acc.opening_balance;
+    v_diff := v_acc.current_balance - v_calc;
+
+    IF v_diff <> 0 THEN
+      v_drift := v_drift || jsonb_build_object(
+        'account_id', v_acc.id,
+        'account_name', v_acc.name,
+        'current_balance', v_acc.current_balance,
+        'calculated_balance', v_calc,
+        'drift', v_diff
+      );
+
+      INSERT INTO notifications (user_id, type, title, body, reference_type, reference_id)
+      SELECT p.id, 'reconciliation_difference',
+        'انحراف محاسبي في ' || v_acc.name,
+        'الرصيد الفعلي: ' || v_acc.current_balance || ' — المحسوب: ' || v_calc || ' الفرق: ' || v_diff,
+        'account', v_acc.id
+      FROM profiles p WHERE p.role = 'admin';
+    END IF;
+  END LOOP;
+
+  INSERT INTO audit_logs (user_id, action_type, table_name, record_id, description, new_values)
+  VALUES (v_user_id, 'check_balance_drift', 'accounts', gen_random_uuid(),
+    'تشغيل فحص انحراف الأرصدة (Balance Drift Check)', jsonb_build_object('drift_count', jsonb_array_length(v_drift), 'details', v_drift));
+
+  RETURN jsonb_build_object('success', true, 'drift_count', jsonb_array_length(v_drift), 'drifts', v_drift);
+END;
+$$;
+
+DROP FUNCTION IF EXISTS fn_verify_balance_integrity(UUID);
 CREATE OR REPLACE FUNCTION fn_verify_balance_integrity()
 RETURNS JSONB
 LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN
   RETURN check_balance_drift();
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION fn_verify_balance_integrity(p_created_by UUID)
+RETURNS JSONB
+LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+  RETURN check_balance_drift(p_created_by);
 END;
 $$;
 

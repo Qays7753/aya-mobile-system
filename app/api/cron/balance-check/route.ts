@@ -1,5 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+import { errorResponse, extractErrorCode, getApiErrorMeta } from "@/lib/api/common";
+import { resolveFirstAdminActorId } from "@/lib/api/reports";
+import type { StandardEnvelope } from "@/lib/pos/types";
+
+type BalanceIntegrityDrift = {
+  account_id: string;
+  account_name: string;
+  current_balance: number;
+  calculated_balance: number;
+  drift: number;
+};
+
+type BalanceIntegrityResponseData = {
+  success: boolean;
+  drift_count: number;
+  drifts: BalanceIntegrityDrift[];
+};
 
 export async function POST(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
@@ -16,20 +33,32 @@ export async function POST(request: NextRequest) {
 
   try {
     const supabase = getSupabaseAdminClient();
-    const { data, error } = await supabase.rpc("fn_verify_balance_integrity");
+    const adminActorId = await resolveFirstAdminActorId(supabase);
+    const { data, error } = await supabase.rpc("fn_verify_balance_integrity", {
+      p_created_by: adminActorId
+    });
 
     if (error) {
-      return NextResponse.json(
-        { success: false, error: error.message },
-        { status: 500 }
-      );
+      const code = extractErrorCode(error.message);
+      const meta = getApiErrorMeta(code);
+      return errorResponse(code, meta.message, meta.status);
     }
 
-    return NextResponse.json({ success: true, data }, { status: 200 });
-  } catch (error) {
-    return NextResponse.json(
-      { success: false, error: (error as Error).message },
-      { status: 500 }
+    return NextResponse.json<StandardEnvelope<BalanceIntegrityResponseData>>(
+      {
+        success: true,
+        data: {
+          success: data.success,
+          drift_count: data.drift_count,
+          drifts: data.drifts ?? []
+        }
+      },
+      { status: 200 }
     );
+  } catch (error) {
+    const meta = getApiErrorMeta("ERR_API_INTERNAL");
+    return errorResponse("ERR_API_INTERNAL", meta.message, meta.status, {
+      reason: (error as Error).message
+    });
   }
 }
