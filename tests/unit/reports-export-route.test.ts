@@ -66,6 +66,7 @@ describe("GET /api/reports/export", () => {
         snapshot_count: 0,
         snapshot_net_sales: 0,
         snapshot_net_profit: 0,
+        expense_total: 0,
         return_total: 0,
         purchase_total: 0,
         topup_amount: 0,

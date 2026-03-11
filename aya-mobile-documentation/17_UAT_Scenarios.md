@@ -333,7 +333,12 @@
 | Ø§Ù„Ø£Ù…Ø§Ù† | 3 | UAT-28 â†’ 30 |
 | الأداء | 2 | UAT-31 → 32 |
 | توافق الأجهزة | 3 | UAT-33 → 35 |
-| **المجموع** | **35** | |
+| المصروفات والإشعارات (V2) | 3 | UAT-36 → 38 |
+| التواصل وروابط الإيصالات (V2) | 3 | UAT-39 → 41 |
+| الصلاحيات الدقيقة والتقارير (V2) | 4 | UAT-42 → 45 |
+| النقل والاستعادة (V2) | 3 | UAT-46 → 48 |
+| البحث والتنبيهات والأداء (V2) | 3 | UAT-49 → 51 |
+| **المجموع** | **51** | |
 
 ---
 
@@ -469,6 +474,224 @@
 
 ---
 
+## المجموعة 14: المصروفات والإشعارات (V2)
+
+### UAT-36: تسجيل مصروف كامل مع أثر مالي صحيح
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | فئة مصروف نشطة + حساب دفع نشط + مستخدم Admin أو POS بحسب الصلاحية |
+| **Steps** | 1. إرسال `POST /api/expenses` بمبلغ صحيح → 2. التحقق من `expenses`, `ledger_entries`, و`audit_logs` → 3. فتح التقارير/اللقطة اليومية |
+| **Expected Results** | المصروف يُسجل مرة واحدة، الرصيد يُخصم من الحساب الصحيح، `total_expenses` و`net_profit` يتغيران كما هو متوقع |
+| **Data Created** | expense + ledger entry + audit log |
+| **Rollback** | قيد عكسي/بيئة اختبار |
+| **Validates** | `PX-08-T01/T03/T05` + تكامل المصروفات مع الربح |
+
+---
+
+### UAT-37: إدارة فئات المصروفات دون كسر Blind POS
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | مستخدم Admin ومستخدم POS نشطان |
+| **Steps** | 1. Admin ينشئ/يعطل فئة مصروف → 2. POS يطلب القائمة التشغيلية → 3. محاولة POS لتعديل الفئة |
+| **Expected Results** | Admin فقط يكتب، POS يقرأ الفئات النشطة فقط عند الحاجة التشغيلية، وأي محاولة كتابة من POS تُرفض |
+| **Data Created** | فئة جديدة أو تعديل حالة |
+| **Rollback** | إعادة الحالة السابقة |
+| **Validates** | `PX-08-T02` + authority scoping |
+
+---
+
+### UAT-38: مركز الإشعارات و`mark as read`
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | إشعارات موجودة لـ Admin وPOS |
+| **Steps** | 1. فتح `/notifications` أو surface المكافئة → 2. تعليم إشعار واحد ثم `mark all as read` → 3. فتح الإشعار المرتبط |
+| **Expected Results** | Admin يرى كل إشعاراته التشغيلية، POS يرى إشعاراته فقط، `unread_count` يتحدث بشكل صحيح، والضغط يفتح المرجع المرتبط |
+| **Data Created** | تحديث `is_read/read_at` فقط |
+| **Rollback** | غير مطلوب |
+| **Validates** | `PX-08-T04` |
+
+---
+
+## المجموعة 15: التواصل وروابط الإيصالات (V2)
+
+### UAT-39: رابط إيصال عام آمن
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | فاتورة موجودة + token صالح |
+| **Steps** | 1. إنشاء `receipt_url` → 2. فتح الرابط من متصفح غير مسجل → 3. محاولة عرض حقول داخلية أو تعديل الرابط |
+| **Expected Results** | الإيصال يُعرض للقراءة فقط، ولا تظهر `cost/profit/internal notes/current balances`، وtoken غير صالح/منتهي يعطي خطأ صريحًا دون تسريب |
+| **Data Created** | token / access log |
+| **Rollback** | revoke token |
+| **Validates** | `PX-09-T01/T02/T05` |
+
+---
+
+### UAT-40: Scheduler تذكير الدين بدون تكرار
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | ديون `due` و`overdue` موجودة + نافذة تذكير معرفة |
+| **Steps** | 1. تشغيل `/api/notifications/debts/run` مرتين لنفس التاريخ → 2. فحص `notifications/delivery log` |
+| **Expected Results** | التذكير يُنشأ مرة واحدة لكل حالة/نافذة، والمحاولة الثانية تسجل suppression أو no-op واضح |
+| **Data Created** | notifications أو reminder log |
+| **Rollback** | حذف سجلات الاختبار |
+| **Validates** | `PX-09-T03` + dedupe policy |
+
+---
+
+### UAT-41: سجل إرسال واتساب
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | adapter مفعل أو mock provider |
+| **Steps** | 1. إرسال رسالة receipt أو reminder → 2. فحص `delivery_log` → 3. اختبار فشل مزود الاتصال |
+| **Expected Results** | status ينتقل `queued/sent/failed` بشكل صحيح، ولا تُخزن بيانات أكثر من اللازم، والفشل يعيد `ERR_WHATSAPP_DELIVERY_FAILED` عند الاقتضاء |
+| **Data Created** | delivery log |
+| **Rollback** | غير مطلوب |
+| **Validates** | `PX-09-T04/T05` |
+
+---
+
+## المجموعة 16: الصلاحيات الدقيقة والتقارير (V2)
+
+### UAT-42: منع الوصول وفق permission bundle
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | مستخدمون بأدوار مختلفة بعد `PX-10` |
+| **Steps** | 1. محاولة دخول شاشة أو route غير مصرح بها → 2. تجربة شاشة مسموحة → 3. مراجعة navigation |
+| **Expected Results** | فقط bundles المسموحة تصل إلى الشاشات والroutes المناسبة، ولا يوجد fallback permissive |
+| **Data Created** | audit access entries عند الحاجة |
+| **Rollback** | إعادة الدور السابق |
+| **Validates** | `PX-10-T02/T03` |
+
+---
+
+### UAT-43: حوكمة الخصم حسب الدور
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | نظام خصومات مفعل + roles متعددة |
+| **Steps** | 1. POS يرسل خصم أعلى من حدّه → 2. Role أعلى يجرب نفس الطلب → 3. مراجعة audit |
+| **Expected Results** | الطلب الأول يُرفض بـ `ERR_DISCOUNT_APPROVAL_REQUIRED` أو ما يعادله، والثاني يمر فقط وفق bundle المعتمد مع audit واضح |
+| **Data Created** | sale/edit attempts + audit |
+| **Rollback** | إلغاء الفاتورة أو بيئة اختبار |
+| **Validates** | `PX-10-T04` |
+
+---
+
+### UAT-44: تقرير مقارنة فترتين
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | بيانات تشغيلية لفترتين مختلفتين |
+| **Steps** | 1. فتح تقرير compare → 2. اختيار فترتين → 3. مراجعة totals والنسب |
+| **Expected Results** | المقارنة تعرض `sales/profit/expenses` لكل فترة بشكل صحيح مع delta واضح |
+| **Data Created** | لا شيء |
+| **Rollback** | N/A |
+| **Validates** | `PX-11-T01/T02` |
+
+---
+
+### UAT-45: parity بين التقرير والتصدير
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | تقرير متقدم ظاهر على الشاشة + export مفعل |
+| **Steps** | 1. تطبيق نفس الفلاتر → 2. فتح التقرير → 3. تنزيل export → 4. مقارنة الأرقام |
+| **Expected Results** | totals الأساسية في الشاشة والتصدير متطابقة 100% |
+| **Data Created** | ملف تصدير |
+| **Rollback** | حذف ملف الاختبار |
+| **Validates** | `PX-11-T04/T05` |
+
+---
+
+## المجموعة 17: النقل والاستعادة (V2)
+
+### UAT-46: package تصدير Admin-only
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | Admin login + بيانات قابلة للتصدير |
+| **Steps** | 1. إنشاء package تصدير → 2. تنزيلها خلال مدة الصلاحية → 3. محاولة تنزيلها بعد الانتهاء أو من مستخدم غير مخول |
+| **Expected Results** | Admin فقط ينشئ وينزل package، والروابط المنتهية تفشل بـ `ERR_EXPORT_PACKAGE_EXPIRED` أو ما يعادله |
+| **Data Created** | export package + audit entry |
+| **Rollback** | حذف package |
+| **Validates** | `PX-12-T01/T04/T05` |
+
+---
+
+### UAT-47: import products بنمط `dry-run ثم commit`
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | ملف import صالح وآخر به أخطاء |
+| **Steps** | 1. dry-run على الملفين → 2. commit للملف الصالح فقط → 3. محاولة commit مباشرة بلا dry-run صالح |
+| **Expected Results** | dry-run يكشف الصفوف الخاطئة، وcommit ينجح فقط بعد dry-run صالح، والمحاولة الثالثة تفشل بـ `ERR_IMPORT_DRY_RUN_REQUIRED` أو ما يعادله |
+| **Data Created** | import job + products مضافة |
+| **Rollback** | rollback/import cleanup |
+| **Validates** | `PX-12-T02` |
+
+---
+
+### UAT-48: restore drill على بيئة معزولة
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | backup معروف + بيئة معزولة |
+| **Steps** | 1. تشغيل restore drill → 2. فحص `RTO` → 3. تشغيل `fn_verify_balance_integrity` أو ما يعادله |
+| **Expected Results** | الاستعادة تنجح في البيئة المعزولة فقط، و`drift = 0` بعد الاستعادة |
+| **Data Created** | restore drill logs |
+| **Rollback** | حذف البيئة المعزولة |
+| **Validates** | `PX-12-T03` + release safety |
+
+---
+
+## المجموعة 18: البحث والتنبيهات والأداء (V2)
+
+### UAT-49: البحث الشامل ضمن p95 الهدف
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | بيانات تشغيلية واقعية + global search مفعل |
+| **Steps** | 1. تنفيذ 20 استعلام بحث على كيانات مختلفة → 2. قياس p95 → 3. مراجعة relevance |
+| **Expected Results** | `p95` ضمن الهدف الموثق، والنتائج grouped correctly by entity، والاستعلامات القصيرة جدًا تُرفض بشكل صحيح |
+| **Data Created** | لا شيء |
+| **Rollback** | N/A |
+| **Validates** | `PX-13-T02/T04` |
+
+---
+
+### UAT-50: مركز التنبيهات المجمّع مع dedupe
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | low stock + overdue debts + unread notifications + maintenance ready |
+| **Steps** | 1. فتح مركز التنبيهات → 2. مراجعة التلخيص → 3. إعادة تشغيل مصادر التنبيه |
+| **Expected Results** | تظهر التنبيهات المجمعة مرة واحدة لكل cluster تشغيلي، وتقل الضوضاء بدون فقدان إشارة مهمة |
+| **Data Created** | read model / aggregated counters |
+| **Rollback** | N/A |
+| **Validates** | `PX-13-T03` |
+
+---
+
+### UAT-51: regression متعدد الأجهزة بعد optimization
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | caching/search optimizations مفعلة |
+| **Steps** | 1. تشغيل flows حرجة على phone/tablet/laptop → 2. مراجعة overflow/touch/search/report render |
+| **Expected Results** | لا regressions على الأجهزة الثلاثة بعد التحسينات |
+| **Data Created** | بيانات تشغيلية محدودة حسب flow |
+| **Rollback** | حسب السيناريو |
+| **Validates** | `PX-13-T05` |
+
+---
+
 ## ðŸ”— Ø§Ù„Ù…Ù„ÙØ§Øª Ø§Ù„Ù…Ø±ØªØ¨Ø·Ø©
 
 - [04_Core_Flows.md](./04_Core_Flows.md) - ØªÙØ§ØµÙŠÙ„ ÙƒÙ„ Ø¹Ù…Ù„ÙŠØ©
@@ -479,9 +702,9 @@
 
 ---
 
-**الإصدار:** 1.6  
-**تاريخ التحديث:** 1 مارس 2026  
-**التغييرات:** v1.6 — إضافة UAT-33/34/35 لتغطية توافق الأجهزة (هاتف/تابلت/لابتوب) + اختبار تثبيت Web App.
+**الإصدار:** 1.7
+**تاريخ التحديث:** 10 مارس 2026
+**التغييرات:** v1.7 — إضافة UAT-36..51 لتغطية `PX-08 .. PX-14` (المصروفات، الإشعارات، receipt links, WhatsApp, permissions, advanced reports, portability, restore drill, search, alert aggregation). v1.6 — إضافة UAT-33/34/35 لتغطية توافق الأجهزة (هاتف/تابلت/لابتوب) + اختبار تثبيت Web App.
 
 
 

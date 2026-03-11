@@ -118,6 +118,31 @@ ERR_{DOMAIN}_{DESCRIPTION}
 
 ---
 
+## امتدادات مخططة لما بعد `PX-07` (Reserved V2 Codes)
+
+> هذه الأكواد **محجوزة تعاقديًا** لخطة `PX-08 .. PX-14` كي تبقى عقود `V2` self-consistent قبل التنفيذ.
+> لا تُعد جزءًا من العدّاد التشغيلي الحالي أعلاه حتى يبدأ تنفيذ الشرائح المقابلة فعليًا.
+
+| Code | HTTP | الاستخدام المخطط | المرحلة المرجحة |
+|------|------|------------------|-----------------|
+| `ERR_EXPENSE_CATEGORY_NOT_FOUND` | 404 | تسجيل مصروف أو إدارة فئة على `expense_category_id` غير موجود | `PX-08` |
+| `ERR_EXPENSE_CATEGORY_INACTIVE` | 400 | محاولة استخدام فئة مصروف غير نشطة | `PX-08` |
+| `ERR_EXPENSE_CATEGORY_HAS_REFERENCES` | 400 | محاولة حذف/تعطيل فئة مرتبطة بمصروفات قائمة دون مسار صحيح | `PX-08` |
+| `ERR_NOTIFICATION_NOT_FOUND` | 404 | محاولة تعليم إشعار غير موجود كمقروء | `PX-08` |
+| `ERR_RECEIPT_LINK_INVALID` | 404 | token غير صالح أو غير معروف | `PX-09` |
+| `ERR_RECEIPT_LINK_REVOKED` | 410 | token ألغي صراحة من النظام | `PX-09` |
+| `ERR_RECEIPT_LINK_EXPIRED` | 410 | token منتهي الصلاحية | `PX-09` |
+| `ERR_WHATSAPP_DELIVERY_FAILED` | 502 | فشل موفر واتساب في قبول/تسليم الرسالة | `PX-09` |
+| `ERR_ROLE_ASSIGNMENT_INVALID` | 400 | محاولة إسناد role/bundle غير مسموح | `PX-10` |
+| `ERR_PERMISSION_BUNDLE_NOT_FOUND` | 404 | bundle غير موجود أو غير مفعّل | `PX-10` |
+| `ERR_DISCOUNT_APPROVAL_REQUIRED` | 403 | الخصم يحتاج موافقة role أعلى أو approval token | `PX-10` |
+| `ERR_EXPORT_PACKAGE_EXPIRED` | 410 | محاولة تنزيل package تصدير منتهية | `PX-12` |
+| `ERR_IMPORT_DRY_RUN_REQUIRED` | 400 | محاولة commit import قبل dry-run valid | `PX-12` |
+| `ERR_RESTORE_ENV_FORBIDDEN` | 403 | restore drill على بيئة غير معزولة أو غير مصرح بها | `PX-12` |
+| `ERR_SEARCH_QUERY_TOO_SHORT` | 400 | استعلام بحث أقل من الحد الأدنى | `PX-13` |
+
+---
+
 ## دليل استخدام الرموز (للمطوّر)
 
 ### WHERE: أين تُرمى الأخطاء
@@ -186,6 +211,6 @@ INSERT INTO audit_logs (
 
 ---
 
-**الإصدار:** 1.8  
-**تاريخ التحديث:** 5 مارس 2026  
-**التغييرات:** v1.8 — إضافة 12 رمز خطأ من SQL: `ERR_CANNOT_CANCEL_PAID_DEBT`, `ERR_INVOICE_NOT_FOUND`, `ERR_INVOICE_CANCELLED`, `ERR_ITEM_NOT_FOUND`, `ERR_CUSTOMER_NOT_FOUND`, `ERR_COUNT_NOT_FOUND`, `ERR_APPEND_ONLY_VIOLATION`, `ERR_VALIDATION_SNAPSHOT_DATE`, `ERR_PRODUCT_NOT_FOUND`, `ERR_DEBT_ENTRY_NOT_FOUND`, `ERR_SUPPLIER_NOT_FOUND`, `ERR_ACCOUNT_NOT_FOUND`; تحديث مصفوفة التغطية لتطابق SQL الحالي; العدد الإجمالي 55. v1.7 — إضافة `ERR_RETURN_REFUND_ACCOUNT_REQUIRED` وتحديث العدد الإجمالي إلى 42 رمز خطأ. v1.6 — تصحيح العدد الإجمالي: 41 رمز خطأ (27 عمليات + 10 عامة + 4 طبقة API). v1.5 — إضافة ERR_PRODUCT_HAS_REFERENCES، إعادة الترقيم.
+**الإصدار:** 1.9
+**تاريخ التحديث:** 10 مارس 2026
+**التغييرات:** v1.9 — حجز امتدادات أخطاء مخططة لـ `PX-08 .. PX-14` (`expense`, `notifications`, `receipt links`, `permissions`, `portability`, `search`) دون إدخالها في العدّاد التشغيلي الحالي. v1.8 — إضافة 12 رمز خطأ من SQL: `ERR_CANNOT_CANCEL_PAID_DEBT`, `ERR_INVOICE_NOT_FOUND`, `ERR_INVOICE_CANCELLED`, `ERR_ITEM_NOT_FOUND`, `ERR_CUSTOMER_NOT_FOUND`, `ERR_COUNT_NOT_FOUND`, `ERR_APPEND_ONLY_VIOLATION`, `ERR_VALIDATION_SNAPSHOT_DATE`, `ERR_PRODUCT_NOT_FOUND`, `ERR_DEBT_ENTRY_NOT_FOUND`, `ERR_SUPPLIER_NOT_FOUND`, `ERR_ACCOUNT_NOT_FOUND`; تحديث مصفوفة التغطية لتطابق SQL الحالي; العدد الإجمالي 55. v1.7 — إضافة `ERR_RETURN_REFUND_ACCOUNT_REQUIRED` وتحديث العدد الإجمالي إلى 42 رمز خطأ. v1.6 — تصحيح العدد الإجمالي: 41 رمز خطأ (27 عمليات + 10 عامة + 4 طبقة API). v1.5 — إضافة ERR_PRODUCT_HAS_REFERENCES، إعادة الترقيم.

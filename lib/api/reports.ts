@@ -63,6 +63,7 @@ export type ProfitReport = {
   snapshot_count: number;
   snapshot_net_sales: number;
   snapshot_net_profit: number;
+  expense_total: number;
   return_total: number;
   purchase_total: number;
   topup_amount: number;
@@ -598,6 +599,12 @@ async function getProfitReport(
     .gte("return_date", filters.fromDate)
     .lte("return_date", filters.toDate);
 
+  let expensesQuery = supabase
+    .from("expenses")
+    .select("amount")
+    .gte("expense_date", filters.fromDate)
+    .lte("expense_date", filters.toDate);
+
   let topupsQuery = supabase
     .from("topups")
     .select("amount, profit_amount")
@@ -613,11 +620,12 @@ async function getProfitReport(
   if (filters.createdBy) {
     purchasesQuery = purchasesQuery.eq("created_by", filters.createdBy);
     returnsQuery = returnsQuery.eq("created_by", filters.createdBy);
+    expensesQuery = expensesQuery.eq("created_by", filters.createdBy);
     topupsQuery = topupsQuery.eq("created_by", filters.createdBy);
     maintenanceQuery = maintenanceQuery.eq("created_by", filters.createdBy);
   }
 
-  const [snapshotsResult, purchasesResult, returnsResult, topupsResult, maintenanceResult] = await Promise.all([
+  const [snapshotsResult, purchasesResult, returnsResult, expensesResult, topupsResult, maintenanceResult] = await Promise.all([
     supabase
       .from("daily_snapshots")
       .select("id, snapshot_date, net_sales, net_profit, invoice_count, created_at")
@@ -626,6 +634,7 @@ async function getProfitReport(
       .returns<SnapshotSummaryRow[]>(),
     purchasesQuery.returns<PurchaseOrderRow[]>(),
     returnsQuery.returns<Array<{ total_amount: number }>>(),
+    expensesQuery.returns<Array<{ amount: number }>>(),
     topupsQuery.returns<TopupRow[]>(),
     maintenanceQuery.returns<Array<{ status: string; final_amount: number | null }>>()
   ]);
@@ -642,6 +651,10 @@ async function getProfitReport(
     throw returnsResult.error;
   }
 
+  if (expensesResult.error) {
+    throw expensesResult.error;
+  }
+
   if (topupsResult.error) {
     throw topupsResult.error;
   }
@@ -653,6 +666,7 @@ async function getProfitReport(
   const snapshots = snapshotsResult.data ?? [];
   const purchases = purchasesResult.data ?? [];
   const returns = returnsResult.data ?? [];
+  const expenses = expensesResult.data ?? [];
   const topups = topupsResult.data ?? [];
   const maintenanceJobs = maintenanceResult.data ?? [];
 
@@ -660,6 +674,7 @@ async function getProfitReport(
     snapshot_count: snapshots.length,
     snapshot_net_sales: snapshots.reduce((sum, snapshot) => sum + snapshot.net_sales, 0),
     snapshot_net_profit: snapshots.reduce((sum, snapshot) => sum + snapshot.net_profit, 0),
+    expense_total: expenses.reduce((sum, entry) => sum + entry.amount, 0),
     return_total: returns.reduce((sum, entry) => sum + entry.total_amount, 0),
     purchase_total: purchases.reduce((sum, entry) => sum + entry.total_amount, 0),
     topup_amount: topups.reduce((sum, entry) => sum + entry.amount, 0),

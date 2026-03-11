@@ -440,6 +440,296 @@
 
 ---
 
+## عقود مخططة لما بعد `PX-07` (Draft-for-Execution)
+
+> هذا القسم **مخطط ومعتمد للتنفيذ لاحقًا** لكنه ليس مفعّلًا تشغيليًا بعد.
+> الهدف منه منع drift بين `09/24/31` وبقية العقود عندما يبدأ تنفيذ `PX-08 .. PX-14`.
+
+### مصفوفة Routes المخططة
+
+| Route | Method | Role | Idempotency | Phase |
+|------|--------|------|-------------|-------|
+| `/api/expenses` | POST | Admin, POS | Required | `PX-08` |
+| `/api/expense-categories` | GET | Admin, POS | N/A | `PX-08` |
+| `/api/expense-categories` | POST | Admin | No | `PX-08` |
+| `/api/expense-categories/[categoryId]` | PATCH | Admin | No | `PX-08` |
+| `/api/notifications` | GET | Admin, POS | N/A | `PX-08` |
+| `/api/notifications/read` | POST | Admin, POS | No | `PX-08` |
+| `/api/receipts/link` | POST | Admin, POS | Natural-Key (`invoice_id + active token`) | `PX-09` |
+| `/r/[token]` | GET | Public | N/A | `PX-09` |
+| `/api/notifications/debts/run` | POST | Internal/Cron | No | `PX-09` |
+| `/api/messages/whatsapp/send` | POST | Admin | Required | `PX-09` |
+| `/api/roles/assign` | POST | Admin | No | `PX-10` |
+| `/api/permissions/preview` | POST | Admin | No | `PX-10` |
+| `/api/reports/advanced` | GET | Admin | N/A | `PX-11` |
+| `/api/reports/advanced/export` | GET | Admin | N/A | `PX-11` |
+| `/api/export/packages` | POST | Admin | Required | `PX-12` |
+| `/api/import/products` | POST | Admin | Required | `PX-12` |
+| `/api/restore/drill` | POST | Admin/Internal | Required | `PX-12` |
+| `/api/search/global` | GET | Admin, POS | N/A | `PX-13` |
+| `/api/alerts/summary` | GET | Admin | N/A | `PX-13` |
+
+### 20) `POST /api/expenses`
+**Body**
+```json
+{
+  "expense_category_id": "uuid",
+  "account_id": "uuid",
+  "amount": 0,
+  "description": "text",
+  "notes": "text",
+  "idempotency_key": "uuid"
+}
+```
+**Success `200`**
+```json
+{ "success": true, "data": { "expense_id": "uuid", "expense_number": "AYA-2026-00090", "ledger_entry_id": "uuid" } }
+```
+**Errors**
+`ERR_EXPENSE_CATEGORY_NOT_FOUND`, `ERR_EXPENSE_CATEGORY_INACTIVE`, `ERR_ACCOUNT_NOT_FOUND`, `ERR_IDEMPOTENCY`, `ERR_VALIDATION_NEGATIVE_AMOUNT`, `ERR_UNAUTHORIZED`.
+
+### 21) `GET/POST/PATCH /api/expense-categories`
+
+**GET Success `200`**
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      { "expense_category_id": "uuid", "name": "إيجار", "is_active": true }
+    ]
+  }
+}
+```
+
+**POST/PATCH Body**
+```json
+{ "name": "إيجار", "description": "text", "is_active": true }
+```
+
+**POST/PATCH Success `200`**
+```json
+{ "success": true, "data": { "expense_category_id": "uuid", "name": "إيجار", "is_active": true } }
+```
+**Errors**
+`ERR_EXPENSE_CATEGORY_NOT_FOUND`, `ERR_EXPENSE_CATEGORY_HAS_REFERENCES`, `ERR_VALIDATION_REQUIRED_FIELD`, `ERR_UNAUTHORIZED`.
+
+### 22) `GET /api/notifications` و`POST /api/notifications/read`
+
+**GET Query**
+`status?=unread|all`, `type?`, `page?`, `page_size?`
+
+**GET Success `200`**
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "notification_id": "uuid",
+        "type": "debt_due",
+        "title": "دين مستحق اليوم",
+        "is_read": false,
+        "reference_type": "debt_entry",
+        "reference_id": "uuid",
+        "created_at": "2026-03-10T10:00:00Z"
+      }
+    ],
+    "unread_count": 1
+  }
+}
+```
+
+**POST Body**
+```json
+{ "notification_ids": ["uuid"], "mark_all": false }
+```
+
+**POST Success `200`**
+```json
+{ "success": true, "data": { "updated_count": 1 } }
+```
+**Errors**
+`ERR_NOTIFICATION_NOT_FOUND`, `ERR_UNAUTHORIZED`, `ERR_API_VALIDATION_FAILED`.
+
+### 23) `POST /api/receipts/link` و`GET /r/[token]`
+
+**`POST /api/receipts/link` Body**
+```json
+{ "invoice_id": "uuid", "channel": "share", "expires_in_hours": 168 }
+```
+
+**`POST` Success `200`**
+```json
+{
+  "success": true,
+  "data": {
+    "token_id": "uuid",
+    "receipt_url": "https://example.com/r/opaque-token",
+    "expires_at": "2026-03-17T12:00:00Z",
+    "is_reissued": false
+  }
+}
+```
+
+**`GET /r/[token]` Success `200`**
+```json
+{
+  "success": true,
+  "data": {
+    "invoice_number": "AYA-2026-00001",
+    "invoice_date": "2026-03-10",
+    "store_name": "آية موبايل",
+    "items": [{ "product_name": "شاحن", "quantity": 1, "unit_price": 10, "line_total": 10 }],
+    "total": 10
+  }
+}
+```
+
+**Errors**
+`ERR_RECEIPT_LINK_INVALID`, `ERR_RECEIPT_LINK_REVOKED`, `ERR_RECEIPT_LINK_EXPIRED`, `ERR_UNAUTHORIZED`.
+
+### 24) `POST /api/notifications/debts/run`
+**Body**
+```json
+{ "mode": "due|overdue", "as_of_date": "2026-03-10" }
+```
+**Success `200`**
+```json
+{ "success": true, "data": { "processed_count": 10, "created_count": 3, "suppressed_duplicates": 7 } }
+```
+**Errors**
+`ERR_API_ROLE_FORBIDDEN`, `ERR_API_INTERNAL`.
+
+### 25) `POST /api/messages/whatsapp/send`
+**Body**
+```json
+{
+  "template_key": "receipt_share",
+  "target_phone": "0770000000",
+  "reference_type": "invoice",
+  "reference_id": "uuid",
+  "payload": { "receipt_url": "https://example.com/r/opaque-token" },
+  "idempotency_key": "uuid"
+}
+```
+**Success `200`**
+```json
+{ "success": true, "data": { "delivery_log_id": "uuid", "status": "queued" } }
+```
+**Errors**
+`ERR_IDEMPOTENCY`, `ERR_WHATSAPP_DELIVERY_FAILED`, `ERR_VALIDATION_REQUIRED_FIELD`, `ERR_UNAUTHORIZED`.
+
+### 26) `POST /api/roles/assign` و`POST /api/permissions/preview`
+
+**`POST /api/roles/assign` Body**
+```json
+{ "user_id": "uuid", "role_key": "inventory_clerk", "notes": "text" }
+```
+**Success `200`**
+```json
+{ "success": true, "data": { "assignment_id": "uuid", "role_key": "inventory_clerk", "is_active": true } }
+```
+
+**`POST /api/permissions/preview` Body**
+```json
+{ "role_key": "inventory_clerk" }
+```
+**Success `200`**
+```json
+{ "success": true, "data": { "permissions": ["inventory.read", "inventory.count.start"] } }
+```
+**Errors**
+`ERR_ROLE_ASSIGNMENT_INVALID`, `ERR_PERMISSION_BUNDLE_NOT_FOUND`, `ERR_UNAUTHORIZED`.
+
+### 27) `GET /api/reports/advanced` و`GET /api/reports/advanced/export`
+
+**Query**
+`from_date`, `to_date`, `compare_from_date?`, `compare_to_date?`, `group_by?`, `dimension?`
+
+**Success `200`**
+```json
+{
+  "success": true,
+  "data": {
+    "current_period": { "sales_total": 0, "net_profit": 0 },
+    "compare_period": { "sales_total": 0, "net_profit": 0 },
+    "trend": [{ "bucket": "2026-03-10", "sales_total": 0, "net_profit": 0 }]
+  }
+}
+```
+**Export Success `200`**
+- workbook أو CSV مجمّع يطابق نفس الأرقام المعروضة في الشاشة.
+
+**Errors**
+`ERR_EXPORT_TOO_LARGE`, `ERR_API_ROLE_FORBIDDEN`, `ERR_API_INTERNAL`.
+
+### 28) `POST /api/export/packages` و`POST /api/import/products` و`POST /api/restore/drill`
+
+**`POST /api/export/packages` Body**
+```json
+{ "package_type": "json|csv", "scope": "products|reports|customers", "filters": {} }
+```
+**Success `200`**
+```json
+{ "success": true, "data": { "package_id": "uuid", "download_url": "https://example.com/download/token", "expires_at": "2026-03-11T12:00:00Z" } }
+```
+
+**`POST /api/import/products` Body**
+```json
+{ "mode": "dry_run|commit", "source_file_id": "uuid" }
+```
+**Success `200`**
+```json
+{ "success": true, "data": { "job_id": "uuid", "mode": "dry_run", "rows_total": 100, "rows_valid": 95, "rows_invalid": 5 } }
+```
+
+**`POST /api/restore/drill` Body**
+```json
+{ "backup_id": "uuid", "target_env": "isolated-drill", "idempotency_key": "uuid" }
+```
+**Success `200`**
+```json
+{ "success": true, "data": { "drill_id": "uuid", "status": "started" } }
+```
+**Errors**
+`ERR_EXPORT_PACKAGE_EXPIRED`, `ERR_IMPORT_DRY_RUN_REQUIRED`, `ERR_RESTORE_ENV_FORBIDDEN`, `ERR_IDEMPOTENCY`, `ERR_UNAUTHORIZED`.
+
+### 29) `GET /api/search/global` و`GET /api/alerts/summary`
+
+**`GET /api/search/global` Query**
+`q`, `entity?`, `limit?`
+
+**Success `200`**
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      { "entity": "product", "id": "uuid", "label": "شاحن سريع", "secondary": "SKU-001" }
+    ]
+  }
+}
+```
+
+**`GET /api/alerts/summary` Success `200`**
+```json
+{
+  "success": true,
+  "data": {
+    "low_stock": 2,
+    "overdue_debts": 1,
+    "reconciliation_drift": 0,
+    "maintenance_ready": 3,
+    "unread_notifications": 5
+  }
+}
+```
+**Errors**
+`ERR_SEARCH_QUERY_TOO_SHORT`, `ERR_API_ROLE_FORBIDDEN`, `ERR_API_INTERNAL`.
+
+---
+
 ## ملاحظات تنفيذية مهمة
 
 1. في `create_sale` و`edit_invoice`: أي `unit_price` مرسل من العميل يجب تجاهله.
@@ -450,6 +740,6 @@
 
 ---
 
-**الإصدار:** 1.3  
-**تاريخ التحديث:** 5 مارس 2026  
-**التغييرات:** v1.3 — إضافة تغطية `ERR_RECONCILIATION_UNRESOLVED` و`ERR_CANNOT_CANCEL_PAID_DEBT` و`ERR_APPEND_ONLY_VIOLATION` في العقود. v1.2 — توحيد Drift Authority (`fn_verify_balance_integrity`) + توثيق Idempotency Policy (`create_debt_manual` required, `create_daily_snapshot` natural-key). v1.1 — إضافة عقد `POST /api/health/balance-check`.
+**الإصدار:** 1.4
+**تاريخ التحديث:** 10 مارس 2026
+**التغييرات:** v1.4 — إضافة عقود مخططة لما بعد `PX-07` (`expenses`, `expense_categories`, `notifications`, `receipt links`, `WhatsApp`, `roles/permissions`, `advanced reports`, `portability`, `search/alerts`) بصيغة draft-for-execution. v1.3 — إضافة تغطية `ERR_RECONCILIATION_UNRESOLVED` و`ERR_CANNOT_CANCEL_PAID_DEBT` و`ERR_APPEND_ONLY_VIOLATION` في العقود. v1.2 — توحيد Drift Authority (`fn_verify_balance_integrity`) + توثيق Idempotency Policy (`create_debt_manual` required, `create_daily_snapshot` natural-key). v1.1 — إضافة عقد `POST /api/health/balance-check`.

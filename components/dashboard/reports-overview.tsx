@@ -186,8 +186,8 @@ export function ReportsOverview({ filters, users, terminals, reportBaseline }: R
         </article>
 
         <article className="workspace-panel">
-          <p className="eyebrow">Purchases / Returns</p>
-          <h2>{formatCurrency(reportBaseline.profitReport.purchase_total)}</h2>
+          <p className="eyebrow">Expenses / Returns</p>
+          <h2>{formatCurrency(reportBaseline.profitReport.expense_total)}</h2>
           <p className="workspace-footnote">
             المرتجعات: {formatCurrency(reportBaseline.profitReport.return_total)}
           </p>

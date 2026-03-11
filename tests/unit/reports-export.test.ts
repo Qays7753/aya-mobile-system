@@ -78,6 +78,7 @@ describe("reports workbook export", () => {
       snapshot_count: 1,
       snapshot_net_sales: 120,
       snapshot_net_profit: 45,
+      expense_total: 12,
       return_total: 20,
       purchase_total: 40,
       topup_amount: 100,
@@ -195,6 +196,7 @@ describe("reports workbook export", () => {
     });
     expect(summaryRows[1]?.[1]).toBe("2026-03-10T15:00:00.000Z");
     expect(summaryRows[8]?.[1]).toBe(120);
+    expect(summaryRows[15]?.[1]).toBe(12);
 
     const salesRows = XLSX.utils.sheet_to_json<(string | number | null)[]>(workbook.Sheets["Sales History"], {
       header: 1

@@ -16,6 +16,7 @@
 | `Pass` | تحقق الشرط بالكامل |
 | `Fail` | الشرط غير متحقق |
 | `Blocked` | لا يمكن التحقق بسبب نقص مدخلات |
+| `Planned` | بند مضاف لمرحلة مستقبلية ولم يبدأ التحقق منه بعد |
 
 ---
 
@@ -43,6 +44,22 @@
 
 ---
 
+## امتدادات V2 / ما بعد `PX-07` (Planned Gates)
+
+| ID | المحور | الفحص | المرجع | آلية التحقق | معيار النجاح | الخطورة إذا فشل | الحالة |
+|----|--------|-------|--------|-------------|--------------|-----------------|--------|
+| `VB-18` | Financial | طبقة المصروفات أصبحت authority كاملة وليست carried-forward gap | `09`, `15`, `16`, `25` | Contract Review + runtime proof | `create_expense` يعمل عبر API ويؤثر على snapshot/profit | Blocker | Planned |
+| `VB-19` | Privacy | روابط الإيصالات العامة محكومة token/revocation/expiry | `18`, `25`, `17` | Link privacy review + UAT-39 | لا كشف لأي بيانات داخلية في public receipt | Blocker | Planned |
+| `VB-20` | Communication | reminders وWhatsApp محكومة dedupe + delivery audit | `18`, `25`, `17` | Scheduler/log review + UAT-40/41 | لا spam ولا silent failure | High | Planned |
+| `VB-21` | Authorization | role expansion لا يفتح privilege escalation أو shadow paths | `10`, `13`, `25`, `17` | Role matrix review + regression UAT | bundles والأدوار الجديدة لا تكسر Blind POS | Blocker | Planned |
+| `VB-22` | Reporting | advanced reports + export parity صحيحة ماليًا | `03`, `25`, `17` | Compare/export review + proof scripts | totals في UI/export = `ledger/snapshots/expenses` | Critical | Planned |
+| `VB-23` | Portability | export/import/restore محكوم بخصوصية وتدقيق واستعادة معزولة | `18`, `25`, `17` | Package review + restore drill | لا restore على البيئة الأساسية + `drift = 0` بعد drill | Blocker | Planned |
+| `VB-24` | Performance | caching والبحث لا يخلقان stale finance أو تجاوزات p95 | `13`, `17`, `27` | Perf review + UAT-49 | search/report p95 ضمن الهدف | High | Planned |
+| `VB-25` | Operations | alert aggregation تحسن الإشارة دون فقدان التنبيهات الحرجة | `03`, `17`, `18` | UAT-50 + manual review | dedupe صحيح وcoverage كامل للتنبيهات الحرجة | High | Planned |
+| `VB-26` | Device Regression | التحسينات لا تكسر الهاتف/التابلت/اللابتوب بعد V2 | `17`, `29` | UAT-51 | no overflow / no workflow regression | Critical | Planned |
+
+---
+
 ## شروط Go/No-Go
 
 ### Go (يسمح بالبدء الفعلي في الكود)
@@ -56,6 +73,18 @@
 2. فشل بندين أو أكثر من `Critical`.
 3. غياب عقود API أو غياب Playbook التنفيذ.
 4. فشل أي بند من بوابة الأجهزة (Gate-D).
+
+### Go لـ V2 (Release Gate لاحق)
+1. `VB-18`, `VB-19`, `VB-21`, `VB-23` = `Pass`.
+2. لا يوجد `Fail` في `VB-22` أو `VB-26`.
+3. `VB-20`, `VB-24`, `VB-25` قد تبقى `High` فقط إذا وُجدت خطة إغلاق صريحة ومُعتمدة، لكن لا يجوز أن تكون `Fail` بدون remediation.
+4. لا توجد finding `P0/P1` مفتوحة في audit الخصوصية أو الصلاحيات أو portability.
+
+### No-Go لـ V2
+1. أي `Fail` في `VB-18`, `VB-19`, `VB-21`, أو `VB-23`.
+2. أي privacy leak في public receipt links أو packages المحمولة.
+3. أي privilege escalation أو shadow write/read path جديد بعد role expansion.
+4. فشل restore drill أو بقاء `drift > 0` بعده.
 
 ---
 
@@ -95,6 +124,6 @@
 
 ---
 
-**الإصدار:** 1.2  
-**تاريخ التحديث:** 5 مارس 2026  
-**الحالة:** Active Pre-Build Gate + Device Gate
+**الإصدار:** 1.3
+**تاريخ التحديث:** 10 مارس 2026
+**الحالة:** Active Pre-Build Gate + Device Gate + Planned Post-V1 Gates
