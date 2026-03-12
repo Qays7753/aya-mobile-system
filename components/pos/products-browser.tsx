@@ -2,6 +2,7 @@
 
 import { useDeferredValue, useEffect, useState, useTransition } from "react";
 import { PackageSearch, RefreshCcw, ShieldCheck } from "lucide-react";
+import { StatusBanner } from "@/components/ui/status-banner";
 import { useProducts } from "@/hooks/use-products";
 import { formatCompactNumber, formatCurrency } from "@/lib/utils/formatters";
 
@@ -10,7 +11,7 @@ function normalizeArabic(value: string) {
 }
 
 export function ProductsBrowser() {
-  const { products, isLoading, errorMessage, refresh } = useProducts();
+  const { products, isLoading, isOffline, errorMessage, refresh } = useProducts();
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>("all");
@@ -43,11 +44,11 @@ export function ProductsBrowser() {
     <section className="workspace-stack">
       <div className="workspace-hero">
         <div>
-          <p className="eyebrow">PX-03 / T01</p>
-          <h1>قراءة المنتجات للـ POS مع Blind POS</h1>
+          <p className="eyebrow">المنتجات</p>
+          <h1>المنتجات المتاحة للبيع</h1>
           <p className="workspace-lead">
-            هذه الشاشة تقرأ من <code>v_pos_products</code> فقط. لا يوجد أي حقل تكلفة أو ربح أو
-            mutation path داخل هذا المسار.
+            اعرض المنتجات الجاهزة للبيع وابحث بينها بسرعة، مع إظهار البيانات المناسبة فقط لنقطة
+            البيع.
           </p>
         </div>
 
@@ -62,7 +63,7 @@ export function ProductsBrowser() {
           </article>
           <article className="hero-stat-card hero-stat-card--safe">
             <ShieldCheck size={18} />
-            <strong>Blind POS محفوظ</strong>
+            <strong>عرض مناسب لنقطة البيع</strong>
           </article>
         </div>
       </div>
@@ -96,6 +97,7 @@ export function ProductsBrowser() {
               key={category}
               type="button"
               className={category === activeCategory ? "chip chip--active" : "chip"}
+              aria-pressed={category === activeCategory}
               onClick={() => setActiveCategory(category)}
             >
               {category === "all" ? "الكل" : category}
@@ -103,19 +105,39 @@ export function ProductsBrowser() {
           ))}
         </div>
 
+        {isOffline ? (
+          <StatusBanner
+            variant="offline"
+            title="أنت الآن خارج الاتصال"
+            message="سيستمر عرض آخر بيانات تم تحميلها، لكن تحديث القائمة يحتاج عودة الشبكة."
+            actionLabel="إعادة المحاولة"
+            onAction={refresh}
+          />
+        ) : null}
+
         {isLoading ? (
-          <div className="empty-panel">
-            <p>جارٍ تحميل قائمة المنتجات الآمنة...</p>
+          <div className="product-grid" aria-label="جارٍ تحميل المنتجات">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <article key={`product-skeleton-${index}`} className="product-card product-card--skeleton">
+                <div className="skeleton-line skeleton-line--sm" />
+                <div className="skeleton-line skeleton-line--lg" />
+                <div className="skeleton-line" />
+                <div className="skeleton-line" />
+              </article>
+            ))}
           </div>
         ) : errorMessage ? (
-          <div className="empty-panel empty-panel--danger">
-            <h2>تعذر جلب المنتجات</h2>
-            <p>{errorMessage}</p>
-          </div>
+          <StatusBanner
+            variant="danger"
+            title="تعذر جلب المنتجات"
+            message={errorMessage}
+            actionLabel="إعادة المحاولة"
+            onAction={refresh}
+          />
         ) : filteredProducts.length === 0 ? (
           <div className="empty-panel">
             <h2>لا توجد نتائج مطابقة</h2>
-            <p>غيّر البحث أو التصنيف لإظهار المنتجات المتاحة في نقطة البيع.</p>
+            <p>جرّب تغيير كلمة البحث أو اختر تصنيفًا آخر لعرض المنتجات المتاحة.</p>
           </div>
         ) : (
           <div className="product-grid">
@@ -141,7 +163,7 @@ export function ProductsBrowser() {
                     <dd>{product.track_stock ? formatCompactNumber(product.stock_quantity) : "خدمة"}</dd>
                   </div>
                   <div>
-                    <dt>SKU</dt>
+                    <dt>رمز المنتج</dt>
                     <dd>{product.sku || "غير محدد"}</dd>
                   </div>
                 </dl>

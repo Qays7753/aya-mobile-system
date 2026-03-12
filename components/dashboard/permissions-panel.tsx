@@ -4,6 +4,8 @@ import { useMemo, useState, useTransition } from "react";
 import { KeyRound, Loader2, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
+import { StatusBanner } from "@/components/ui/status-banner";
 import type {
   PermissionAssignmentOption,
   PermissionBundleOption,
@@ -32,8 +34,19 @@ type PermissionsPanelProps = {
   activeAssignments: PermissionAssignmentOption[];
 };
 
+type RetryAction = "preview-bundle" | "assign-bundle" | "revoke-bundle" | null;
+type ConfirmAction = { type: "assign-bundle" | "revoke-bundle" } | null;
+
 function getApiErrorMessage<T>(envelope: StandardEnvelope<T>) {
   return envelope.error?.message ?? "تعذر إتمام العملية.";
+}
+
+function getRoleLabel(role: "admin" | "pos_staff") {
+  return role === "admin" ? "إداري" : "نقطة بيع";
+}
+
+function formatPermissionLabel(permission: string) {
+  return permission.replace(/\./g, " / ");
 }
 
 export function PermissionsPanel({
@@ -46,6 +59,9 @@ export function PermissionsPanel({
   const [selectedUserId, setSelectedUserId] = useState(permissionUsers[0]?.id ?? "");
   const [notes, setNotes] = useState("");
   const [preview, setPreview] = useState<BundlePreviewResponse | null>(null);
+  const [actionErrorMessage, setActionErrorMessage] = useState<string | null>(null);
+  const [retryAction, setRetryAction] = useState<RetryAction>(null);
+  const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
   const [isPending, startTransition] = useTransition();
 
   const selectedBundle = useMemo(
@@ -71,7 +87,19 @@ export function PermissionsPanel({
     [activeAssignments, selectedUser]
   );
 
-  async function runPreview() {
+  function clearActionFeedback() {
+    setActionErrorMessage(null);
+    setRetryAction(null);
+  }
+
+  function failAction(message: string, action: RetryAction) {
+    setActionErrorMessage(message);
+    setRetryAction(action);
+    toast.error(message);
+  }
+
+  function runPreview() {
+    clearActionFeedback();
     startTransition(() => {
       void (async () => {
         const response = await fetch("/api/permissions/preview", {
@@ -82,22 +110,24 @@ export function PermissionsPanel({
 
         const envelope = (await response.json()) as StandardEnvelope<BundlePreviewResponse>;
         if (!response.ok || !envelope.success || !envelope.data) {
-          toast.error(getApiErrorMessage(envelope));
+          failAction(getApiErrorMessage(envelope), "preview-bundle");
           return;
         }
 
         setPreview(envelope.data);
+        setRetryAction(null);
         toast.success("تم تحميل معاينة الحزمة.");
       })();
     });
   }
 
-  async function manageAssignment(method: "POST" | "DELETE") {
+  function manageAssignment(method: "POST" | "DELETE") {
     if (!selectedUser || !selectedBundle) {
-      toast.error("اختر مستخدمًا وحزمة صالحة أولًا.");
+      failAction("اختر مستخدمًا وحزمة صالحة أولًا.", method === "POST" ? "assign-bundle" : "revoke-bundle");
       return;
     }
 
+    clearActionFeedback();
     startTransition(() => {
       void (async () => {
         const response = await fetch("/api/roles/assign", {
@@ -112,34 +142,67 @@ export function PermissionsPanel({
 
         const envelope = (await response.json()) as StandardEnvelope<AssignmentResponse>;
         if (!response.ok || !envelope.success || !envelope.data) {
-          toast.error(getApiErrorMessage(envelope));
+          failAction(getApiErrorMessage(envelope), method === "POST" ? "assign-bundle" : "revoke-bundle");
           return;
         }
 
         setNotes("");
-        toast.success(
-          method === "POST"
-            ? "تم إسناد الحزمة بنجاح."
-            : "تم إلغاء الحزمة بنجاح."
-        );
+        setConfirmAction(null);
+        setRetryAction(null);
+        toast.success(method === "POST" ? "تم إسناد الحزمة بنجاح." : "تم إلغاء الحزمة بنجاح.");
         router.refresh();
       })();
     });
+  }
+
+  function retryLastAction() {
+    switch (retryAction) {
+      case "preview-bundle":
+        runPreview();
+        break;
+      case "assign-bundle":
+        manageAssignment("POST");
+        break;
+      case "revoke-bundle":
+        manageAssignment("DELETE");
+        break;
+      default:
+        break;
+    }
   }
 
   return (
     <section className="workspace-panel">
       <div className="section-heading">
         <div>
-          <p className="eyebrow">PX-10-T02 / T03</p>
+          <p className="eyebrow">الصلاحيات</p>
           <h2>مركز الحِزم والصلاحيات الدقيقة</h2>
         </div>
         <ShieldCheck size={18} />
       </div>
 
       <p className="workspace-footnote">
-        يبقى <code>profiles.role</code> هو السقف الأساسي، بينما تُسند الحِزم التشغيلية هنا بشكل auditable دون فتح grants جديدة.
+        يُحدَّد نطاق عمل كل حساب من خلال الدور الأساسي والحِزم التشغيلية المسندة له من هذه الشاشة.
       </p>
+
+      {isPending ? (
+        <StatusBanner
+          variant="info"
+          title="جارٍ تنفيذ تحديث الصلاحيات"
+          message="انتظر حتى يكتمل تحديث الحزمة الحالية قبل تعديل مستخدم أو حزمة أخرى."
+        />
+      ) : null}
+
+      {actionErrorMessage ? (
+        <StatusBanner
+          variant="danger"
+          title="تعذر إكمال تحديث الصلاحيات"
+          message={actionErrorMessage}
+          actionLabel={retryAction ? "إعادة المحاولة" : undefined}
+          onAction={retryAction ? retryLastAction : undefined}
+          onDismiss={clearActionFeedback}
+        />
+      ) : null}
 
       <div className="stack-form">
         <label className="stack-field">
@@ -147,7 +210,7 @@ export function PermissionsPanel({
           <select value={selectedBundleKey} onChange={(event) => setSelectedBundleKey(event.target.value)}>
             {permissionBundles.map((bundle) => (
               <option key={bundle.id} value={bundle.key}>
-                {bundle.label} ({bundle.base_role})
+                {bundle.label} ({getRoleLabel(bundle.base_role)})
               </option>
             ))}
           </select>
@@ -162,7 +225,7 @@ export function PermissionsPanel({
           >
             {eligibleUsers.map((user) => (
               <option key={user.id} value={user.id}>
-                {user.full_name ?? user.id} ({user.role})
+                {user.full_name ?? user.id} ({getRoleLabel(user.role)})
               </option>
             ))}
           </select>
@@ -175,19 +238,29 @@ export function PermissionsPanel({
             maxLength={500}
             value={notes}
             onChange={(event) => setNotes(event.target.value)}
-            placeholder="مثال: Bundle جرد لنوبة المساء"
+            placeholder="مثال: صلاحية الجرد لنوبة المساء"
           />
         </label>
 
         <div className="actions-row">
-          <button type="button" className="secondary-button" disabled={isPending || !selectedBundleKey} onClick={() => void runPreview()}>
+          <button type="button" className="secondary-button" disabled={isPending || !selectedBundleKey} onClick={runPreview}>
             {isPending ? <Loader2 className="spin" size={16} /> : <KeyRound size={16} />}
             معاينة الحزمة
           </button>
-          <button type="button" className="primary-button" disabled={isPending || !selectedUser || !selectedBundle} onClick={() => void manageAssignment("POST")}>
+          <button
+            type="button"
+            className="primary-button"
+            disabled={isPending || !selectedUser || !selectedBundle}
+            onClick={() => setConfirmAction({ type: "assign-bundle" })}
+          >
             إسناد
           </button>
-          <button type="button" className="secondary-button" disabled={isPending || !selectedUser || !selectedBundle} onClick={() => void manageAssignment("DELETE")}>
+          <button
+            type="button"
+            className="secondary-button"
+            disabled={isPending || !selectedUser || !selectedBundle}
+            onClick={() => setConfirmAction({ type: "revoke-bundle" })}
+          >
             إلغاء
           </button>
         </div>
@@ -195,24 +268,25 @@ export function PermissionsPanel({
 
       {preview ? (
         <div className="result-card">
-          <h3>{preview.bundle_key}</h3>
-          <p>الدور الأساسي: {preview.base_role}</p>
+          <h3>{selectedBundle?.label ?? preview.bundle_key}</h3>
+          {selectedBundle?.description ? <p>{selectedBundle.description}</p> : null}
+          <p>الدور الأساسي: {getRoleLabel(preview.base_role)}</p>
           <p>الحد الأقصى للخصم: {preview.max_discount_percentage ?? "غير محدد"}</p>
           <p>يتطلب اعتماد خصم: {preview.discount_requires_approval ? "نعم" : "لا"}</p>
-          <p>الصلاحيات: {preview.permissions.join("، ") || "لا يوجد"}</p>
+          <p>العمليات المتاحة: {preview.permissions.map(formatPermissionLabel).join("، ") || "لا يوجد"}</p>
         </div>
       ) : null}
 
       {selectedUser ? (
         <div className="workspace-panel workspace-panel--muted">
-          <p className="eyebrow">Active Assignments</p>
+          <p className="eyebrow">الصلاحيات النشطة</p>
           <h3>{selectedUser.full_name ?? selectedUser.id}</h3>
           {selectedUserAssignments.length > 0 ? (
             <ul className="compact-list">
               {selectedUserAssignments.map((assignment) => (
                 <li key={assignment.id}>
                   <strong>{assignment.bundle_label}</strong>
-                  <span> — {assignment.bundle_key}</span>
+                  {assignment.notes ? <span> - {assignment.notes}</span> : null}
                 </li>
               ))}
             </ul>
@@ -221,6 +295,27 @@ export function PermissionsPanel({
           )}
         </div>
       ) : null}
+
+      <ConfirmationDialog
+        open={confirmAction?.type === "assign-bundle"}
+        title="تأكيد إسناد الحزمة"
+        description="سيُضاف هذا الإسناد إلى المستخدم المحدد ويُطبق مباشرة على الصلاحيات الممنوحة له."
+        confirmLabel="إسناد الحزمة"
+        onConfirm={() => manageAssignment("POST")}
+        onCancel={() => setConfirmAction(null)}
+        isPending={isPending}
+      />
+
+      <ConfirmationDialog
+        open={confirmAction?.type === "revoke-bundle"}
+        title="تأكيد إلغاء الحزمة"
+        description="سيُزال هذا الإسناد من المستخدم المحدد. استخدمه فقط بعد التحقق من الأثر التشغيلي على دوره الحالي."
+        confirmLabel="إلغاء الحزمة"
+        onConfirm={() => manageAssignment("DELETE")}
+        onCancel={() => setConfirmAction(null)}
+        isPending={isPending}
+        tone="danger"
+      />
     </section>
   );
 }

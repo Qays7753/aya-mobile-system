@@ -12,19 +12,25 @@ function createDraftIdempotencyKey() {
   return `draft-${Date.now()}`;
 }
 
+function roundCartAmount(value: number) {
+  return Math.round((value + Number.EPSILON) * 1000) / 1000;
+}
+
 export function calculateCartSubtotal(items: PosCartItem[]) {
-  return items.reduce((sum, item) => sum + item.sale_price * item.quantity, 0);
+  return roundCartAmount(items.reduce((sum, item) => sum + item.sale_price * item.quantity, 0));
 }
 
 export function calculateCartDiscount(items: PosCartItem[]) {
-  return items.reduce((sum, item) => {
-    const lineSubtotal = item.sale_price * item.quantity;
-    return sum + lineSubtotal * (item.discount_percentage / 100);
-  }, 0);
+  return roundCartAmount(
+    items.reduce((sum, item) => {
+      const lineSubtotal = item.sale_price * item.quantity;
+      return sum + lineSubtotal * (item.discount_percentage / 100);
+    }, 0)
+  );
 }
 
 export function calculateCartTotal(items: PosCartItem[]) {
-  return calculateCartSubtotal(items) - calculateCartDiscount(items);
+  return roundCartAmount(calculateCartSubtotal(items) - calculateCartDiscount(items));
 }
 
 function clampQuantity(item: PosCartItem, nextQuantity: number) {
@@ -69,7 +75,7 @@ function createDefaultState() {
     selectedAccountId: null,
     posTerminalCode: "POS-01",
     notes: "",
-    currentIdempotencyKey: "",
+    currentIdempotencyKey: createDraftIdempotencyKey(),
     submissionState: "idle" as SubmissionState,
     lastCompletedSale: null as SaleResponseData | null,
     lastErrorCode: null as string | null
@@ -92,7 +98,7 @@ export const usePosCartStore = create<PosCartStore>()(
                   product_id: product.id,
                   name: product.name,
                   category: product.category,
-                  sale_price: product.sale_price,
+                  sale_price: roundCartAmount(product.sale_price),
                   quantity: 1,
                   discount_percentage: 0,
                   stock_quantity: product.stock_quantity,
@@ -107,7 +113,21 @@ export const usePosCartStore = create<PosCartStore>()(
           return {
             items: state.items.map((item) =>
               item.product_id === product.id
-                ? { ...item, quantity: clampQuantity(item, item.quantity + 1) }
+                ? (() => {
+                    const refreshedItem: PosCartItem = {
+                      ...item,
+                      name: product.name,
+                      category: product.category,
+                      sale_price: roundCartAmount(product.sale_price),
+                      stock_quantity: product.stock_quantity,
+                      track_stock: product.track_stock
+                    };
+
+                    return {
+                      ...refreshedItem,
+                      quantity: clampQuantity(refreshedItem, refreshedItem.quantity + 1)
+                    };
+                  })()
                 : item
             ),
             submissionState: "idle",
@@ -193,6 +213,21 @@ export const usePosCartStore = create<PosCartStore>()(
     {
       name: "aya-mobile-pos-cart",
       storage: createJSONStorage(() => localStorage),
+      merge: (persistedState, currentState) => {
+        const snapshot =
+          persistedState && typeof persistedState === "object"
+            ? (persistedState as Partial<ReturnType<typeof createDefaultState>>)
+            : {};
+
+        return {
+          ...currentState,
+          ...snapshot,
+          currentIdempotencyKey:
+            typeof snapshot.currentIdempotencyKey === "string" && snapshot.currentIdempotencyKey.trim().length > 0
+              ? snapshot.currentIdempotencyKey
+              : createDraftIdempotencyKey()
+        };
+      },
       partialize: (state) => ({
         items: state.items,
         selectedAccountId: state.selectedAccountId,

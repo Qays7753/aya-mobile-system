@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
-import { errorResponse, extractErrorCode, getApiErrorMeta } from "@/lib/api/common";
+import { errorResponse, extractErrorCode, getApiErrorMeta, internalErrorResponse } from "@/lib/api/common";
+import { getCronAuthorizationHeader } from "@/lib/env";
 import { resolveFirstAdminActorId } from "@/lib/api/reports";
 import type { StandardEnvelope } from "@/lib/pos/types";
 
@@ -20,15 +21,10 @@ type BalanceIntegrityResponseData = {
 
 export async function POST(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
-  const expected = process.env.CRON_SECRET
-    ? `Bearer ${process.env.CRON_SECRET}`
-    : "";
+  const expected = getCronAuthorizationHeader({ allowMissing: true });
 
   if (!expected || authHeader !== expected) {
-    return NextResponse.json(
-      { success: false, error: "ERR_UNAUTHORIZED" },
-      { status: 401 }
-    );
+    return errorResponse("ERR_UNAUTHORIZED", "غير مصرح بتنفيذ هذا المسار.", 401);
   }
 
   try {
@@ -56,9 +52,6 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
-    const meta = getApiErrorMeta("ERR_API_INTERNAL");
-    return errorResponse("ERR_API_INTERNAL", meta.message, meta.status, {
-      reason: (error as Error).message
-    });
+    return internalErrorResponse(error, { context: "cron.balance-check.unhandled" });
   }
 }

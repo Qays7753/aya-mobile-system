@@ -1,6 +1,12 @@
+import type { Metadata } from "next";
 import { getWorkspaceAccess } from "@/app/(dashboard)/access";
 import { PosAccessRequired } from "@/components/pos/access-required";
 import { ProductsBrowser } from "@/components/pos/products-browser";
+
+export const metadata: Metadata = {
+  title: "المنتجات",
+  description: "عرض المنتجات المتاحة للبيع ومراجعة الأصناف النشطة بسرعة."
+};
 
 export default async function ProductsPage() {
   const access = await getWorkspaceAccess();
@@ -9,7 +15,7 @@ export default async function ProductsPage() {
     return (
       <PosAccessRequired
         title="يلزم تسجيل الدخول لقراءة المنتجات"
-        description="قراءة v_pos_products متاحة فقط داخل جلسة POS/Admin صالحة، لذلك لن نحاول أي طلبات قراءة قبل التأكد من الجلسة."
+        description="سجّل الدخول لعرض قائمة المنتجات المتاحة للبيع من الحساب المصرح له."
       />
     );
   }
@@ -18,7 +24,7 @@ export default async function ProductsPage() {
     return (
       <PosAccessRequired
         title="الحساب الحالي غير مخول لهذا المسار"
-        description="هذا المسار مخصص لمستخدمي نقطة البيع أو الـ Admin فقط. إذا كان الحساب غير نشط أو بدور مختلف فلن تُفتح القراءة الآمنة."
+        description="هذه الشاشة مخصصة للحسابات التي تعمل على البيع اليومي. استخدم حسابًا مناسبًا أو تواصل مع الإدارة."
       />
     );
   }

@@ -43,3 +43,30 @@ export function getServerEnv(): ServerEnv {
 
   return cachedServerEnv;
 }
+
+export function isProductionRuntime() {
+  return process.env.NODE_ENV === "production";
+}
+
+export function getCronSecret(options?: { allowMissing?: boolean }) {
+  const value = process.env.CRON_SECRET?.trim();
+
+  if (!value) {
+    if (options?.allowMissing || !isProductionRuntime()) {
+      return null;
+    }
+
+    throw new Error("ERR_ENV_CRON_SECRET_MISSING");
+  }
+
+  if (value.length < 16) {
+    throw new Error("ERR_ENV_CRON_SECRET_INVALID");
+  }
+
+  return value;
+}
+
+export function getCronAuthorizationHeader(options?: { allowMissing?: boolean }) {
+  const secret = getCronSecret(options);
+  return secret ? `Bearer ${secret}` : null;
+}

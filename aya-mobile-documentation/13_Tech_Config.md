@@ -478,6 +478,10 @@ aya-mobile/
 ### مرحلة 2: النشر
 - [ ] ربط Vercel بـ GitHub repo
 - [ ] إعداد Environment Variables في Vercel
+- [ ] تشغيل `npm run check:runtime` والتأكد أن:
+  - `required env keys = 4/4`
+  - `babel_compatibility = not-adopted`
+  - `skip_lib_check = retained-with-policy`
 - [ ] اختبار Build ناجح
 - [ ] تعيين Domain (اختياري)
 
@@ -625,6 +629,7 @@ aya-mobile/
 **التنفيذ:**
 - **Login:** Supabase Auth يوفر rate limiting مدمج على endpoints المصادقة (يجب تأكيد الإعداد الافتراضي عند النشر)
 - **API Write:** Vercel Edge Middleware على مسارات `/api/*` (ADR-042)
+- **Current deployment assumption:** التنفيذ الحالي يعتمد store داخل الذاكرة (`globalThis`) لذلك هو صالح لـ single-instance deployments فقط. عند التوسع إلى multi-instance يجب نقل rate limiting إلى shared backend store.
 
 **Brute Force Protection:**
 - Supabase Auth يحد محاولات تسجيل الدخول الفاشلة تلقائياً

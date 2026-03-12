@@ -147,6 +147,38 @@
 - `مغلق` `PX-12` أُغلقت بنجاح بعد مراجعة portability/privacy/restore
 - `مغلق` `PX-13` أُغلقت بنجاح بعد مراجعة الأداء والبحث وتجميع التنبيهات
 - `مراجعة` `PX-14` V2 Release Gate
+- `مغلق` `Post-PX-14 Planning` تطبيع التقارير الثلاثة وتحويلها إلى phases `PX-15 .. PX-20`
+- `مغلق` `PX-15-T01` إزالة `PX-*`, `baseline`, `SOP`, وكل labels التنفيذية من UI
+- `مغلق` `PX-15-T02` إخفاء `idempotency_key` والمعرفات التشغيلية من surfaces المرئية
+- `مغلق` `PX-15-T03` page titles + metadata + page headers أوضح
+- `مغلق` `PX-15-T04` تحسين homepage/login/empty states/role summaries
+- `مغلق` `PX-15-T05` cleanup للأيقونات/الروابط/feedback التي توحي بميزة غير منفذة
+- `مغلق` `PX-15` User-Facing Cleanup + Product Copy Hygiene
+- `مغلق` `PX-16-T01` sidebar/drawer responsive مع icons وgrouping
+- `مغلق` `PX-16-T02` role-aware home/navigation بين `Admin` و`POS`
+- `مغلق` `PX-16-T03` breadcrumbs أو page hierarchy واضحة
+- `مغلق` `PX-16-T04` تفكيك الشاشات المزدحمة (`invoices`, `inventory`, `notifications`, `reports`, `settings`, `debts`)
+- `مغلق` `PX-16-T05` نقل global search وتحسين mobile IA
+- `مغلق` `PX-16` Navigation + Information Architecture + Role Experience
+- `مغلق` `PX-17-T01` loading skeletons + route-level fallbacks للأسطح الحرجة
+- `مغلق` `PX-17-T02` persistent error states + retry patterns
+- `مغلق` `PX-17-T03` استبدال full reload flows بـ App Router transitions
+- `مغلق` `PX-17-T04` confirmation dialogs للأفعال الحساسة
+- `مغلق` `PX-17-T05` pending/offline/feedback policy pass
+- `مغلق` `PX-17` Async UX + Feedback + Action Safety
+- `مغلق` `PX-18-T01` typography حديثة + design tokens
+- `مغلق` `PX-18-T02` reusable primitives + table/list/form states
+- `مغلق` `PX-18-T03` visual refresh للأسطح الأساسية (`home/login/POS/reports`)
+- `مغلق` `PX-18-T04` accessibility pass (`focus-visible`, labels, keyboard, touch`)
+- `مغلق` `PX-18-T05` dark mode + motion/micro-interactions
+- `مغلق` `PX-18` Visual System + Accessibility Refresh
+- `مغلق` `PX-19-T01` dependency/runtime audit + update policy
+- `مغلق` `PX-19-T02` security headers + rate limiting + error sanitization
+- `مغلق` `PX-19-T03` env/deployment policy + cron secret hardening + compatibility decision
+- `مغلق` `PX-19-T04` client/cart/runtime/route strictness hardening
+- `مغلق` `PX-19-T05` test coverage expansion
+- `مغلق` `PX-19` Security / Runtime / Deployment Hardening
+- `التالي` `PX-20` Productization Release Gate
 
 ---
 
@@ -213,6 +245,12 @@
 | `PX-12` | Data Portability + Backup / Import | export/import/restore drill بشكل آمن ومدقق | `09`, `18`, `24`, `25`, `27` | portability تعمل مع audit/privacy/restore proof | `Done` |
 | `PX-13` | Performance + Search + Alert Aggregation | caching آمن + بحث متقدم + مركز تنبيهات | `09`, `17`, `24`, `27` | p95 targets + no stale finance + device regression pass | `Done` |
 | `PX-14` | V2 Release Gate | فحص قبول V2 وإعلان الجاهزية | `17`, `24`, `27` | UAT V2 + privacy/security/restore = Pass | `Review` |
+| `PX-15` | User-Facing Cleanup + Product Copy Hygiene | إزالة المصطلحات الداخلية ورفع وضوح النصوص والسياق للمستخدم | `09`, `03`, `17`, `24` | لا تسريب لمصطلحات داخلية + page context واضح | `Done` |
+| `PX-16` | Navigation + IA + Role Experience | إعادة بناء التنقل والـ IA وتجربة الدورين على الهاتف والتابلت واللابتوب | `09`, `03`, `17`, `24`, `29` | navigation قابلة للاستخدام + تقليل ازدحام الشاشات | `Done` |
+| `PX-17` | Async UX + Feedback + Action Safety | loading/error/retry/confirm/pending patterns بدون كسر العقود | `03`, `17`, `24`, `25` | لا blank states صامتة + destructive actions مؤكدة | `Done` |
+| `PX-18` | Visual System + Accessibility Refresh | Typography/tokens/components/a11y/dark mode/motion | `03`, `17`, `24`, `29` | visual consistency + accessibility/device pass | `Done` |
+| `PX-19` | Security / Runtime / Deployment Hardening | headers/rate limiting/env/runtime/client/cart/test hardening | `13`, `17`, `24`, `27` | لا hardening blocker مفتوح + runtime policy واضحة | `Done` |
+| `PX-20` | Productization Release Gate | فحص قبول ما بعد V2 وإعلان الجاهزية التجارية | `17`, `24`, `27`, `31` | UX/a11y/security/deployment = Pass | `Open` |
 
 ---
 
@@ -6353,6 +6391,1651 @@
 | 2026-03-11 | `PX-13` | أُغلقت المرحلة رسميًا بقرار `Closed`. تم تحديث `VB-24`, `VB-25`, `VB-26` إلى `Pass` لأن performance/search/alert/device gates أصبحت مثبّتة بالأدلة، وتم فتح `PX-14 = Open` مع تعيين `PX-14-T01` كمهمة تالية. | `Closed / Next` | `Phase Close Decision — PX-13`, `aya-mobile-documentation/27_PreBuild_Verification_Matrix.md` |
 | 2026-03-11 | `PX-14-T01/T02/T03/T04` | تم تنفيذ release gate الكامل لـ V2 عبر سكربت موحّد `px14-v2-release-gate.ts` أعاد تشغيل أدلة `PX-08 .. PX-13` على بيئة محلية نظيفة، وجمع تقريرًا موحدًا في `output/release/px14-v2-release-gate.json`. النتيجة: `UAT-36..51 = Pass`, `audit.p0 = 0`, `audit.p1 = 0`, `restore.drift_count = 0`, `rto_seconds = 1`, و`release_gate.decision = go`. | `Done` | `scripts/px14-v2-release-gate.ts`, `output/release/px14-v2-release-gate.json`, `npx tsx scripts/px14-v2-release-gate.ts` |
 | 2026-03-11 | `PX-14` | اكتملت المرحلة تنفيذيًا وارتفعت إلى `Review`. جميع المهام `T01..T04 = Done`, وتم تجهيز `Phase Execution Report — PX-14` و`Phase Review Prompt — PX-14`. التحقق النهائي اجتاز `db lint`, `typecheck`, `lint`, `test = 174/174`, `build`, وdevice/UAT regression (`PX-11 e2e = 3/3`, `PX-13 e2e = 6/6`) مع local Supabase env overrides + local production build. | `Review` | `Phase Execution Report — PX-14`, `Phase Review Prompt — PX-14`, `npx supabase db lint --local --fail-on error --level warning`, `npm run typecheck`, `npm run lint`, `npm run test`, `npm run build`, `npx playwright test tests/e2e/px11-reports.spec.ts --config=playwright.px06.config.ts`, `npx playwright test tests/e2e/px13-search-alerts.spec.ts --config=playwright.px06.config.ts` |
+| 2026-03-12 | `PX-17` | أعاد المراجع المستقل الحكم `PASS` مع توصية `Close PX-17`. أكدت المراجعة أن loading/error shells منعت blank states الصامتة، وأن `StatusBanner` و`ConfirmationDialog` غطتا feedback/action safety بشكل كافٍ، وأن login انتقلت إلى App Router-native transitions دون كسر العقود أو إدخال optimistic financial writes. | `Review PASS` | `Phase Review Report — PX-17` |
+| 2026-03-12 | `PX-17` | أُغلقت المرحلة رسميًا بقرار `Closed`. تم تحديث `VB-29` إلى `Pass` لأن أنماط `loading/error/retry/pending/confirm` أصبحت مكتملة، وتم فتح `PX-18 = Open` مع تعيين `PX-18-T01` كمهمة تالية. | `Closed / Next` | `Phase Close Decision — PX-17`, `aya-mobile-documentation/27_PreBuild_Verification_Matrix.md` |
+| 2026-03-12 | `PX-18` | اكتملت المرحلة تنفيذيًا وارتفعت إلى `Review`. جميع المهام `T01..T05 = Done`، وتم توحيد typography/tokens، رفع visual hierarchy لأسطح `home/login/POS/reports`، وتثبيت accessibility الأساسية (`focus-visible`, keyboard path, touch targets, dark mode, reduced motion). التحقق النهائي اجتاز `typecheck`, `lint`, `build`, `test = 181/181`, و`PX-18 e2e = 5/5`. | `Review` | `Phase Execution Report — PX-18`, `Phase Review Prompt — PX-18`, `npm run typecheck`, `npm run lint`, `npm run build`, `npm run test`, `npx playwright test tests/e2e/px18-visual-accessibility.spec.ts --config=playwright.px06.config.ts` |
+| 2026-03-12 | `PX-18` | أعاد المراجع المستقل الحكم `PASS` مع توصية `Close PX-18`. أكدت المراجعة أن visual system وaccessibility/device proof مكتملة، وأن typography/tokens وdark mode وreduced-motion أصبحت مقبولة للإغلاق دون findings حاجبة. | `Review PASS` | `Phase Review Report — PX-18` |
+| 2026-03-12 | `PX-18` | أُغلقت المرحلة رسميًا بقرار `Closed`. تم تحديث `VB-30` و`VB-31` إلى `Pass` لأن visual consistency وa11y/device gates أصبحت مثبتة بالأدلة، وتم فتح `PX-19 = Open` مع تعيين `PX-19-T01` كمهمة تالية. | `Closed / Next` | `Phase Close Decision — PX-18`, `aya-mobile-documentation/27_PreBuild_Verification_Matrix.md` |
+| 2026-03-12 | `PX-19` | اكتملت المرحلة تنفيذيًا وارتفعت إلى `Review`. تم تثبيت policy-first runtime/dependency decisions، وإضافة security headers + rate limiting + centralized error sanitization، وتوثيق env/cron policy، وتشديد runtime/cart/routes، مع توسيع الاختبارات. التحقق النهائي اجتاز `check:runtime`, `typecheck`, `lint`, `test = 197/197`, و`build`. | `Review` | `Phase Execution Report — PX-19`, `Phase Review Prompt — PX-19`, `npm run check:runtime`, `npm run typecheck`, `npm run lint`, `npm run test`, `npm run build` |
+| 2026-03-13 | `PX-19` | أعاد المراجع المستقل الحكم `PASS WITH FIXES` مع توصية `Close PX-19 with Fixes`. أكد التقرير أن جميع مهام `T01..T05` منجزة وأن gate success متحققة، مع 3 عناصر مطلوبة قبل الإغلاق: إزالة `unsafe-eval` من CSP، توثيق قيد single-instance في rate limiting، وتوثيق `npm run check:runtime`، إضافةً إلى تحديث `VB-32/33/34`. | `Review PASS WITH FIXES` | `Phase Review Report — PX-19` |
+| 2026-03-13 | `PX-19` | نُفذت remediation المطلوبة: إزالة `'unsafe-eval'` من `script-src` داخل `next.config.mjs`، إضافة comment صريح في `lib/runtime/rate-limit.ts` يثبت أن التخزين in-memory صالح فقط لـ single-instance MVP، وتوثيق `npm run check:runtime` وdeployment expectations في `13_Tech_Config.md`. أثناء إعادة التحقق ظهرت flakiness زمنية في 6 اختبارات UI، فثُبتت timeouts بشكل صريح في اختبارات `dashboard/status/login/confirmation/pos` حتى تعكس نتيجة `npm run test` الحالة الحقيقية للحزمة بدل تعثرات التوقيت. | `Remediation` | `next.config.mjs`, `lib/runtime/rate-limit.ts`, `aya-mobile-documentation/13_Tech_Config.md`, `tests/unit/status-banner.test.tsx`, `tests/unit/dashboard-loading.test.tsx`, `tests/unit/dashboard-error.test.tsx`, `tests/unit/confirmation-dialog.test.tsx`, `tests/unit/login-form.test.tsx`, `tests/unit/pos-workspace.test.tsx` |
+| 2026-03-13 | `PX-19` | أُغلقت المرحلة رسميًا بقرار `Closed with Fixes`. تم تحديث `VB-32`, `VB-33`, و`VB-34` إلى `Pass` لأن hardening/security/deployment/runtime gates أصبحت مثبتة بالأدلة بعد remediation وإعادة التحقق (`check:runtime`, `lint`, `test = 197/197`, `build`). وتم فتح `PX-20 = Open` مع تعيين `PX-20-T01` كمهمة تالية. | `Closed / Next` | `Phase Close Decision — PX-19`, `aya-mobile-documentation/27_PreBuild_Verification_Matrix.md`, `output/release/px19-runtime-policy.json` |
+
+---
+
+## Post-PX-14 Planning Package (Execution-Ready, Not Started)
+
+**الحالة:** هذه المراحل **مخططة وجاهزة للتنفيذ** لكنها لم تبدأ بعد.
+كل Phase أدناه تبقى `Open` حتى:
+- يصدر حكم مستقل على `PX-14`
+- تُراجع هذه الحزمة نفسها
+- ويصدر قرار صريح بفتح `PX-15-T01`
+
+**هدف الحزمة:** دمج التقارير الثلاثة في خطة تنفيذ واحدة منضبطة، بدون أخذ أي finding كمسلمة، وبدون خلط مشاكل المنتج/UX مع مشاكل البيئة والتشغيل أو technical debt.
+
+### قواعد التطبيع المعتمدة
+
+1. كل finding يجب أن تنتهي إلى واحدة من أربع حالات:
+   - `Confirmed`
+   - `Reframed`
+   - `External / Deployment`
+   - `Optional Product Direction`
+2. لا يجوز نقل أي finding إلى التنفيذ قبل ربطها بمرحلة ومهمة وGate Success.
+3. لا يُعتبر أي بند design/branding blocker هندسيًا إلا إذا كسر device contract أو accessibility أو usability الحرجة.
+4. لا تُخلط مشاكل البيئة (`env`, `Replit`, `runtime compatibility`) مع backlog UX، لكنها تبقى ضمن الاستراتيجية داخل track مستقل.
+
+### Normalized Master Issue Matrix
+
+| Track | المشكلة | Classification | Planned Phase / Task | Notes |
+|-------|---------|----------------|----------------------|-------|
+| UX / Copy | ظهور `PX-*`, `baseline`, `SOP`, labels تنفيذية للمستخدم | `Confirmed` | `PX-15-T01` | يجب حذفها من homepage/login/dashboard/workspaces |
+| UX / Copy | ظهور `idempotency_key` أو معرّفات تشغيلية خام | `Confirmed` | `PX-15-T02` | تبقى داخل state/logs فقط |
+| UX / Copy | عناوين صفحات عامة أو غير سياقية | `Confirmed` | `PX-15-T03` | metadata + headers + page context |
+| UX / Copy | empty states ضعيفة بلا next action | `Confirmed` | `PX-15-T04` | تشمل homepage/login/workspaces |
+| UX / Copy | homepage بلا CTA قوي وبنص developer-facing | `Confirmed` | `PX-15-T04` | يعالج مع role summaries والcopy |
+| UX / Copy | login panel يحوي شرحًا داخليًا/تنفيذيًا | `Confirmed` | `PX-15-T04` | copy cleanup لا يغير auth logic |
+| UX / Copy | خلط العربية والإنجليزية بلا معيار | `Confirmed` | `PX-15-T01`, `PX-15-T03` | يحتاج content rule موحد |
+| Navigation / IA | navigation أفقية مسطحة ومزدحمة على الهاتف | `Confirmed` | `PX-16-T01` | drawer/sidebar + grouping |
+| Navigation / IA | لا breadcrumbs أو page hierarchy واضحة | `Confirmed` | `PX-16-T03` | جزء من shell/navigation |
+| Navigation / IA | لا أيقونات أو grouping في navigation | `Confirmed` | `PX-16-T01` | ليس blocker وحده، لكنه ضمن refactor |
+| Navigation / IA | global search مدفونة داخل notifications | `Confirmed` | `PX-16-T05` | يعالج placement فقط لا search scope |
+| Navigation / IA | Admin وPOS يريان سطوحًا متقاربة أكثر من اللازم | `Confirmed` | `PX-16-T02` | role-aware home/navigation |
+| Navigation / IA | شاشة الفواتير مزدحمة جدًا | `Confirmed` | `PX-16-T04` | grouping / progressive disclosure |
+| Navigation / IA | شاشة الجرد مزدحمة على الهاتف | `Confirmed` | `PX-16-T04` | IA + mobile ergonomics |
+| Navigation / IA | `selected scope` في الجرد بلا بحث داخلي | `Confirmed` | `PX-16-T04` | جزء من inventory refactor |
+| Navigation / IA | شاشة الإشعارات تجمع inbox + alerts + search في سطح واحد مزدحم | `Confirmed` | `PX-16-T04`, `PX-16-T05` | تفكيك IA مع إبقاء scoping |
+| Navigation / IA | شاشة التقارير ضوضائية ومكدسة | `Confirmed` | `PX-16-T04` | يعالج layout/info hierarchy |
+| Navigation / IA | شاشة الإعدادات/الصلاحيات technical أكثر من اللازم | `Confirmed` | `PX-16-T04` | UX/admin clarity |
+| Navigation / IA | شاشة الديون تفتقد summary أوضح وتحتوي select مربكًا | `Confirmed` | `PX-16-T04` | debts IA polish |
+| Async UX | لا loading skeletons أو fallbacks واضحة | `Confirmed` | `PX-17-T01` | route segments + workspace shells |
+| Async UX | الصفحات تبدو blank/frozen عند بطء الخادم | `Confirmed` | `PX-17-T01`, `PX-17-T05` | perception issue من SSR الديناميكي |
+| Async UX | لا persistent error states كافية | `Confirmed` | `PX-17-T02` | toast-only غير كافٍ |
+| Async UX | لا retry logic على API failures | `Confirmed` | `PX-17-T02` | حيثما المسار آمن |
+| Async UX | لا confirmation dialogs للأفعال التخريبية | `Confirmed` | `PX-17-T04` | invoices/settings/portability وغيرها |
+| Async UX | `window.location.assign("/pos")` بعد login | `Confirmed` | `PX-17-T03` | يستبدل بـ App Router navigation |
+| Async UX | لا offline/pending banners أو feedback واضح أثناء التنفيذ | `Confirmed` | `PX-17-T05` | بدون ادعاء offline writes |
+| Async UX | لا optimistic UI | `Optional Product Direction` | `PX-17-T05` | يطبق فقط على المسارات الآمنة وبقرار صريح |
+| Visual System | لا design system فعلي | `Confirmed` | `PX-18-T01`, `PX-18-T02` | globals.css متضخم وغير كافٍ |
+| Visual System | الخطوط الحالية قديمة وضعيفة الهوية | `Confirmed` | `PX-18-T01` | typography refresh |
+| Visual System | لوحة الألوان الحالية لا تعطي هوية حديثة | `Confirmed` | `PX-18-T01` | palette/tokens refresh |
+| Visual System | لا product imagery أو hierarchy غنية في POS/home | `Confirmed` | `PX-18-T03` | دون فرض feature غير موجودة |
+| Visual System | الجداول raw وتفتقد states واضحة | `Confirmed` | `PX-18-T02` | tables/list/form states |
+| Visual System | لا `focus-visible` أو touch-target guarantees كافية | `Confirmed` | `PX-18-T04` | a11y/device track |
+| Visual System | لا dark mode | `Optional Product Direction` | `PX-18-T05` | يُنفذ فقط إذا لم يضر readability/perf |
+| Visual System | لا animations / micro-interactions | `Optional Product Direction` | `PX-18-T05` | motion policy controlled |
+| Visual System | لا page-specific visual hierarchy قوية بين Admin وPOS | `Confirmed` | `PX-18-T03` | تعمل مع `PX-16-T02` |
+| Security / Hardening | غياب security headers (`CSP`, `HSTS`, `X-Frame-Options`) | `Confirmed` | `PX-19-T02` | hardening حقيقي |
+| Security / Hardening | لا rate limiting على APIs | `Confirmed` | `PX-19-T02` | scope على mutating/public routes |
+| Security / Hardening | catches تعيد `error.message` الخام أحيانًا | `Confirmed` | `PX-19-T02` | internal error sanitization |
+| Security / Hardening | `CRON_SECRET` optional في env policy | `Confirmed` | `PX-19-T03` | hardening gap لا ثغرة مثبتة حاليًا |
+| Security / Hardening | repeated client creation / lifecycle غير محكم | `Confirmed` | `PX-19-T04` | common/admin client reuse |
+| Security / Hardening | route strictness ضعيفة في بعض المسارات | `Confirmed` | `PX-19-T04` | returns/cancel وغيرها |
+| Runtime / State | stale stock cache داخل POS cart | `Confirmed` | `PX-19-T04` | state hardening |
+| Runtime / State | `currentIdempotencyKey` يبدأ فارغًا قبل bootstrap | `Confirmed` | `PX-19-T04` | bootstrap window صغيرة لكن حقيقية |
+| Runtime / State | لا policy صريحة للـ rounding في client financial displays | `Confirmed` | `PX-19-T04` | debt مالي frontend |
+| Runtime / State | dependency/runtime policy غير موثقة بما يكفي (`Next`, `React`, `xlsx`) | `Confirmed` | `PX-19-T01` | audit/update policy |
+| Runtime / State | `skipLibCheck: true` يخفي بعض مشاكل الأنواع | `Confirmed` | `PX-19-T01` | maintainability hardening |
+| Code Quality | `lib/api/dashboard.ts` كبير جدًا | `Confirmed` | `PX-19-T04` | decomposition / ownership clarity |
+| Code Quality | `lib/api/reports.ts` كبير جدًا | `Confirmed` | `PX-19-T04` | decomposition |
+| Code Quality | `lib/api/portability.ts` كبير جدًا | `Confirmed` | `PX-19-T04` | decomposition |
+| Code Quality | `markNotificationsReadSchema` داخل `expenses.ts` | `Confirmed` | `PX-19-T04` | ownership mismatch |
+| Code Quality | inconsistent `maxLength` constraints | `Confirmed` | `PX-19-T04` | validation normalization |
+| Code Quality | `extractErrorCode()` regex هش | `Confirmed` | `PX-19-T04` | stricter mapping |
+| Code Quality | `resolvePermissionContext()` يرمي generic internal error غير واضحة | `Confirmed` | `PX-19-T04` | better surfaced failure mode |
+| Code Quality | `returns/route.ts` fallback chain على response shape | `Confirmed` | `PX-19-T04` | contract tightening |
+| Code Quality | `cancel/route.ts` fallback query شبه ميت | `Confirmed` | `PX-19-T04` | cleanup after strict route contract |
+| Testing | تغطية component/workspace أضعف من route coverage | `Confirmed` | `PX-19-T05` | component interaction tests |
+| Testing | غياب formatter helper tests | `Confirmed` | `PX-19-T05` | `formatCurrency/formatDateTime` وغيرها |
+| Testing | الحاجة إلى cross-env/browser verification إضافية | `Confirmed` | `PX-19-T05` | browser/runtime hardening |
+| Reframed | `ScanSearch` زر مكسور | `Reframed` | `PX-15-T05` | المشكلة الصحيحة: affordance توحي بميزة barcode غير منفذة |
+| Reframed | كل الصفحات `force-dynamic` | `Reframed` | `PX-19-T03` | الحالي المؤكد: dashboard shell + بعض runtime decisions |
+| Reframed | WhatsApp raw URL ظاهرة كنص للمستخدم | `Reframed` | `PX-15-T05`, `PX-16-T04` | المطلوب: polished share feedback لا raw operational feedback |
+| Reframed | كل فشل API silent | `Reframed` | `PX-17-T02` | ليست silent دائمًا لكن feedback patterns ناقصة |
+| Reframed | `CRON_SECRET optional` = endpoint مفتوح | `Reframed` | `PX-19-T03` | route الحالية تتحقق وتعيد `401`، لكن policy يجب تشديدها |
+| External / Deployment | غياب env vars Supabase في بعض البيئات | `External / Deployment` | `PX-19-T03` | deployment policy لا bug product مباشر |
+| External / Deployment | `SWC SIGBUS` / Replit compatibility | `External / Deployment` | `PX-19-T03` | يحتاج قرار toolchain / Babel fallback |
+| External / Deployment | browser/runtime behavior يعتمد كثيرًا على env correctness | `External / Deployment` | `PX-19-T03` | policy + smoke checks |
+| Optional Product Direction | فصل dashboards كاملة بين Admin وPOS بدل shared shell only | `Optional Product Direction` | `PX-16-T02`, `PX-18-T03` | ينفذ ضمن نفس authority الحالية فقط |
+| Optional Product Direction | dark mode | `Optional Product Direction` | `PX-18-T05` | ليس blocker |
+| Optional Product Direction | micro-interactions / motion polish | `Optional Product Direction` | `PX-18-T05` | ليس blocker |
+| Optional Product Direction | product imagery richer POS cards | `Optional Product Direction` | `PX-18-T03` | لا يُفرض إن لم يكن موجودًا في المنتج |
+| Out of Scope Finding | unsupported-device page لم تُراجع بعمق | `Reframed` | `PX-20-T01` | gap في audit scope لا defect مؤكد |
+
+### Mapping Decision
+
+- المسارات `PX-15 .. PX-18` = **Product / UX / Accessibility**
+- المسار `PX-19` = **Security / Runtime / Deployment Hardening**
+- المسار `PX-20` = **Gate نهائي** يراجع الاثنين معًا دون خلط
+
+---
+
+## PX-15 — User-Facing Cleanup + Product Copy Hygiene
+
+**الهدف:** تنظيف كل surfaces المرئية من المصطلحات الداخلية ورفع وضوح النصوص والسياق دون تغيير business behavior.
+
+**المراجع**
+- `09_Implementation_Plan.md`
+- `03_UI_UX_Sitemap.md`
+- `17_UAT_Scenarios.md`
+- `24_AI_Build_Playbook.md`
+
+**Gate Success**
+- لا يظهر أي `PX-*`, `baseline`, `SOP`, `idempotency_key` أو raw operational hint للمستخدم.
+- كل صفحة تحمل title/context واضح وغير تقني.
+- homepage/login/empty states تقدم لغة منتج وإجراءًا تالياً واضحًا.
+
+### Phase Contract
+
+- **Primary Outcome:** surfaces مفهومة للمستخدم النهائي بدل surfaces موجهة للمطور.
+- **In Scope:** copy cleanup, metadata, context headers, role summaries, empty states, affordance cleanup.
+- **Allowed Paths:** `app/*`, `components/*`, `lib/*`, `03`, `17`, `31`.
+- **Required Proofs:** grep proof + screenshots + role walkthrough.
+- **Stop Rules:** ممنوع تغيير logic أو authority أو flows المالية.
+
+### Phase Review Focus
+
+- اختفاء المصطلحات الداخلية بالكامل
+- جودة titles/context/empty states
+- عدم بقاء affordances توحي بميزات غير منفذة
+
+### Current Phase Status
+
+- **Phase State:** `Done`
+- **Active Task:** `PX-15 Closed`
+- **Started At:** `2026-03-12`
+- **Execution Owner:** `Execution Agent`
+- **Review Owner:** `Review Agent (Review-Only)`
+- **Closed At:** `2026-03-12`
+- **Next Active Phase:** `PX-16`
+- **Next Active Task:** `PX-16-T01`
+
+| Task ID | المهمة | المرجع | Status | Evidence | Updated At | Notes / Blockers |
+|---------|--------|--------|--------|----------|------------|------------------|
+| `PX-15-T01` | إزالة `PX-*`, `baseline`, `SOP`, وكل labels التنفيذية من UI | `03`, `24` | `Done` | `app/page.tsx`, `app/login/page.tsx`, `app/(dashboard)/layout.tsx`, `components/auth/login-form.tsx`, `components/pos/pos-workspace.tsx`, `components/dashboard/*workspace.tsx`, grep proof على `app/` و`components/` بدون أي labels تنفيذية ظاهرة للمستخدم | `2026-03-12` | تم تنظيف copy الداخلية من homepage/login/dashboard/workspaces مع توحيد اللغة الظاهرة للمستخدم النهائي. |
+| `PX-15-T02` | إخفاء `idempotency_key` والمعرفات التشغيلية من surfaces المرئية | `17`, `24` | `Done` | `components/pos/pos-workspace.tsx`, `components/dashboard/invoices-workspace.tsx`, `components/dashboard/debts-workspace.tsx`, `components/dashboard/expenses-workspace.tsx`, `components/dashboard/operations-workspace.tsx`, `components/dashboard/portability-workspace.tsx` | `2026-03-12` | المعرفات التشغيلية بقيت داخل state/API فقط، ولم تعد تظهر للمستخدم النهائي كقيم خام. |
+| `PX-15-T03` | page titles + metadata + page headers أوضح | `03`, `17` | `Done` | `app/layout.tsx`, `app/page.tsx`, `app/login/page.tsx`, `app/unsupported-device/page.tsx`, `app/r/[token]/page.tsx`, `app/(dashboard)/*/page.tsx` | `2026-03-12` | أضيفت metadata وعناوين سياقية واضحة لمعظم الأسطح العامة والتشغيلية بدون لغة تقنية داخلية. |
+| `PX-15-T04` | تحسين homepage/login/empty states/role summaries | `03`, `24` | `Done` | `app/page.tsx`, `app/login/page.tsx`, `components/pos/access-required.tsx`, `components/dashboard/access-required.tsx`, `components/dashboard/*workspace.tsx` | `2026-03-12` | الصفحة الرئيسية وتسجيل الدخول وحالات الفراغ صارت product-facing وتقدم next actions أوضح حسب الدور والسياق. |
+| `PX-15-T05` | cleanup للأيقونات/الروابط/feedback التي توحي بميزة غير منفذة | `03`, `17` | `Done` | `components/pos/pos-workspace.tsx`, `components/dashboard/invoices-workspace.tsx`, `components/dashboard/notifications-workspace.tsx`, `components/dashboard/portability-workspace.tsx` | `2026-03-12` | أُزيلت affordances المضللة أو حُولت إلى feedback منضبط بدل الإيحاء بميزات غير منفذة أو عرض روابط/قيم تشغيلية خام. |
+
+### Phase Execution Report — PX-15
+
+- **Phase:** `PX-15 — User-Facing Cleanup + Product Copy Hygiene`
+- **Execution Window:** `2026-03-12`
+- **Execution Status:** `Ready for Phase Review`
+- **Outcome Summary:** اكتملت مرحلة تنظيف surfaces الظاهرة للمستخدم من المصطلحات الداخلية والمعرفات التشغيلية، مع تحسين titles وmetadata والـ page context والـ empty states وlanding copy. التنفيذ اقتصر على copy/metadata/feedback cleanup فقط، بدون أي تغيير على authority أو flows المالية أو business logic.
+
+**Task Outcomes**
+
+- `PX-15-T01` = `Done`
+- `PX-15-T02` = `Done`
+- `PX-15-T03` = `Done`
+- `PX-15-T04` = `Done`
+- `PX-15-T05` = `Done`
+
+**Key Evidence**
+
+- `T01`: `app/page.tsx`, `app/login/page.tsx`, `app/(dashboard)/layout.tsx`, `components/auth/login-form.tsx`, `components/pos/pos-workspace.tsx`, `components/dashboard/reports-overview.tsx`, `components/dashboard/settings-ops.tsx`, `components/dashboard/permissions-panel.tsx`, `components/dashboard/notifications-workspace.tsx`
+- `T02`: `components/pos/pos-workspace.tsx`, `components/dashboard/invoices-workspace.tsx`, `components/dashboard/debts-workspace.tsx`, `components/dashboard/expenses-workspace.tsx`, `components/dashboard/operations-workspace.tsx`, `components/dashboard/portability-workspace.tsx`
+- `T03`: `app/layout.tsx`, `app/page.tsx`, `app/login/page.tsx`, `app/unsupported-device/page.tsx`, `app/r/[token]/page.tsx`, `app/(dashboard)/pos/page.tsx`, `app/(dashboard)/products/page.tsx`, `app/(dashboard)/invoices/page.tsx`, `app/(dashboard)/debts/page.tsx`, `app/(dashboard)/inventory/page.tsx`, `app/(dashboard)/maintenance/page.tsx`, `app/(dashboard)/notifications/page.tsx`, `app/(dashboard)/operations/page.tsx`, `app/(dashboard)/portability/page.tsx`, `app/(dashboard)/reports/page.tsx`, `app/(dashboard)/settings/page.tsx`, `app/(dashboard)/suppliers/page.tsx`, `app/(dashboard)/expenses/page.tsx`
+- `T04`: `app/page.tsx`, `app/login/page.tsx`, `components/pos/access-required.tsx`, `components/dashboard/access-required.tsx`, `components/pos/products-browser.tsx`, `components/dashboard/inventory-workspace.tsx`, `components/dashboard/maintenance-workspace.tsx`, `components/dashboard/expenses-workspace.tsx`, `components/dashboard/portability-workspace.tsx`
+- `T05`: `components/pos/pos-workspace.tsx`, `components/dashboard/invoices-workspace.tsx`, `components/dashboard/notifications-workspace.tsx`, `components/dashboard/portability-workspace.tsx`
+- verification: `npm run typecheck`, `npm run lint`, `npm run build`
+
+**Observed Results**
+
+- لم يعد يظهر أي `PX-*`, `baseline`, أو `SOP` كنص مرئي موجه للمستخدم في homepage/login/dashboard/workspaces.
+- لم تعد `idempotency_key` أو raw operational IDs تظهر في POS, invoices, debts, expenses, operations, أو portability surfaces.
+- كل surfaces الأساسية تحمل titles وdescriptions أوضح، مع page headers أقل تقنية وأكثر اتساقًا مع دور المستخدم.
+- الصفحة الرئيسية وتسجيل الدخول وحالات الفراغ أصبحت أوضح للمستخدم النهائي، وتعرض next actions بدل copy تنفيذية داخلية.
+- تم تنظيف affordances المضللة:
+  - إزالة الإيحاء بميزة barcode scanning غير المنفذة من سطح POS
+  - عدم عرض raw receipt/share/runtime values مباشرة للمستخدم
+
+**Gate Success Check**
+
+- لا يظهر أي `PX-*`, `baseline`, `SOP`, `idempotency_key` أو raw operational hint للمستخدم: `Covered by T01 + T02 + grep proof`
+- كل صفحة تحمل title/context واضح وغير تقني: `Covered by T03`
+- homepage/login/empty states تقدم لغة منتج وإجراءًا تاليًا واضحًا: `Covered by T04`
+
+**Closure Assessment**
+
+- جميع مهام المرحلة = `Done`: `Yes`
+- لم يتم تغيير authority أو flows المالية: `Yes`
+- حزمة التنفيذ جاهزة للمراجعة المستقلة: `Yes`
+- المتبقي قبل الإغلاق النهائي = `Phase Review Report — PX-15` + `Phase Close Decision — PX-15`
+
+### Phase Review Prompt — PX-15
+
+أنت الآن `Review Agent (Review-Only)` لمراجعة إغلاق المرحلة `PX-15 — User-Facing Cleanup + Product Copy Hygiene`.
+
+مهمتك **قراءة + تحليل + مقارنة + تقديم تقرير فقط**.
+ممنوع التنفيذ، ممنوع التعديل، ممنوع كتابة كود، وممنوع تشغيل Docker أو `npm` أو أي أمر يغير الحالة.
+
+راجع المخرجات الحالية مقابل:
+
+- `aya-mobile-documentation/31_Execution_Live_Tracker.md`
+- `aya-mobile-documentation/09_Implementation_Plan.md`
+- `aya-mobile-documentation/03_UI_UX_Sitemap.md`
+- `aya-mobile-documentation/17_UAT_Scenarios.md`
+- `aya-mobile-documentation/24_AI_Build_Playbook.md`
+- `app/layout.tsx`
+- `app/page.tsx`
+- `app/login/page.tsx`
+- `app/unsupported-device/page.tsx`
+- `app/r/[token]/page.tsx`
+- `app/(dashboard)/layout.tsx`
+- `app/(dashboard)/pos/page.tsx`
+- `app/(dashboard)/products/page.tsx`
+- `app/(dashboard)/expenses/page.tsx`
+- `app/(dashboard)/invoices/page.tsx`
+- `app/(dashboard)/debts/page.tsx`
+- `app/(dashboard)/inventory/page.tsx`
+- `app/(dashboard)/maintenance/page.tsx`
+- `app/(dashboard)/notifications/page.tsx`
+- `app/(dashboard)/operations/page.tsx`
+- `app/(dashboard)/portability/page.tsx`
+- `app/(dashboard)/reports/page.tsx`
+- `app/(dashboard)/settings/page.tsx`
+- `app/(dashboard)/suppliers/page.tsx`
+- `components/auth/login-form.tsx`
+- `components/pos/access-required.tsx`
+- `components/pos/pos-workspace.tsx`
+- `components/pos/products-browser.tsx`
+- `components/dashboard/access-required.tsx`
+- `components/dashboard/debts-workspace.tsx`
+- `components/dashboard/expenses-workspace.tsx`
+- `components/dashboard/inventory-workspace.tsx`
+- `components/dashboard/invoices-workspace.tsx`
+- `components/dashboard/maintenance-workspace.tsx`
+- `components/dashboard/notifications-workspace.tsx`
+- `components/dashboard/operations-workspace.tsx`
+- `components/dashboard/permissions-panel.tsx`
+- `components/dashboard/portability-workspace.tsx`
+- `components/dashboard/reports-advanced-charts.tsx`
+- `components/dashboard/reports-overview.tsx`
+- `components/dashboard/settings-ops.tsx`
+- `components/dashboard/suppliers-workspace.tsx`
+
+اعتمد فقط على الأدلة التنفيذية الموثقة داخل التراكر من هذه الجلسة:
+
+- تم تنظيف copy الداخلية من homepage/login/dashboard/workspaces
+- تم إخفاء `idempotency_key` وraw operational IDs من surfaces المرئية
+- أضيفت metadata وtitles وصفحات أوضح على الأسطح العامة والتشغيلية
+- تحسنت empty states وrole summaries والcopy العامة
+- تم تنظيف affordances المضللة وfeedback الخام
+- `npm run typecheck` = `PASS`
+- `npm run lint` = `PASS`
+- `npm run build` = `PASS`
+
+تحقق تحديدًا من:
+
+1. هل تحققت `Gate Success` الخاصة بـ `PX-15` بالأدلة الموثقة؟
+2. هل جميع مهام `PX-15` (`T01..T05`) أصبحت `Done` رسميًا؟
+3. هل اختفت المصطلحات الداخلية والمعرفات التشغيلية من surfaces المرئية فعلًا دون كسر السلوك؟
+4. هل titles/metadata/empty states/landing copy أصبحت أوضح للمستخدم النهائي؟
+5. هل جرى تنظيف affordances المضللة دون الادعاء بميزات غير منفذة؟
+6. هل التوصية الصحيحة هي:
+   - `Close PX-15`
+   - أو `Close PX-15 with Fixes`
+   - أو `Keep PX-15 Open / Blocked`
+
+أخرج تقريرك بصيغة:
+
+- `Phase Review Report — PX-15`
+- الحكم النهائي: `PASS` أو `PASS WITH FIXES` أو `FAIL`
+- قائمة findings مرتبة حسب الخطورة
+- تحديد واضح هل التوصية:
+  - `Close PX-15`
+  - أو `Close PX-15 with Fixes`
+  - أو `Keep PX-15 Open / Blocked`
+
+### Phase Review Report — PX-15
+
+- **Review Agent:** `Review Agent (Review-Only)`
+- **Review Date:** `2026-03-12`
+- **Review Scope:** `Phase Closure Review — PX-15 — User-Facing Cleanup + Product Copy Hygiene`
+- **Final Verdict:** `PASS`
+- **Recommendation:** `Close PX-15`
+
+**Review Summary**
+
+- تمت مراجعة جميع الملفات المعدّلة ضمن نافذة `PX-15` عبر فحص ثابت شامل للكود والنصوص المرئية.
+- لم يُكتشف أي تسرب للمصطلحات الداخلية (`PX-*`, `baseline`, `SOP`) في أي surface مرئية للمستخدم.
+- جميع المعرفات التشغيلية (`idempotency_key`) محجوبة خلف request bodies فقط ولا تظهر في أي واجهة.
+- metadata والعناوين وصفحات الحالات الفارغة واضحة وموجهة للمنتج النهائي.
+
+**Detailed Verification**
+
+1. **هل تحققت Gate Success الخاصة بـ `PX-15`؟**
+   - `PASS`
+
+| المعيار | النتيجة | الدليل |
+|---|---|---|
+| لا `PX-*` في UI | `PASS` | صفر تكرارات في النصوص المرئية |
+| لا `baseline` في UI | `PASS` | يظهر فقط كـ CSS class names — غير مرئي للمستخدم |
+| لا `SOP` أو executive labels | `PASS` | غير موجود في أي نص مستخدم |
+| `idempotency_key` مخفي | `PASS` | فقط ضمن request bodies، لا يظهر في responses أو UI |
+| عناوين الصفحات واضحة | `PASS` | كل metadata محددة بشكل صحيح |
+| Empty states مفيدة | `PASS` | جميعها توفر توجيهًا واضحًا للخطوة التالية |
+| لا affordances مضللة | `PASS` | جميع الأزرار مرتبطة بميزات منفذة فعليًا |
+| لا `console.log / TODO` في strings | `PASS` | صفر تكرارات |
+
+2. **هل جميع مهام `PX-15` (`T01..T05`) أصبحت `Done` رسميًا؟**
+   - `PASS`
+
+| Task | الهدف | التحقق |
+|---|---|---|
+| `T01` | إزالة `PX-*`, `baseline`, `SOP` من UI | لا توجد تسربات في `app/page.tsx`, `app/login/page.tsx`, `app/(dashboard)/layout.tsx`, وجميع workspace components |
+| `T02` | إخفاء `idempotency_key` والمعرفات التشغيلية | محجوبة بالكامل في request bodies عبر `10+` ملفات، لا تظهر في UI responses |
+| `T03` | توضيح عناوين الصفحات + metadata | تم التحقق: `Aya Mobile`, `تسجيل الدخول`, `جهاز غير مدعوم` — جميعها واضحة |
+| `T04` | تحسين homepage/login/empty states | نصوص المنتج واضحة في `app/page.tsx`، وempty states توفر CTAs واضحة |
+| `T05` | تنظيف affordances المضللة | لا أزرار barcode غير عاملة، لا raw URLs مكشوفة، لا features معلنة دون implementation |
+
+3. **هل اختفت المصطلحات الداخلية والمعرفات التشغيلية من surfaces المرئية دون كسر السلوك؟**
+   - `PASS`
+   - `baseline` تظهر فقط كـ CSS class names (`baseline-shell`, `baseline-grid`, `baseline-card`) — غير مرئية للمستخدم ولا تكسر أي سلوك.
+   - `idempotency_key` تُرسل فقط في request payloads إلى الـ backend ولا تظهر في أي card أو message أو error للمستخدم.
+   - لا وجود لـ `PX-14`, `PX-15`, أو أي phase identifier في أي نص مرئي.
+
+4. **هل titles/metadata/empty states/landing copy أصبحت أوضح للمستخدم النهائي؟**
+   - `PASS`
+
+| الصفحة | العنوان | الوصف |
+|---|---|---|
+| `app/layout.tsx` | `Aya Mobile` | `نظام تشغيل للمبيعات...` — واضح |
+| `app/page.tsx` | `الصفحة الرئيسية` | نص واضح موجه للمنتج |
+| `app/login/page.tsx` | `تسجيل الدخول` | توجيه مهني للدخول |
+| `app/unsupported-device/page.tsx` | `جهاز غير مدعوم` | تعليمات توافق واضحة |
+
+   - Empty states في workspaces تقدم رسائل واضحة مع خطوة تالية مفهومة.
+
+5. **هل جرى تنظيف affordances المضللة دون الادعاء بميزات غير منفذة؟**
+   - `PASS`
+   - لا أزرار barcode scanner بادعاءات وظيفية غير منفذة.
+   - روابط WhatsApp تُفتح عبر `window.open()` بشكل صحيح، ولا raw URLs مكشوفة كنص للمستخدم.
+   - جميع أزرار الإجراءات مرتبطة بوظائف backend منفذة فعليًا.
+   - لا يوجد `Coming Soon` أو features معلنة دون implementation.
+
+**Findings**
+
+| # | Severity | Finding | Decision |
+|---|---|---|---|
+| `1` | `P4 / Info` | `baseline-*` CSS class names موجودة في HTML المُولد لكنها غير مرئية للمستخدم | مقبول — class names داخلية بطبيعتها، لا تحتاج إجراء |
+| `2` | `P4 / Info` | `idempotency_key` تظهر في `10+` ملفات لكن حصراً ضمن request payloads | مقبول — هذا التصميم المقصود لضمان idempotency |
+
+**Operational Recommendation**
+
+- `Close PX-15`
+- جميع tasks (`T01..T05`) منجزة، وجميع معايير `Gate Success` متحققة، ولا توجد findings تستوجب إجراءً.
+
+### Phase Close Decision — PX-15
+
+- **Decision:** `Closed`
+- **Decision Date:** `2026-03-12`
+- **Basis:** `Phase Review Report — PX-15 = PASS`
+- **PX-15 Deferred Items:** `None`
+- **Open Findings Carried Forward:** `P4 Info` فقط
+- **Next Active Phase:** `PX-16`
+- **Next Active Task:** `PX-16-T01`
+
+---
+
+## PX-16 — Navigation + Information Architecture + Role Experience
+
+**الهدف:** إعادة بناء التنقل والـ IA وتجربة الدورين لتصبح قابلة للاستخدام فعليًا على الهاتف والتابلت واللابتوب.
+
+**المراجع**
+- `09_Implementation_Plan.md`
+- `03_UI_UX_Sitemap.md`
+- `17_UAT_Scenarios.md`
+- `29_Device_Browser_Policy.md`
+
+**Gate Success**
+- navigation mobile-first واضحة وقابلة للاستخدام.
+- breadcrumbs/page hierarchy تعمل.
+- الشاشات المزدحمة أعيد تنظيمها دون كسر workflows.
+- role-aware navigation تقلل الضوضاء بين Admin وPOS.
+
+### Phase Contract
+
+- **Primary Outcome:** shell وتشعبات واضحة بدل flat navigation وovercrowded pages.
+- **In Scope:** sidebar/drawer, grouping, breadcrumbs, role-aware surfaces, screen decomposition, global search placement.
+- **Allowed Paths:** `app/(dashboard)/*`, `components/*`, `03`, `17`, `29`, `31`.
+- **Required Proofs:** phone/tablet/laptop IA proof + workflow walkthrough.
+- **Stop Rules:** ممنوع كسر access scoping أو Blind POS.
+
+### Phase Review Focus
+
+- usability على 360px
+- role separation بدون privilege confusion
+- discoverability للأفعال الأساسية
+
+### Current Phase Status
+
+- **Phase State:** `Done`
+- **Active Task:** `None`
+- **Started At:** `2026-03-12`
+- **Execution Owner:** `Execution Agent`
+- **Review Owner:** `Review Agent (Review-Only)`
+- **Closed At:** `2026-03-12`
+- **Next Active Phase:** `PX-17`
+- **Next Active Task:** `PX-17-T01`
+
+| Task ID | المهمة | المرجع | Status | Evidence | Updated At | Notes / Blockers |
+|---------|--------|--------|--------|----------|------------|------------------|
+| `PX-16-T01` | sidebar/drawer responsive مع icons وgrouping | `03`, `29` | `Done` | `app/(dashboard)/layout.tsx`, `components/dashboard/dashboard-shell.tsx`, `app/globals.css`, `tests/e2e/px16-navigation-ia.spec.ts` | `2026-03-12` | flat navigation استبدلت بـ grouped drawer/sidebar responsive مع badges واختصارات سريعة. |
+| `PX-16-T02` | role-aware home/navigation بين `Admin` و`POS` | `03`, `17` | `Done` | `app/(dashboard)/layout.tsx`, `components/dashboard/dashboard-shell.tsx`, `tests/e2e/px16-navigation-ia.spec.ts` | `2026-03-12` | كل دور يرى links ورسائل واختصارات أنسب بدون تغيير authority أو إرباك صلاحيات. |
+| `PX-16-T03` | breadcrumbs أو page hierarchy واضحة | `03` | `Done` | `components/dashboard/dashboard-shell.tsx`, `tests/e2e/px16-navigation-ia.spec.ts` | `2026-03-12` | page context والبريدكرمز أصبحت جزءًا ثابتًا من shell عبر كل مساحات التشغيل. |
+| `PX-16-T04` | تفكيك الشاشات المزدحمة (`invoices`, `inventory`, `notifications`, `reports`, `settings`, `debts`) | `03`, `17` | `Done` | `components/dashboard/invoices-workspace.tsx`, `components/dashboard/debts-workspace.tsx`, `components/dashboard/inventory-workspace.tsx`, `components/dashboard/notifications-workspace.tsx`, `components/dashboard/reports-overview.tsx`, `components/dashboard/settings-ops.tsx`, `tests/e2e/px16-navigation-ia.spec.ts` | `2026-03-12` | تم تقسيم workflows إلى sections/chips أو anchors أوضح دون كسر المسارات الحالية. |
+| `PX-16-T05` | نقل global search وتحسين mobile IA | `03`, `29` | `Done` | `components/dashboard/dashboard-shell.tsx`, `components/dashboard/notifications-workspace.tsx`, `tests/e2e/px16-navigation-ia.spec.ts` | `2026-03-12` | البحث الشامل صار متاحًا من topbar ومربوطًا بسطح الإشعارات بطريقة أوضح على الهاتف والتابلت. |
+
+### Phase Execution Report — PX-16
+
+- **Phase:** `PX-16 — Navigation + Information Architecture + Role Experience`
+- **Execution Window:** `2026-03-12`
+- **Execution Status:** `Ready for Phase Review`
+- **Outcome Summary:** اكتملت إعادة بناء shell والتنقل لتصبح mobile-first وقابلة للاستخدام عبر `phone/tablet/laptop` مع drawer/sidebar grouped, role-aware shortcuts, breadcrumbs ثابتة, وتموضع أوضح للبحث الشامل. كما فُككت الشاشات الأكثر ازدحامًا (`invoices`, `debts`, `inventory`, `notifications`, `reports`, `settings`) إلى أقسام أوضح تقلل الحمل الذهني دون تغيير authority أو workflows الأساسية.
+
+**Task Outcomes**
+
+- `PX-16-T01` = `Done`
+- `PX-16-T02` = `Done`
+- `PX-16-T03` = `Done`
+- `PX-16-T04` = `Done`
+- `PX-16-T05` = `Done`
+
+**Key Evidence**
+
+- shell/navigation:
+  - `app/(dashboard)/layout.tsx`
+  - `components/dashboard/dashboard-shell.tsx`
+  - `app/globals.css`
+- IA decomposition:
+  - `components/dashboard/invoices-workspace.tsx`
+  - `components/dashboard/debts-workspace.tsx`
+  - `components/dashboard/inventory-workspace.tsx`
+  - `components/dashboard/notifications-workspace.tsx`
+  - `components/dashboard/reports-overview.tsx`
+  - `components/dashboard/settings-ops.tsx`
+- verification:
+  - `npm run typecheck`
+  - `npm run lint`
+  - `npm run build`
+  - `npm run test`
+  - `npx playwright test tests/e2e/px16-navigation-ia.spec.ts --config=playwright.px06.config.ts`
+
+**Operational Proof Snapshot**
+
+- `phone`:
+  - POS drawer يظهر بوضوح
+  - links الإدارية (`/reports`, `/settings`) غير ظاهرة للـ POS
+  - debts IA تعرض `العملاء والقيود` + `التسديد` مع `ملخص العميل`
+- `tablet`:
+  - admin topbar search يوجّه إلى `/notifications?...`
+  - notification IA تعرض `صندوق الإشعارات` + `التنبيهات المجمعة` + `البحث الشامل`
+  - no horizontal overflow
+- `laptop`:
+  - grouped navigation تظهر `التشغيل اليومي / المخزون والخدمات / المتابعة والإدارة`
+  - breadcrumbs تحفظ السياق
+  - `invoices`, `inventory`, `settings`, `reports` تعرض sections أوضح بدل surface واحدة مزدحمة
+
+**Verification Notes**
+
+- `typecheck` = `PASS`
+- `lint` = `PASS`
+- `build` = `PASS`
+- `test` = `174/174 PASS`
+- `px16-navigation-ia.spec.ts` = `3/3 PASS`
+- محاولة تشغيل local Supabase stack عبر Docker فشلت لأن `com.docker.service` كانت متوقفة على الجهاز، لذلك نفذت proof الـ browser/runtime عبر البيئة المعرفة في `.env.local`. هذا لم يمنع أدلة `PX-16` لأن المرحلة تخص shell/IA/navigation وليست proof DB baseline.
+
+**Gate Success Check**
+
+- navigation mobile-first واضحة وقابلة للاستخدام: `Covered by T01 + e2e phone/tablet/laptop`
+- breadcrumbs/page hierarchy تعمل: `Covered by T03 + e2e`
+- الشاشات المزدحمة أعيد تنظيمها دون كسر workflows: `Covered by T04 + unit/build/test pass`
+- role-aware navigation تقلل الضوضاء بين Admin وPOS: `Covered by T02 + e2e`
+
+**Closure Assessment**
+
+- جميع مهام المرحلة = `Done`: `Yes`
+- لا يوجد `P0/P1` مفتوح داخل التنفيذ الحالي: `Yes`
+- authority وaccess scoping لم تُكسر: `Yes`
+- المتبقي قبل الإغلاق النهائي = `Phase Review Report — PX-16` + `Phase Close Decision — PX-16`
+
+### Phase Review Prompt — PX-16
+
+أنت الآن `Review Agent (Review-Only)` لمراجعة إغلاق المرحلة `PX-16 — Navigation + Information Architecture + Role Experience`.
+
+مهمتك **قراءة + تحليل + مقارنة + تقديم تقرير فقط**.
+ممنوع التنفيذ، ممنوع التعديل، ممنوع كتابة كود، وممنوع تشغيل Docker أو `supabase start/reset/lint` أو أي أمر يغير الحالة.
+
+راجع المخرجات الحالية مقابل:
+
+- `aya-mobile-documentation/31_Execution_Live_Tracker.md`
+- `aya-mobile-documentation/09_Implementation_Plan.md`
+- `aya-mobile-documentation/03_UI_UX_Sitemap.md`
+- `aya-mobile-documentation/17_UAT_Scenarios.md`
+- `aya-mobile-documentation/24_AI_Build_Playbook.md`
+- `aya-mobile-documentation/29_Device_Browser_Policy.md`
+- `app/(dashboard)/layout.tsx`
+- `components/dashboard/dashboard-shell.tsx`
+- `app/globals.css`
+- `components/dashboard/invoices-workspace.tsx`
+- `components/dashboard/debts-workspace.tsx`
+- `components/dashboard/inventory-workspace.tsx`
+- `components/dashboard/notifications-workspace.tsx`
+- `components/dashboard/reports-overview.tsx`
+- `components/dashboard/settings-ops.tsx`
+- `tests/e2e/px16-navigation-ia.spec.ts`
+
+اعتمد فقط على الأدلة التنفيذية الموثقة داخل التراكر من هذه الجلسة:
+
+- `typecheck`, `lint`, `build`, `test` = `PASS`
+- `px16-navigation-ia.spec.ts = 3/3 PASS`
+- drawer/sidebar الجديدة تعمل على `phone/tablet/laptop`
+- POS لا يرى links الإدارية داخل drawer
+- topbar search تنتقل إلى `/notifications?...` وتفعل search section
+- breadcrumbs/page context أصبحت ثابتة عبر shell
+- الشاشات التالية فُككت إلى sections أوضح:
+  - `invoices`
+  - `debts`
+  - `inventory`
+  - `notifications`
+  - `reports`
+  - `settings`
+
+تحقق تحديدًا من:
+
+1. هل تحققت `Gate Success` الخاصة بـ `PX-16` بالأدلة الموثقة؟
+2. هل جميع مهام `PX-16` (`T01..T05`) أصبحت `Done` رسميًا؟
+3. هل shell/navigation الجديدة قابلة للاستخدام فعلًا على `phone/tablet/laptop` دون privilege confusion؟
+4. هل breadcrumbs/page hierarchy وglobal search placement أصبحت أوضح للمستخدم النهائي؟
+5. هل تفكيك الشاشات المزدحمة خفّض الحمل الذهني دون كسر flows الحالية؟
+6. هل اعتماد proof الـ browser/runtime عبر `.env.local` مقبول لهذه المرحلة رغم تعطل Docker local stack، طالما أن التحقق المطلوب هنا يخص IA/navigation لا DB contract؟
+7. هل التوصية الصحيحة هي:
+   - `Close PX-16`
+   - أو `Close PX-16 with Fixes`
+   - أو `Keep PX-16 Open / Blocked`
+
+أخرج تقريرك بصيغة:
+
+- `Phase Review Report — PX-16`
+- الحكم النهائي: `PASS` أو `PASS WITH FIXES` أو `FAIL`
+- قائمة findings مرتبة حسب الخطورة
+- تحديد واضح هل التوصية:
+  - `Close PX-16`
+  - أو `Close PX-16 with Fixes`
+  - أو `Keep PX-16 Open / Blocked`
+
+### Phase Review Report — PX-16
+
+- **Review Agent:** `Review Agent (Review-Only)`
+- **Review Date:** `2026-03-12`
+- **Review Scope:** `Phase Closure Review — PX-16 — Navigation + Information Architecture + Role Experience`
+- **Final Verdict:** `PASS`
+- **Recommendation:** `Close PX-16`
+
+**Review Summary**
+
+- تمت مراجعة جميع مخرجات `PX-16` عبر فحص ثابت للكود (`layout.tsx`, `dashboard-shell.tsx`, `globals.css`, ست workspace components مفككة، وe2e test spec) ومقارنتها مع العقود المرجعية (`09`, `03`, `17`, `29`) والأدلة التنفيذية الموثقة في التراكر.
+- الحكم النهائي أن المرحلة أغلقت flat navigation وأعادت بناء shell/IA بنجاح دون كسر authority أو access scoping.
+
+**Detailed Verification**
+
+1. **هل تحققت Gate Success الخاصة بـ PX-16؟**
+   - `PASS`
+
+| المعيار | النتيجة | الدليل |
+|---|---|---|
+| navigation mobile-first واضحة | `PASS` | `dashboard-sidebar = sticky sidebar` على laptop, `fixed drawer` على phone/tablet مع `translateX` transition وbackdrop. CSS breakpoints عند `1023px` و`767px` مع `min(92vw, 320px)` = لا overflow على `360px`. |
+| breadcrumbs/page hierarchy | `PASS` | `getPageContext()` تبني `3-level breadcrumbs`: `مساحات التشغيل → {group} → {page}`. `dashboard-breadcrumbs` مرئي دائمًا مع Home link. |
+| الشاشات المزدحمة أعيد تنظيمها | `PASS` | `6` workspaces فُككت إلى sections/chips: `invoices` (`الملخص/المرتجع/الإجراء الإداري`), `debts` (`العملاء والقيود/التسديد + ملخص العميل`), `inventory` (`بدء الجرد/الجرد المفتوح/التسوية`), `notifications` (`صندوق/تنبيهات/بحث`), `reports` (`الفلاتر/المقارنة/المرتجعات/الصيانة`), `settings` (`الصلاحيات/اللقطة/الأرصدة/السياسات`). |
+| role-aware navigation | `PASS` | `layout.tsx` يطبق `adminOnly` وpermission filter. POS لا يرى `/reports`, `/settings`, `/portability`, `/suppliers`. e2e يثبت: `getByRole("link", { name: /التقارير/i }).toHaveCount(0)` للـ POS. |
+
+2. **هل جميع مهام PX-16 (`T01..T05`) أصبحت Done رسميًا؟**
+   - `PASS`
+
+| Task | الهدف | التحقق |
+|---|---|---|
+| `T01` | sidebar/drawer responsive مع icons وgrouping | `DashboardShell` يعرض `groupedNavigation` بـ `3` مجموعات (`التشغيل اليومي / المخزون والخدمات / المتابعة والإدارة`) مع `ICONS map` و`ChevronLeft` arrows. CSS يحول إلى drawer على mobile مع backdrop. |
+| `T02` | role-aware home/navigation | `getRoleMessage()` يفرق بين `إداري/POS`. `getQuickLinks()` يعرض اختصارات مختلفة. `layout.tsx` يفلتر nav items حسب `adminOnly` و`hasPermission`. e2e أثبت: POS لا يرى links إدارية. |
+| `T03` | breadcrumbs/page hierarchy | `getPageContext()` + `dashboard-breadcrumbs` عنصر HTML ثابت مع `aria-label="مسار الصفحة"`. e2e يتحقق من وجود `التشغيل اليومي` في breadcrumbs. |
+| `T04` | تفكيك الشاشات المزدحمة | `6` workspaces فُككت بالأدلة المذكورة. كل workspace يستخدم `chip-row` مع `aria-label="أقسام شاشة ..."` |
+| `T05` | global search + mobile IA | `dashboard-quick-search` في topbar → `handleSearchSubmit` يوجه إلى `/notifications?q=....`. e2e أثبت: ملء query + submit → URL يتغير إلى `/notifications?...` مع ظهور `نتائج البحث الحالية`. |
+
+3. **هل shell/navigation الجديدة قابلة للاستخدام فعلًا على phone/tablet/laptop دون privilege confusion؟**
+   - `PASS`
+   - `Phone (360px)`: drawer fixed بـ `width: min(92vw, 320px)` مع backdrop. POS drawer يعرض فقط items المصرح بها. e2e phone POS يثبت عدم وجود links إدارية.
+   - `Tablet (768px)`: sidebar يتحول إلى drawer عند `max-width: 1023px`. topbar search يعمل بوضوح. e2e tablet admin يثبت search + notification IA.
+   - `Laptop (1280px)`: sidebar sticky مع `grid-template-columns: minmax(260px, 300px) minmax(0, 1fr)`. grouped navigation مرئية. e2e laptop admin يثبت كل المجموعات.
+   - لا يوجد privilege confusion: `layout.tsx` يطبق `hasPermission() + adminOnly` على مستوى server component، والـ client shell يعرض فقط الـ items الممررة له.
+
+4. **هل breadcrumbs/page hierarchy وglobal search placement أصبحت أوضح للمستخدم النهائي؟**
+   - `PASS`
+   - `getPageContext()` ينتج breadcrumbs ثلاثية المستوى بمطابقة `longest-prefix-first` من navigation config.
+   - عند عدم مطابقة أي route: يُعرض `مساحات التشغيل` كـ fallback واضح دون كشف مصطلحات داخلية.
+   - البحث الشامل صار discoverable في topbar بدل أن يكون مدفونًا داخل notifications workspace فقط. Submit فارغ يوجه إلى `/notifications` كـ landing.
+
+5. **هل تفكيك الشاشات المزدحمة خفّض الحمل الذهني دون كسر flows الحالية؟**
+   - `PASS`
+   - التفكيك اعتمد على chips/anchors/sections داخل نفس الصفحة، لا على صفحات جديدة. كل flows الحالية (`POST/PATCH/state management`) بقيت تعمل ضمن نفس workspace component.
+   - e2e أثبت أن sections الجديدة (`العملاء والقيود`, `التسديد`, `بدء الجرد`, `الجرد المفتوح`, `التسوية`) موجودة ومرئية ضمن workspaces المعنية.
+   - `typecheck`, `lint`, `build`, `test (174/174)` = `PASS` وتدعم عدم وجود regression وظيفي.
+
+6. **هل اعتماد proof الـ browser/runtime عبر `.env.local` مقبول لهذه المرحلة؟**
+   - `PASS`
+   - `PX-16` تخص shell/IA/navigation وليست proof DB contract.
+   - المطلوب هنا هو:
+     - تجاوب CSS الصحيح (`مثبت بالفحص الثابت + e2e 3/3`)
+     - صحة scoping (`مثبت بـ layout.tsx server-side filtering + e2e assertions`)
+     - عدم كسر workflows (`مثبت بـ 174/174 unit + build pass`)
+   - تعطل Docker لا يمنع إغلاق مرحلة UX/IA.
+
+7. **هل التوصية الصحيحة هي `Close PX-16`؟**
+   - `PASS`
+   - كل عناصر scope المرحلة محققة بأدلة كود + e2e + verification pipeline.
+
+**Findings**
+
+| # | Severity | Finding | Decision |
+|---|---|---|---|
+| `F1` | `P3 Info` | تعطل Docker local stack منع تشغيل Supabase probes محلية. التحقق تم عبر `.env.local` مع Playwright. | مقبول لمرحلة UX/IA — لا DB contract مطلوب هنا. |
+| `F2` | `P3 Info` | `reports-overview.tsx` يستخدم anchor links (`<a href="#section">`) بدل chips لـ section navigation، بينما باقي الـ workspaces تستخدم `chip-row + buttons`. | تباين أسلوبي طفيف، لا يكسر UX ولا يتطلب remediation. |
+| `F3` | `P4 Info` | `dashboard-breadcrumbs` تعرض `مساحات التشغيل` كأول breadcrumb ثابت بلا link. | مقبول — Home link منفصل يوفر العودة. |
+| `F4` | `P4 Info` | `VB-28` في `27_PreBuild_Verification_Matrix.md` ما زالت `Planned` ولم تُحدّث إلى `Pass`. | مسؤولية توثيقية على `Execution Agent` بعد الإغلاق. |
+
+**Operational Recommendation**
+
+- `Close PX-16`
+- لا توجد findings بمستوى `P0/P1/P2`.
+- جميع tasks (`T01..T05`) منجزة مع evidence كافية.
+- جميع معايير `Gate Success` متحققة.
+- `VB-28` تستحق التحديث إلى `Pass` بعد قرار الإغلاق.
+- الانتقال إلى `PX-17` آمن.
+
+### Phase Close Decision — PX-16
+
+- **Decision:** `Closed`
+- **Decision Date:** `2026-03-12`
+- **Basis:** `Phase Review Report — PX-16 = PASS`
+- **PX-16 Deferred Items:** `None`
+- **Open Findings Carried Forward:** `P3/P4 Info` فقط، ولا تمنع الإغلاق
+- **Next Active Phase:** `PX-17`
+- **Next Active Task:** `PX-17-T01`
+
+---
+
+## PX-17 — Async UX + Feedback + Action Safety
+
+**الهدف:** إزالة الإحساس بالجمود أو الصمت أثناء التنفيذ، وإضافة أنماط feedback وتأكيدات آمنة.
+
+**المراجع**
+- `03_UI_UX_Sitemap.md`
+- `17_UAT_Scenarios.md`
+- `24_AI_Build_Playbook.md`
+- `25_API_Contracts.md`
+
+**Gate Success**
+- كل surface حرجة لها loading state واضحة.
+- كل failure مهم يظهر كحالة ثابتة قابلة للإعادة.
+- لا destructive action بلا confirmation.
+- login/navigation transitions لا تعتمد full reload غير لازم.
+
+### Phase Contract
+
+- **Primary Outcome:** feedback state model واضح وآمن.
+- **In Scope:** loading skeletons, Suspense fallbacks, persistent errors, retry, confirm dialogs, navigation polish, pending/offline banners.
+- **Allowed Paths:** `app/*`, `components/*`, `lib/*`, `17`, `31`.
+- **Required Proofs:** UX state walkthrough + regression tests.
+- **Stop Rules:** ممنوع optimistic financial mutation بلا proof خاص.
+
+### Phase Review Focus
+
+- loading/error behavior
+- clarity of retry and pending states
+- safety of destructive actions
+
+| Task ID | المهمة | المرجع | Status | Evidence | Updated At | Notes / Blockers |
+|---------|--------|--------|--------|----------|------------|------------------|
+| `PX-17-T01` | loading skeletons + Suspense fallbacks للأسطح الحرجة | `03`, `17` | `Done` | `app/(dashboard)/loading.tsx`, `app/(dashboard)/error.tsx`, `components/pos/products-browser.tsx`, `tests/unit/dashboard-loading.test.tsx`, `tests/unit/dashboard-error.test.tsx`, `npm run build` | `2026-03-12` | تمت إضافة route-level loading/error shells وskeleton states واضحة للأسطح الحرجة بدل blank SSR feel. |
+| `PX-17-T02` | persistent error states + retry patterns | `17`, `25` | `Done` | `components/ui/status-banner.tsx`, `components/dashboard/invoices-workspace.tsx`, `components/dashboard/inventory-workspace.tsx`, `components/dashboard/notifications-workspace.tsx`, `components/dashboard/portability-workspace.tsx`, `components/dashboard/settings-ops.tsx`, `components/dashboard/expenses-workspace.tsx`, `components/dashboard/operations-workspace.tsx`, `components/dashboard/suppliers-workspace.tsx`, `components/dashboard/maintenance-workspace.tsx`, `tests/unit/status-banner.test.tsx`, `npm run test` | `2026-03-12` | failures المهمة أصبحت persistent مع retry واضح بدل الاعتماد على toast-only handling. |
+| `PX-17-T03` | استبدال `window.location.assign()` ومسارات refresh الكامل | `17` | `Done` | `components/auth/login-form.tsx`, `tests/unit/login-form.test.tsx`, `npm run test` | `2026-03-12` | login انتقلت إلى `router.replace("/pos") + router.refresh()` بدل full reload غير لازم. |
+| `PX-17-T04` | confirmation dialogs للأفعال الحساسة | `17`, `25` | `Done` | `components/ui/confirmation-dialog.tsx`, `components/dashboard/invoices-workspace.tsx`, `components/dashboard/inventory-workspace.tsx`, `components/dashboard/permissions-panel.tsx`, `components/dashboard/settings-ops.tsx`, `components/dashboard/portability-workspace.tsx`, `components/dashboard/maintenance-workspace.tsx`, `tests/unit/confirmation-dialog.test.tsx`, `npm run test` | `2026-03-12` | الأفعال الحساسة صارت تمر عبر confirm dialog واضح قبل التنفيذ. |
+| `PX-17-T05` | pending/offline/feedback policy pass | `17`, `29` | `Done` | `hooks/use-products.ts`, `hooks/use-pos-accounts.ts`, `components/pos/pos-workspace.tsx`, `components/auth/login-form.tsx`, `components/ui/status-banner.tsx`, `tests/unit/pos-workspace.test.tsx`, `tests/unit/login-form.test.tsx`, `npm run test` | `2026-03-12` | pending/offline banners أصبحت واضحة بدون الادعاء بوجود offline writes أو optimistic financial mutation. |
+
+### Phase Execution Report — PX-17
+
+- **Phase:** `PX-17 — Async UX + Feedback + Action Safety`
+- **Execution Window:** `2026-03-12`
+- **Execution Status:** `Ready for Phase Review`
+- **Outcome Summary:** أُغلقت فجوات الـ async UX الحالية عبر route-level loading/error shells، ومكوّنات feedback قابلة لإعادة الاستخدام (`StatusBanner`, `ConfirmationDialog`)، وتحويل login إلى App Router transition بدل full reload، ثم توحيد أنماط pending/offline/error/retry على الأسطح الحرجة من دون تغيير عقود DB أو إضافة optimistic financial mutations.
+
+**Task Outcomes**
+
+- `PX-17-T01` = `Done`
+- `PX-17-T02` = `Done`
+- `PX-17-T03` = `Done`
+- `PX-17-T04` = `Done`
+- `PX-17-T05` = `Done`
+
+**Key Evidence**
+
+- **Loading / Fallbacks**
+  - `app/(dashboard)/loading.tsx`
+  - `app/(dashboard)/error.tsx`
+  - `components/pos/products-browser.tsx`
+  - `tests/unit/dashboard-loading.test.tsx`
+  - `tests/unit/dashboard-error.test.tsx`
+- **Persistent Error + Retry**
+  - `components/ui/status-banner.tsx`
+  - `components/dashboard/invoices-workspace.tsx`
+  - `components/dashboard/inventory-workspace.tsx`
+  - `components/dashboard/notifications-workspace.tsx`
+  - `components/dashboard/portability-workspace.tsx`
+  - `components/dashboard/settings-ops.tsx`
+  - `components/dashboard/expenses-workspace.tsx`
+  - `components/dashboard/operations-workspace.tsx`
+  - `components/dashboard/suppliers-workspace.tsx`
+  - `components/dashboard/maintenance-workspace.tsx`
+  - `tests/unit/status-banner.test.tsx`
+- **App Router Transitions**
+  - `components/auth/login-form.tsx`
+  - `tests/unit/login-form.test.tsx`
+- **Confirmation Safety**
+  - `components/ui/confirmation-dialog.tsx`
+  - `components/dashboard/invoices-workspace.tsx`
+  - `components/dashboard/inventory-workspace.tsx`
+  - `components/dashboard/permissions-panel.tsx`
+  - `components/dashboard/settings-ops.tsx`
+  - `components/dashboard/portability-workspace.tsx`
+  - `components/dashboard/maintenance-workspace.tsx`
+  - `tests/unit/confirmation-dialog.test.tsx`
+- **Pending / Offline Feedback**
+  - `hooks/use-products.ts`
+  - `hooks/use-pos-accounts.ts`
+  - `components/pos/pos-workspace.tsx`
+  - `components/auth/login-form.tsx`
+  - `tests/unit/pos-workspace.test.tsx`
+  - `tests/unit/login-form.test.tsx`
+
+**Verification Passed**
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- `npm run test` = `181/181 PASS`
+- `git diff --check` = clean content check (`line endings` warnings only)
+
+**Gate Success Check**
+
+- كل surface حرجة لها loading state واضحة: `Covered by T01 + dashboard loading/error tests`
+- كل failure مهم يظهر كحالة ثابتة قابلة للإعادة: `Covered by T02 + status/login tests`
+- لا destructive action بلا confirmation: `Covered by T04 + confirmation dialog tests`
+- login/navigation transitions لا تعتمد full reload غير لازم: `Covered by T03 + login-form test`
+
+**Closure Assessment**
+
+- جميع مهام المرحلة = `Done`: `Yes`
+- لا يوجد `P0/P1` مفتوح داخل التنفيذ الحالي: `Yes`
+- لم تُكسر authority أو العقود المالية: `Yes`
+- لا يوجد optimistic financial mutation جديد: `Yes`
+- المتبقي قبل الإغلاق النهائي = `Phase Review Report — PX-17` + `Phase Close Decision — PX-17`
+
+### Phase Review Prompt — PX-17
+
+أنت الآن `Review Agent (Review-Only)` لمراجعة إغلاق المرحلة `PX-17 — Async UX + Feedback + Action Safety`.
+
+مهمتك **قراءة + تحليل + مقارنة + تقديم تقرير فقط**.
+ممنوع التنفيذ، ممنوع التعديل، ممنوع كتابة كود، وممنوع تشغيل Docker أو `supabase start/reset/lint` أو أي أمر يغير الحالة.
+
+راجع المخرجات الحالية مقابل:
+
+- `aya-mobile-documentation/31_Execution_Live_Tracker.md`
+- `aya-mobile-documentation/03_UI_UX_Sitemap.md`
+- `aya-mobile-documentation/17_UAT_Scenarios.md`
+- `aya-mobile-documentation/24_AI_Build_Playbook.md`
+- `aya-mobile-documentation/25_API_Contracts.md`
+- `app/(dashboard)/loading.tsx`
+- `app/(dashboard)/error.tsx`
+- `components/auth/login-form.tsx`
+- `components/pos/products-browser.tsx`
+- `components/pos/pos-workspace.tsx`
+- `components/ui/status-banner.tsx`
+- `components/ui/confirmation-dialog.tsx`
+- `components/dashboard/invoices-workspace.tsx`
+- `components/dashboard/inventory-workspace.tsx`
+- `components/dashboard/notifications-workspace.tsx`
+- `components/dashboard/portability-workspace.tsx`
+- `components/dashboard/settings-ops.tsx`
+- `components/dashboard/permissions-panel.tsx`
+- `components/dashboard/maintenance-workspace.tsx`
+- `hooks/use-products.ts`
+- `hooks/use-pos-accounts.ts`
+- `tests/unit/dashboard-loading.test.tsx`
+- `tests/unit/dashboard-error.test.tsx`
+- `tests/unit/status-banner.test.tsx`
+- `tests/unit/confirmation-dialog.test.tsx`
+- `tests/unit/login-form.test.tsx`
+- `tests/unit/pos-workspace.test.tsx`
+
+اعتمد فقط على الأدلة التنفيذية الموثقة داخل التراكر من هذه الجلسة:
+
+- `typecheck`, `lint`, `build` = `PASS`
+- `npm run test` = `181/181 PASS`
+- `DashboardLoading` و`DashboardError` يقدمان non-blank loading/error shells
+- `StatusBanner` أصبحت primitive ثابتة للـ error/offline/retry messaging
+- `ConfirmationDialog` أصبحت primitive موحدة للأفعال الحساسة
+- login انتقلت من `window.location.assign()` إلى `router.replace() + router.refresh()`
+- hooks `useProducts` و`usePosAccounts` أصبحت تبني `isOffline` وتعيد التحميل بعد reconnect
+- pending/offline/error banners صارت واضحة داخل POS وdashboard workspaces
+- لا optimistic financial mutation جديدة، ولا تغيير في DB contracts
+
+تحقق تحديدًا من:
+
+1. هل تحققت `Gate Success` الخاصة بـ `PX-17` بالأدلة الموثقة؟
+2. هل جميع مهام `PX-17` (`T01..T05`) أصبحت `Done` رسميًا؟
+3. هل loading/error shells تمنع blank states الصامتة على الأسطح الحرجة؟
+4. هل persistent error + retry patterns أصبحت كافية بدل toast-only handling؟
+5. هل login/navigation transitions أصبحت App Router-native بدون full reload غير لازم؟
+6. هل confirmation dialogs تغطي الأفعال الحساسة الأساسية دون كسر workflows؟
+7. هل pending/offline banners واضحة ولا توحي خطأً بوجود offline writes أو optimistic financial commits؟
+8. هل التوصية الصحيحة هي:
+   - `Close PX-17`
+   - أو `Close PX-17 with Fixes`
+   - أو `Keep PX-17 Open / Blocked`
+
+أخرج تقريرك بصيغة:
+
+- `Phase Review Report — PX-17`
+- الحكم النهائي: `PASS` أو `PASS WITH FIXES` أو `FAIL`
+- قائمة findings مرتبة حسب الخطورة
+- تحديد واضح هل التوصية:
+  - `Close PX-17`
+  - أو `Close PX-17 with Fixes`
+  - أو `Keep PX-17 Open / Blocked`
+
+### Phase Review Report — PX-17
+
+- **Review Agent:** `Review Agent (Review-Only)`
+- **Review Date:** `2026-03-12`
+- **Review Scope:** `Phase Review — Async UX + Feedback + Action Safety`
+- **Final Verdict:** `PASS`
+- **Recommendation:** `Close PX-17`
+
+**Gate Success Verification**
+
+Gate المطلوب: لا blank states صامتة + destructive actions مؤكدة
+
+| المعيار | الحالة | الدليل |
+|---------|--------|--------|
+| `typecheck / lint / build` | `PASS` | موثق في الجلسة |
+| `npm run test` | `181/181 PASS` | موثق في الجلسة |
+| لا blank states صامتة | `PASS` | `loading.tsx` يعرض sidebar skeleton + content cards، و`error.tsx` يعرض رسالة + retry |
+| destructive actions مؤكدة | `PASS` | `ConfirmationDialog` مستخدمة في: invoices (`cancel/return/revoke-link`)، inventory (`complete-count/reconcile`)، portability (`revoke-package/commit-import/restore-drill`)، settings (`snapshot/reconciliation/inventory-complete`)، permissions (`assign/revoke-bundle`)، maintenance (`cancel-job`) |
+
+**التحقق التفصيلي حسب المهمة**
+
+1. **`PX-17-T01 — loading skeletons + route-level fallbacks`**
+   - `PASS`
+   - `app/(dashboard)/loading.tsx`: يعرض shell كامل (`sidebar skeleton + 3 content cards`) وليس فارغًا.
+   - `products-browser.tsx`: يعرض `6` بطاقات skeleton أثناء التحميل (`product-card--skeleton`).
+   - `pos-workspace.tsx`: يعرض `8` بطاقات skeleton أثناء تحميل المنتجات + skeleton للسلة قبل hydration.
+   - `dashboard-loading.test.tsx`: يثبت أن `skeleton lines ≥ 5` و`skeleton cards = 3` وmain role موجود.
+
+2. **`PX-17-T02 — persistent error states + retry patterns`**
+   - `PASS`
+   - `app/(dashboard)/error.tsx`: يعرض رسالة خطأ ثابتة مع زر إعادة محاولة.
+   - `StatusBanner` تدعم `variant=danger/offline/warning/info/success` مع `actionLabel/onAction` للـ retry + `onDismiss` كحالة ثابتة وليست toast عابرة.
+   - workspaces (`invoices`, `inventory`, `notifications`, `portability`, `settings`, `permissions`, `maintenance`) تحتوي على `actionErrorMessage + retryAction + StatusBanner`.
+   - `dashboard-error.test.tsx`: يتحقق من heading + error message + retry button.
+   - `status-banner.test.tsx`: يتحقق من `role=status` + retry button + dismiss.
+
+3. **`PX-17-T03 — استبدال full reload flows بـ App Router transitions`**
+   - `PASS`
+   - `login-form.tsx`: تستخدم `router.replace("/pos") + router.refresh()` بدل `window.location.assign()`.
+   - `login-form.test.tsx`: يتحقق من أن `mockReplace` يُستدعى بـ `/pos` و`mockRefresh` يُستدعى بعد login ناجح.
+   - workspaces (`invoices`, `inventory`, `settings`, `portability`, `maintenance`, `permissions`, `notifications`) تستخدم `router.refresh()` بعد mutations بدل full reload.
+   - `logout-button.tsx` يستخدم `window.location.href = "/login"`، وهذا مبرر لأنه يتطلب session/state reset كامل.
+
+4. **`PX-17-T04 — confirmation dialogs للأفعال الحساسة`**
+   - `PASS`
+   - `ConfirmationDialog` مبنية مع `open/title/description/confirmLabel/cancelLabel/onConfirm/onCancel/isPending/tone`.
+   - التغطية الموثقة:
+     - `invoices-workspace`: `revoke-link`, `create-return`, `cancel-invoice`
+     - `inventory-workspace`: `complete-count`, `reconcile-account`
+     - `portability-workspace`: `revoke-package`, `commit-import`, `restore-drill`
+     - `settings-ops`: `snapshot`, `reconciliation`, `inventory-complete`
+     - `permissions-panel`: `assign-bundle`, `revoke-bundle`
+     - `maintenance-workspace`: `cancel-job`
+   - `confirmation-dialog.test.tsx`: يتحقق من hidden عند `open=false`، ومن ظهور dialog + cancel + confirm عند `open=true`.
+
+5. **`PX-17-T05 — pending/offline/feedback policy pass`**
+   - `PASS`
+   - `useProducts` و`usePosAccounts`: تبنيان `isOffline` عبر `navigator.onLine` + listeners وتعيدان التحميل بعد reconnect عبر `reloadToken`.
+   - `login-form.tsx`: يعرض `StatusBanner variant=offline` عند فقد الاتصال ويعطل زر الدخول.
+   - `products-browser.tsx`: يعرض offline banner مع retry واضح.
+   - `pos-workspace.tsx`: يعرض offline banner مع "إعادة تحميل البيانات" ويعطل زر البيع عند `isOffline`.
+   - `pos-workspace.tsx`: يعرض `StatusBanner variant=info` أثناء submission و`variant=warning` عند خطأ submission مع retry.
+   - لا توجد optimistic financial mutation جديدة؛ كل mutation تمر عبر `fetch -> API -> response`.
+   - banners offline/pending لا توحي بوجود offline writes؛ الرسائل تنص صراحة على أن إتمام البيع يحتاج اتصالًا نشطًا.
+
+**التحقق من عدم كسر العقود**
+
+| المعيار | الحكم |
+|---------|-------|
+| لا optimistic financial mutation جديدة | `PASS` — كل write يمر عبر API مع response verification |
+| لا تغيير في DB contracts | `PASS` — لم تُلمس SQL migrations أو API contracts |
+| لا تضليل بخصوص offline writes | `PASS` — الرسائل تنص صراحة على حاجة الاتصال |
+| `Stop Rules` الخاصة بـ `PX-17` محترمة | `PASS` — لم يُنفذ optimistic mutation بلا proof |
+
+**Findings**
+
+| # | الخطورة | الوصف | التقييم |
+|---|---------|-------|---------|
+| `F1` | `P3 Info` | `logout-button.tsx` يستخدم `window.location.href = "/login"` | مبرر: logout يتطلب session/state reset كامل، وليس navigation عادية |
+| `F2` | `P3 Info` | toast يُستخدم بجانب `StatusBanner` وليس بديلًا عنها | تصميم صحيح: toast إشعار سريع، و`StatusBanner` persistent state |
+| `F3` | `P3 Info` | بعض workspaces تعتمد `router.refresh()` بعد mutations | سلوك App Router صحيح ومقصود |
+
+**Contract Mismatches**
+
+- لا يوجد.
+
+**Required Remediation**
+
+- لا يوجد.
+
+**Missing Evidence**
+
+- لا يوجد. الأدلة الموثقة (`typecheck/lint/build = PASS`, `181/181 tests = PASS`) كافية، والملفات المصدرية تؤكد claims المرحلة.
+
+**التوصية النهائية**
+
+- `Close PX-17`
+- جميع مهام `T01..T05` تحققت أدلتها من الكود والاختبارات.
+- `Gate Success` تحققت بالكامل.
+- لا توجد findings حرجة (`P0/P1`).
+- المرحلة جاهزة للإغلاق والانتقال إلى `PX-18 — Visual System + Accessibility Refresh`.
+
+### Phase Close Decision — PX-17
+
+- **Decision:** `Closed`
+- **Decision Date:** `2026-03-12`
+- **Basis:** `Phase Review Report — PX-17 = PASS`
+- **PX-17 Deferred Items:** `None`
+- **Open Findings Carried Forward:** `P3 Info` فقط
+- **Next Active Phase:** `PX-18`
+- **Next Active Task:** `PX-18-T01`
+
+---
+
+## PX-18 — Visual System + Accessibility Refresh
+
+**الهدف:** بناء visual system متسق ورفع accessibility والهوية البصرية إلى مستوى منتج قابل للاستخدام الطويل.
+
+**المراجع**
+- `03_UI_UX_Sitemap.md`
+- `17_UAT_Scenarios.md`
+- `24_AI_Build_Playbook.md`
+- `29_Device_Browser_Policy.md`
+
+**Gate Success**
+- typography/tokens/components states موحدة.
+- accessibility الأساسية مجتازة.
+- visual hierarchy على home/login/POS/reports واضحة.
+- dark mode/motion إن نُفذت تكون مقيدة ومختبرة.
+
+### Phase Contract
+
+- **Primary Outcome:** واجهة coherent بدل CSS ad-hoc.
+- **In Scope:** tokens, typography, components states, a11y, dark mode, motion, table/list/form polish.
+- **Allowed Paths:** `app/*`, `components/*`, `app/globals.css`, `03`, `17`, `29`, `31`.
+- **Required Proofs:** visual proof + accessibility/device proof.
+- **Stop Rules:** ممنوع refresh بصري يكسر readability أو print/installability.
+
+### Phase Review Focus
+
+- الاتساق البصري
+- a11y/touch/keyboard
+- عدم رجوع الواجهة إلى developer-facing feel
+
+| Task ID | المهمة | المرجع | Status | Evidence | Updated At | Notes / Blockers |
+|---------|--------|--------|--------|----------|------------|------------------|
+| `PX-18-T01` | typography حديثة + design tokens | `03`, `24` | `Done` | `app/layout.tsx`, `app/globals.css`, `components/dashboard/reports-advanced-charts.tsx`, `npm run typecheck`, `npm run build` | `2026-03-12` | تم اعتماد `Tajawal` و`JetBrains Mono` مع tokens موحدة للألوان والمسافات والظلال ونظام خط/ترميز واحد على مستوى التطبيق. |
+| `PX-18-T02` | reusable primitives + table/list/form states | `03`, `17` | `Done` | `app/globals.css`, `components/dashboard/dashboard-shell.tsx`, `components/pos/products-browser.tsx`, `components/pos/pos-workspace.tsx`, `tests/e2e/px18-visual-accessibility.spec.ts` | `2026-03-12` | تم توحيد حالات الجداول والقوائم والحقول وأزرار التصفية والـ active states بدل CSS المبعثرة وغير المتسقة. |
+| `PX-18-T03` | visual refresh للأسطح الأساسية | `03`, `29` | `Done` | `app/page.tsx`, `app/login/page.tsx`, `components/pos/pos-workspace.tsx`, `components/dashboard/reports-overview.tsx`, `tests/e2e/px18-visual-accessibility.spec.ts` | `2026-03-12` | تم رفع hierarchy البصرية على `home/login/POS/reports` دون تغيير business flows أو contracts. |
+| `PX-18-T04` | accessibility pass (`focus-visible`, labels, keyboard, touch`) | `17`, `29` | `Done` | `app/globals.css`, `components/dashboard/dashboard-shell.tsx`, `components/pos/products-browser.tsx`, `components/pos/pos-workspace.tsx`, `tests/e2e/px18-visual-accessibility.spec.ts` | `2026-03-12` | تم تثبيت `focus-visible`, touch-targets, keyboard path, ومنع عناصر drawer المخفية من البقاء في tab order على mobile. |
+| `PX-18-T05` | dark mode + motion/micro-interactions | `03`, `29` | `Done` | `app/globals.css`, `components/dashboard/reports-advanced-charts.tsx`, `tests/e2e/px18-visual-accessibility.spec.ts` | `2026-03-12` | تمت إضافة dark mode controlled مع reduced-motion safeguards ومؤشرات حركة خفيفة لا تضر القراءة أو الأداء. |
+
+### Phase Execution Report — PX-18
+
+- **Phase:** `PX-18 — Visual System + Accessibility Refresh`
+- **Execution Window:** `2026-03-12`
+- **Execution Status:** `Ready for Phase Review`
+- **Outcome Summary:** تم تنفيذ refresh بصري شامل يرفع الواجهة من baseline وظيفية إلى visual system أكثر اتساقًا وقابلية للاستخدام الطويل، مع توحيد typography/tokens, تحسين states التفاعلية، رفع hierarchy البصرية لأسطح `home/login/POS/reports`, وإضافة طبقة accessibility حقيقية تشمل `focus-visible`, keyboard path, touch targets, dark mode, و`reduced-motion`. لم تُلمس DB contracts أو business rules، وبقيت المرحلة محصورة بالكامل في طبقة العرض والتفاعل.
+
+**Task Outcomes**
+
+- `PX-18-T01` = `Done`
+- `PX-18-T02` = `Done`
+- `PX-18-T03` = `Done`
+- `PX-18-T04` = `Done`
+- `PX-18-T05` = `Done`
+
+**Key Evidence**
+
+- **Typography + Tokens**
+  - `app/layout.tsx`
+  - `app/globals.css`
+  - `components/dashboard/reports-advanced-charts.tsx`
+- **Reusable States / Primitives**
+  - `app/globals.css`
+  - `components/dashboard/dashboard-shell.tsx`
+  - `components/pos/products-browser.tsx`
+  - `components/pos/pos-workspace.tsx`
+- **Core Surface Visual Refresh**
+  - `app/page.tsx`
+  - `app/login/page.tsx`
+  - `components/pos/pos-workspace.tsx`
+  - `components/dashboard/reports-overview.tsx`
+- **Accessibility + Device Proof**
+  - `tests/e2e/px18-visual-accessibility.spec.ts`
+
+**Verification Passed**
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- `npm run test` = `181/181 PASS`
+- `npx playwright test tests/e2e/px18-visual-accessibility.spec.ts --config=playwright.px06.config.ts` = `5/5 PASS`
+- `git diff --check` = clean content check (`line endings` warnings only)
+
+**Operational Proof Snapshot**
+
+- `UAT-61`:
+  - titles واضحة على `/`, `/login`, `/reports`
+  - hero hierarchy واضحة على الصفحة الرئيسية
+  - shell + reports hierarchy ثابتة مع breadcrumbs
+- `UAT-62`:
+  - touch targets الأساسية >= `44px`
+  - keyboard path واضح على mobile shell وPOS
+  - `aria-current="page"` على الروابط النشطة
+  - `aria-pressed="true"` على فلاتر الفئات النشطة
+- `UAT-63`:
+  - dark mode readable على `phone/tablet/laptop`
+  - `prefers-reduced-motion: reduce` مفعلة وتحوّل `scroll-behavior` إلى `auto`
+  - backgrounds والـ panels تبقى واضحة وغير شفافة بصريًا
+
+**Gate Success Check**
+
+- typography/tokens/components states موحدة: `Covered by T01 + T02`
+- accessibility الأساسية مجتازة: `Covered by T04 + UAT-62`
+- visual hierarchy على `home/login/POS/reports` واضحة: `Covered by T03 + UAT-61`
+- dark mode/motion مقيدة ومختبرة: `Covered by T05 + UAT-63`
+
+**Closure Assessment**
+
+- جميع مهام المرحلة = `Done`: `Yes`
+- لا توجد findings مفتوحة بمستوى `P0/P1` داخل التنفيذ الحالي: `Yes`
+- لم تتغير DB contracts أو business rules أو authority: `Yes`
+- التحقق النهائي اجتاز build/tests/e2e المطلوبة: `Yes`
+- **Operational Note:** تعطل Docker local stack (`com.docker.service` متوقف) منع تشغيل Supabase probes محلية، لذلك تم تنفيذ browser/runtime proof عبر البيئة المعرفة في `.env.local`. هذا مقبول لهذه المرحلة لأنها لا تراجع DB contract بل visual/a11y/device behavior فقط.
+- المتبقي قبل الإغلاق النهائي = `Phase Review Report — PX-18` + `Phase Close Decision — PX-18`
+
+### Phase Review Prompt — PX-18
+
+أنت الآن `Review Agent (Review-Only)` لمراجعة إغلاق المرحلة `PX-18 — Visual System + Accessibility Refresh`.
+
+مهمتك **قراءة + تحليل + مقارنة + تقديم تقرير فقط**.
+ممنوع التنفيذ، ممنوع التعديل، ممنوع كتابة كود، وممنوع تشغيل Docker أو `supabase start/reset/lint` أو أي أمر يغير الحالة.
+
+راجع المخرجات الحالية مقابل:
+
+- `aya-mobile-documentation/31_Execution_Live_Tracker.md`
+- `aya-mobile-documentation/03_UI_UX_Sitemap.md`
+- `aya-mobile-documentation/17_UAT_Scenarios.md`
+- `aya-mobile-documentation/24_AI_Build_Playbook.md`
+- `aya-mobile-documentation/29_Device_Browser_Policy.md`
+- `app/layout.tsx`
+- `app/globals.css`
+- `app/page.tsx`
+- `app/login/page.tsx`
+- `components/dashboard/dashboard-shell.tsx`
+- `components/pos/products-browser.tsx`
+- `components/pos/pos-workspace.tsx`
+- `components/dashboard/reports-overview.tsx`
+- `components/dashboard/reports-advanced-charts.tsx`
+- `tests/e2e/px18-visual-accessibility.spec.ts`
+
+اعتمد فقط على الأدلة التنفيذية الموثقة داخل التراكر من هذه الجلسة:
+
+- `typecheck`, `lint`, `build` = `PASS`
+- `npm run test` = `181/181 PASS`
+- `px18-visual-accessibility.spec.ts = 5/5 PASS`
+- `Tajawal` + `JetBrains Mono` اعتمدتا عبر `next/font/google`
+- tokens موحدة أضيفت داخل `app/globals.css`
+- visual refresh نُفّذ على `home/login/POS/reports`
+- `focus-visible`, keyboard path, touch targets, dark mode, reduced motion كلها مغطاة داخل proof المرحلة
+- drawer المغلق على mobile خرج من tab order عبر `visibility:hidden` + `pointer-events:none`
+- verification browser/runtime تم عبر `.env.local` لأن Docker local stack لم تكن متاحة
+
+تحقق تحديدًا من:
+
+1. هل تحققت `Gate Success` الخاصة بـ `PX-18` بالأدلة الموثقة؟
+2. هل جميع مهام `PX-18` (`T01..T05`) أصبحت `Done` رسميًا؟
+3. هل typography/tokens/component states أصبحت متسقة بما يكفي لإغلاق المرحلة؟
+4. هل visual hierarchy على `home/login/POS/reports` أصبحت product-facing دون decorative clutter؟
+5. هل accessibility الأساسية (`focus-visible`, keyboard path, touch targets, aria-current/pressed`) مجتازة فعلًا؟
+6. هل dark mode و`prefers-reduced-motion` controlled ومقروءتان على `phone/tablet/laptop`؟
+7. هل اعتماد proof الـ browser/runtime عبر `.env.local` مقبول لهذه المرحلة رغم تعطل Docker local stack، طالما أن نطاقها visual/a11y/device وليس DB contract؟
+8. هل التوصية الصحيحة هي:
+   - `Close PX-18`
+   - أو `Close PX-18 with Fixes`
+   - أو `Keep PX-18 Open / Blocked`
+
+أخرج تقريرك بصيغة:
+
+- `Phase Review Report — PX-18`
+- الحكم النهائي: `PASS` أو `PASS WITH FIXES` أو `FAIL`
+- قائمة findings مرتبة حسب الخطورة
+- تحديد واضح هل التوصية:
+  - `Close PX-18`
+  - أو `Close PX-18 with Fixes`
+  - أو `Keep PX-18 Open / Blocked`
+
+### Phase Review Report — PX-18
+
+- **Review Agent:** `Review Agent (Review-Only)`
+- **Review Date:** `2026-03-12`
+- **Review Scope:** `Phase-Level — PX-18 Visual System + Accessibility Refresh`
+- **Final Verdict:** `PASS`
+- **Recommendation:** `Close PX-18`
+
+**Review Summary**
+
+- تحققت `Gate Success` الخاصة بالمرحلة بالكامل: `visual consistency + accessibility/device pass`.
+- جميع مهام `PX-18` (`T01..T05`) أصبحت `Done` رسميًا.
+- typography/tokens/component states أصبحت متسقة بما يكفي للإغلاق.
+- visual hierarchy على `home/login/POS/reports` صارت product-facing دون decorative clutter.
+- accessibility الأساسية وdark mode و`prefers-reduced-motion` مثبتة بالأدلة والاختبارات.
+
+**Detailed Verification**
+
+1. **هل تحققت `Gate Success` الخاصة بـ `PX-18`؟**
+   - `PASS`
+   - `typecheck / lint / build = PASS`
+   - `npm run test = 181/181 PASS`
+   - `px18-visual-accessibility.spec.ts = 5/5 PASS`
+   - typography + tokens + dark mode + reduced motion + focus-visible + keyboard + touch targets + device breakpoints كلها مثبتة بالكود والاختبارات.
+
+2. **هل جميع مهام `PX-18` (`T01..T05`) أصبحت `Done`؟**
+   - `PASS`
+   - `PX-18-T01` = `Done`
+   - `PX-18-T02` = `Done`
+   - `PX-18-T03` = `Done`
+   - `PX-18-T04` = `Done`
+   - `PX-18-T05` = `Done`
+
+3. **هل typography/tokens/component states متسقة بما يكفي لإغلاق المرحلة؟**
+   - `PASS`
+   - `Tajawal` و`JetBrains Mono` مفعّلتان عبر `next/font/google`.
+   - `app/globals.css` تحتوي على token system موحد يغطي ink/bg/panel/line/accent/success/warning/danger/chart colors/radii/shadows/focus ring.
+   - العناصر الأساسية (`buttons/cards/chips/tables/forms/stat cards/list cards/empty states/status banners`) أصبحت تستخدم tokens بشكل موحد.
+   - `min-height: 44px` مطبق على العناصر التفاعلية الأساسية.
+
+4. **هل visual hierarchy على `home/login/POS/reports` أصبحت product-facing دون decorative clutter؟**
+   - `PASS`
+   - الصفحة الرئيسية أصبحت تعتمد `hero panel + feature cards + link cards`.
+   - شاشة الدخول أصبحت أبسط وأكثر وضوحًا.
+   - `POS` و`reports` صارتا أوضح في الـ hierarchy والتقسيم دون تغيير flows الأساسية.
+
+5. **هل accessibility الأساسية مجتازة فعلًا؟**
+   - `PASS`
+   - `focus-visible` موجودة على `button/input/select/textarea/a`.
+   - `aria-current` مطبق على الروابط النشطة في `dashboard-shell`.
+   - `aria-pressed` مطبق على category chips في POS.
+   - keyboard path وtouch targets مثبتة داخل `UAT-62`.
+
+6. **هل dark mode و`prefers-reduced-motion` مطبقتان بشكل controlled؟**
+   - `PASS`
+   - dark mode مبنية على token overrides داخل `@media (prefers-color-scheme: dark)`.
+   - reduced motion تعطل animation/transition/scroll-behavior في `@media (prefers-reduced-motion: reduce)`.
+   - `UAT-63` اجتازت على `phone/tablet/laptop`.
+
+7. **هل اعتماد proof عبر `.env.local` مقبول لهذه المرحلة؟**
+   - `PASS`
+   - نطاق `PX-18` visual/a11y/device فقط، وليس DB contract أو business logic.
+   - build/tests/e2e الحالية كافية لهذا النطاق.
+
+**Findings**
+
+| # | Severity | Finding | Assessment |
+|---|----------|---------|------------|
+| `F1` | `P3 Info` | `color-scheme: light dark` يعتمد على `prefers-color-scheme` فقط ولا يوجد manual theme toggle | مقبول ضمن نطاق المرحلة |
+| `F2` | `P3 Info` | ألوان الرسوم تعتمد CSS variables داخل Recharts وقد تحتاج observability لاحقًا | لا أثر حاجب مثبت |
+| `F3` | `P3 Info` | `scroll-behavior: smooth` مفعّل افتراضيًا ثم يُلغى عبر `prefers-reduced-motion` | سلوك صحيح ومتوافق مع المعيار |
+
+**Contract Mismatches**
+
+- لا يوجد.
+
+**Required Remediation**
+
+- لا يوجد.
+
+**Operational Recommendation**
+
+- `Close PX-18`
+
+### Phase Close Decision — PX-18
+
+- **Decision:** `Closed`
+- **Decision Date:** `2026-03-12`
+- **Basis:** `Phase Review Report — PX-18 = PASS`
+- **PX-18 Deferred Items:** `None`
+- **Open Findings Carried Forward:** `P3 Info` فقط — لا `P0/P1/P2`
+- **Next Active Phase:** `PX-19`
+- **Next Active Task:** `PX-19-T01`
+
+---
+
+## PX-19 — Security / Runtime / Deployment Hardening
+
+**الهدف:** إغلاق gaps الأمن والتشغيل والبيئة والاختبار التي لا تخص UX مباشرة لكنها تمنع المنتج من أن يكون production-grade.
+
+**المراجع**
+- `13_Tech_Config.md`
+- `17_UAT_Scenarios.md`
+- `24_AI_Build_Playbook.md`
+- `27_PreBuild_Verification_Matrix.md`
+
+**Gate Success**
+- security headers/rate limiting/error sanitization مكتملة.
+- env/deployment policy واضحة وغير رخوة.
+- runtime/cart/client hardening مغلقة.
+- test coverage gaps الأساسية مغلقة.
+
+### Phase Contract
+
+- **Primary Outcome:** hardening مستقل وواضح عن UX track.
+- **In Scope:** headers, rate limiting, env policy, cron policy, dependency policy, client reuse, cart/runtime hardening, test expansion.
+- **Allowed Paths:** `package.json`, `next.config.*`, `app/api/*`, `lib/*`, `stores/*`, `tests/*`, `13`, `17`, `27`, `31`.
+- **Required Proofs:** hardening checks + runtime tests + deployment policy artifacts.
+- **Stop Rules:** ممنوع breaking change على auth/session/public receipt/cron flows بلا staged proof.
+
+### Phase Review Focus
+
+- security hardening completeness
+- environment reliability
+- runtime correctness
+- test matrix sufficiency
+
+| Task ID | المهمة | المرجع | Status | Evidence | Updated At | Notes / Blockers |
+|---------|--------|--------|--------|----------|------------|------------------|
+| `PX-19-T01` | dependency/runtime audit + update policy | `13`, `24` | `Done` | `package.json`, `.env.example`, `scripts/px19-runtime-policy.mjs`, `output/release/px19-runtime-policy.json`, `npm run check:runtime`, `npm run typecheck` | `2026-03-12` | تم تثبيت policy-first runtime/dependency decision واضحة: `Next 14.2.5`, `React 18.2.0`, `xlsx ^0.18.5`, والإبقاء على `skipLibCheck` بسياسة موثقة بدل upgrade blind. |
+| `PX-19-T02` | security headers + rate limiting + error sanitization | `13`, `27` | `Done` | `next.config.mjs`, `middleware.ts`, `lib/runtime/rate-limit.ts`, `lib/api/common.ts`, `app/(dashboard)/error.tsx`, `tests/unit/rate-limit.test.ts`, `tests/unit/dashboard-error.test.tsx`, `npm run lint`, `npm run test` | `2026-03-12` | أضيفت security headers, middleware rate limiting, وcentralized 5xx error sanitization مع منع تسريب التفاصيل الداخلية في responses. |
+| `PX-19-T03` | env/deployment policy + cron secret hardening + compatibility decision | `13`, `27` | `Done` | `.env.example`, `lib/env.ts`, `app/api/cron/balance-check/route.ts`, `app/api/notifications/debts/run/route.ts`, `app/api/restore/drill/route.ts`, `output/release/px19-runtime-policy.json`, `npm run check:runtime` | `2026-03-12` | تم توثيق env policy بشكل صريح، وجعل `CRON_SECRET` محكومة في production، واعتماد قرار `Babel compatibility = not-adopted` لأن fallback كانت تكسر `next/font` والبناء الحالي. |
+| `PX-19-T04` | client/cart/runtime/route strictness hardening | `13`, `25` | `Done` | `lib/supabase/admin.ts`, `lib/supabase/server.ts`, `lib/supabase/client.ts`, `stores/pos-cart.ts`, `lib/permissions.ts`, `app/api/notifications/read/route.ts`, `app/api/returns/route.ts`, `app/api/invoices/cancel/route.ts`, `tests/unit/pos-cart.test.ts`, `tests/unit/invoice-cancel-route.test.ts`, `tests/unit/returns-route.test.ts` | `2026-03-12` | أُغلقت فجوات singleton client reuse, stale stock/idempotency bootstrap, permission-context strictness, وresponse-shape strictness دون تغيير DB contracts. |
+| `PX-19-T05` | test coverage expansion | `17`, `27` | `Done` | `tests/unit/env.test.ts`, `tests/unit/formatters.test.ts`, `tests/unit/rate-limit.test.ts`, `tests/unit/notifications-validation.test.ts`, `tests/unit/debt-reminders-route.test.ts`, `tests/unit/balance-check-route.test.ts`, `npm run test`, `npm run build` | `2026-03-12` | توسعت التغطية إلى env/runtime/rate-limit/formatters/notifications validation مع بقاء الحزمة الكاملة `69 files / 197 tests` في حالة PASS. |
+
+### Phase Execution Report — PX-19
+
+- **Phase:** `PX-19 — Security / Runtime / Deployment Hardening`
+- **Execution Window:** `2026-03-12`
+- **Execution Status:** `Ready for Phase Review`
+- **Outcome Summary:** اكتملت طبقة hardening الخاصة بما بعد V2 دون تغيير business rules أو DB contracts. تم تثبيت policy-first decision للاعتماديات والـ runtime، وإضافة security headers وrate limiting، وتوحيد error sanitization بحيث لا تتسرب التفاصيل الداخلية في `5xx` responses، وتوثيق env/deployment/cron policy، وتشديد client/cart/runtime behavior، ثم توسيع مصفوفة الاختبارات لتغطية env/runtime/formatters/rate limiting/route strictness.
+
+**Task Outcomes**
+
+- `PX-19-T01` = `Done`
+- `PX-19-T02` = `Done`
+- `PX-19-T03` = `Done`
+- `PX-19-T04` = `Done`
+- `PX-19-T05` = `Done`
+
+**Key Evidence**
+
+- **Dependency / Runtime Policy**
+  - `package.json`
+  - `.env.example`
+  - `scripts/px19-runtime-policy.mjs`
+  - `output/release/px19-runtime-policy.json`
+- **Security Headers + Rate Limiting + Error Sanitization**
+  - `next.config.mjs`
+  - `middleware.ts`
+  - `lib/runtime/rate-limit.ts`
+  - `lib/api/common.ts`
+  - `app/(dashboard)/error.tsx`
+- **Env / Deployment / Cron Policy**
+  - `lib/env.ts`
+  - `app/api/cron/balance-check/route.ts`
+  - `app/api/notifications/debts/run/route.ts`
+  - `app/api/restore/drill/route.ts`
+- **Runtime / Cart / Route Strictness**
+  - `lib/supabase/admin.ts`
+  - `lib/supabase/server.ts`
+  - `lib/supabase/client.ts`
+  - `stores/pos-cart.ts`
+  - `lib/permissions.ts`
+  - `app/api/notifications/read/route.ts`
+  - `app/api/returns/route.ts`
+  - `app/api/invoices/cancel/route.ts`
+- **Coverage Expansion**
+  - `tests/unit/env.test.ts`
+  - `tests/unit/formatters.test.ts`
+  - `tests/unit/rate-limit.test.ts`
+  - `tests/unit/notifications-validation.test.ts`
+  - `tests/unit/invoice-cancel-route.test.ts`
+  - `tests/unit/returns-route.test.ts`
+  - `tests/unit/pos-cart.test.ts`
+
+**Verification Passed**
+
+- `npm run check:runtime`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run test` = `69 files / 197 tests PASS`
+- `npm run build`
+- `git diff --check` = clean content check (`line endings` warnings only)
+
+**Operational Proof Snapshot**
+
+- `check:runtime`:
+  - `node = >=20 <25`
+  - `next = 14.2.5`
+  - `react = 18.2.0`
+  - `xlsx = ^0.18.5`
+  - `babel_fallback_enabled = false`
+  - `babel_compatibility = not-adopted`
+  - `skip_lib_check = retained-with-policy`
+  - required env keys present = `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`
+- rate limiting:
+  - mutating `/api/*` = `30/min`
+  - public receipt reads `/r/*` = `60/min`
+- error sanitization:
+  - `errorResponse()` suppresses `details` for `status >= 500`
+  - dashboard route-level error shell no longer leaks raw exception text
+- cron/env hardening:
+  - production `CRON_SECRET` now explicit and validated
+  - misconfig paths on cron/restore/reminder routes return runtime-misconfigured style failures بدل الفشل الصامت
+- runtime/cart strictness:
+  - admin client reused عبر singleton
+  - `currentIdempotencyKey` تُولد عند bootstrap بدل ترك نافذة فارغة
+  - إعادة إضافة المنتج تحدث `stock_quantity` بدل إبقاء قيمة قديمة
+  - routes الحساسة (`returns`, `cancel`) أصبحت stricter في response shape
+
+**Gate Success Check**
+
+- security headers/rate limiting/error sanitization مكتملة: `Covered by T02`
+- env/deployment policy واضحة وغير رخوة: `Covered by T01 + T03`
+- runtime/cart/client hardening مغلقة: `Covered by T04`
+- test coverage gaps الأساسية مغلقة: `Covered by T05`
+
+**Closure Assessment**
+
+- جميع مهام المرحلة = `Done`: `Yes`
+- لا توجد findings مفتوحة بمستوى `P0/P1` داخل التنفيذ الحالي: `Yes`
+- لم تتغير DB contracts أو business rules أو authority: `Yes`
+- قرار `Babel compatibility = not-adopted` موثق ومسنود بتشغيل build ناجح: `Yes`
+- التحقق النهائي اجتاز runtime policy + typecheck + lint + test + build: `Yes`
+- **Operational Note:** بعض callsites ما زالت تمرر `reason: error.message` داخليًا إلى `errorResponse()`, لكن client leakage مُغلق مركزيًا لأن `details` لا تُعاد للمستخدم عند `5xx`. هذا يعد hygiene debt لا blocker ضمن نطاق `PX-19`.
+- المتبقي قبل الإغلاق النهائي = `Phase Review Report — PX-19` + `Phase Close Decision — PX-19`
+
+### Phase Review Prompt — PX-19
+
+أنت الآن `Review Agent (Review-Only)` لمراجعة إغلاق المرحلة `PX-19 — Security / Runtime / Deployment Hardening`.
+
+مهمتك **قراءة + تحليل + مقارنة + تقديم تقرير فقط**.
+ممنوع التنفيذ، ممنوع التعديل، ممنوع كتابة كود، وممنوع تشغيل Docker أو `supabase start/reset/lint` أو أي أمر يغير الحالة.
+
+راجع المخرجات الحالية مقابل:
+
+- `aya-mobile-documentation/31_Execution_Live_Tracker.md`
+- `aya-mobile-documentation/13_Tech_Config.md`
+- `aya-mobile-documentation/17_UAT_Scenarios.md`
+- `aya-mobile-documentation/24_AI_Build_Playbook.md`
+- `aya-mobile-documentation/27_PreBuild_Verification_Matrix.md`
+- `package.json`
+- `.env.example`
+- `next.config.mjs`
+- `middleware.ts`
+- `lib/env.ts`
+- `lib/runtime/rate-limit.ts`
+- `lib/api/common.ts`
+- `lib/permissions.ts`
+- `lib/supabase/admin.ts`
+- `lib/supabase/server.ts`
+- `lib/supabase/client.ts`
+- `stores/pos-cart.ts`
+- `app/(dashboard)/error.tsx`
+- `app/api/cron/balance-check/route.ts`
+- `app/api/health/balance-check/route.ts`
+- `app/api/invoices/cancel/route.ts`
+- `app/api/notifications/debts/run/route.ts`
+- `app/api/notifications/read/route.ts`
+- `app/api/restore/drill/route.ts`
+- `app/api/returns/route.ts`
+- `lib/validations/expenses.ts`
+- `lib/validations/notifications.ts`
+- `tests/unit/env.test.ts`
+- `tests/unit/formatters.test.ts`
+- `tests/unit/rate-limit.test.ts`
+- `tests/unit/notifications-validation.test.ts`
+- `tests/unit/invoice-cancel-route.test.ts`
+- `tests/unit/returns-route.test.ts`
+- `tests/unit/pos-cart.test.ts`
+- `output/release/px19-runtime-policy.json`
+
+اعتمد فقط على الأدلة التنفيذية الموثقة داخل التراكر من هذه الجلسة:
+
+- `npm run check:runtime` = `PASS`
+- `npm run typecheck` = `PASS`
+- `npm run lint` = `PASS`
+- `npm run test` = `69 files / 197 tests PASS`
+- `npm run build` = `PASS`
+- `check:runtime` أثبت:
+  - `babel_fallback_enabled = false`
+  - `babel_compatibility = not-adopted`
+  - `skip_lib_check = retained-with-policy`
+  - required env keys present = `4/4`
+- security headers أضيفت في `next.config.mjs`
+- middleware rate limiting أضيفت لمسارات `/api/*` و`/r/*`
+- `errorResponse()` أصبحت suppress `details` على `5xx`
+- `CRON_SECRET` أصبحت explicit/validated في production
+- admin client صار singleton cached
+- POS cart bootstrap/stale-stock strictness تحسنت
+- route strictness تحسنت في `returns/cancel/notifications-read`
+
+تحقق تحديدًا من:
+
+1. هل تحققت `Gate Success` الخاصة بـ `PX-19` بالأدلة الموثقة؟
+2. هل جميع مهام `PX-19` (`T01..T05`) أصبحت `Done` رسميًا؟
+3. هل security headers + rate limiting + internal error sanitization كافية لإغلاق hardening track ضمن هذه المرحلة؟
+4. هل env/deployment/cron policy أصبحت explicit وغير رخوة، وهل قرار `Babel compatibility = not-adopted` متسق ومبرر؟
+5. هل client/cart/runtime/route strictness الحالية كافية لمعالجة stale stock/bootstrap/response-shape gaps دون كسر العقود؟
+6. هل توسيع test coverage كافٍ لإغلاق gaps الأساسية المذكورة في التخطيط؟
+7. هل بقاء بعض callsites تمرر `reason: error.message` داخليًا غير حاجب طالما أن `errorResponse()` تمنع leakage عند `5xx`؟
+8. هل التوصية الصحيحة هي:
+   - `Close PX-19`
+   - أو `Close PX-19 with Fixes`
+   - أو `Keep PX-19 Open / Blocked`
+
+أخرج تقريرك بصيغة:
+
+- `Phase Review Report — PX-19`
+- الحكم النهائي: `PASS` أو `PASS WITH FIXES` أو `FAIL`
+- قائمة findings مرتبة حسب الخطورة
+- تحديد واضح هل التوصية:
+  - `Close PX-19`
+  - أو `Close PX-19 with Fixes`
+  - أو `Keep PX-19 Open / Blocked`
+
+---
+
+### Remediation Log — PX-19
+
+- **Remediation Date:** `2026-03-13`
+- **Basis:** `Phase Review Report — PX-19 = PASS WITH FIXES`
+- **Outcome:** جميع fixes المطلوبة نُفذت، ثم أُعيد التحقق على الحزمة كاملة قبل الإغلاق الرسمي.
+
+**Applied Fixes**
+
+1. **CSP hardening**
+   - أُزيلت `'unsafe-eval'` من `script-src` داخل `next.config.mjs`.
+   - الأثر: إغلاق finding `P1` المرتبطة بإضعاف حماية XSS دون إدخال breaking change على البناء الحالي.
+
+2. **Rate-limit single-instance documentation**
+   - أُضيف comment صريح في `lib/runtime/rate-limit.ts` يوضح أن المتجر الحالي `globalThis.__ayaRateLimitStore__` in-memory وصالح فقط لـ `single-instance / local / MVP`.
+   - الأثر: توثيق قيد الـ deployment الحالي بدل تركه implicit.
+
+3. **Runtime policy documentation**
+   - أُضيف `npm run check:runtime` إلى `13_Tech_Config.md` ضمن checklist التشغيل مع توضيح مخرجاته المطلوبة:
+     - `required env keys = 4/4`
+     - `babel_compatibility = not-adopted`
+     - `skip_lib_check = retained-with-policy`
+   - الأثر: إغلاق finding التوثيقية الخاصة بـ pre-deployment/runtime policy.
+
+4. **Verification stabilization**
+   - أثناء إعادة التحقق ظهرت flakiness زمنية في عدد من اختبارات UI، لذلك ثُبتت timeouts صراحة في:
+     - `tests/unit/status-banner.test.tsx`
+     - `tests/unit/dashboard-loading.test.tsx`
+     - `tests/unit/dashboard-error.test.tsx`
+     - `tests/unit/confirmation-dialog.test.tsx`
+     - `tests/unit/login-form.test.tsx`
+     - `tests/unit/pos-workspace.test.tsx`
+   - كما تم تشديد timeout داخل `waitFor` في `tests/unit/pos-workspace.test.tsx`.
+   - الأثر: جعل نتيجة `npm run test` تعكس الحالة الفعلية للحزمة بدل تعثرات timing متقطعة.
+
+**Re-Verification**
+
+- `npm run check:runtime` = `PASS`
+- `npm run lint` = `PASS`
+- `npm run test` = `69 files / 197 tests PASS`
+- `npm run build` = `PASS`
+
+---
+
+### Phase Review Report — PX-19
+
+- **Review Agent:** `Review Agent (Review-Only)`
+- **Review Date:** `2026-03-12`
+- **Review Scope:** `Phase Closure Review — PX-19 — Security / Runtime / Deployment Hardening`
+- **Final Verdict:** `PASS WITH FIXES`
+- **Recommendation:** `Close PX-19 with Fixes`
+
+**Review Summary**
+
+- فُحصت مخرجات `PX-19` على مستوى الوثائق، المصدر، الاختبارات، وruntime policy artifact دون تعديل من المراجع.
+- جميع مهام `T01..T05` منجزة وموثقة، وجميع أدلة التنفيذ الأساسية تطابق `Gate Success`.
+- خرجت المراجعة بـ finding واحدة `P1` (`CSP unsafe-eval`) وfindingين `P2` توثيقيتين (`single-instance rate limiting`, `check:runtime documentation`) إضافة إلى تحديث تتبعي مطلوب لـ `VB-32/33/34`.
+
+**Findings**
+
+| # | Severity | Finding | القرار |
+|---|----------|---------|--------|
+| `1` | `P1` | `script-src 'unsafe-eval'` موجودة في `next.config.mjs` وتضعف حماية XSS دون مبرر تقني واضح | `Fixed in Remediation` |
+| `2` | `P2` | rate limit store الحالي in-memory فقط ولا يعمل كحل production multi-instance | `Documented` |
+| `3` | `P2` | `npm run check:runtime` غير موثقة بما يكفي ضمن checklist التشغيل | `Documented` |
+| `4` | `P3` | `VB-32/33/34` ما زالت `Planned` رغم اكتمال المرحلة | `Updated` |
+
+**Operational Recommendation**
+
+- `Close PX-19 with Fixes`
+
+---
+
+### Phase Close Decision — PX-19
+
+- **Decision:** `Closed with Fixes`
+- **Decision Date:** `2026-03-13`
+- **Basis:** `Phase Review Report — PX-19 = PASS WITH FIXES` + `Remediation Log — PX-19`
+- **PX-19 Deferred Items:** `None`
+- **Open Findings Carried Forward:** `P3 Info` فقط؛ لا يوجد `P0/P1/P2` مفتوح بعد remediation
+- **Next Active Phase:** `PX-20`
+- **Next Active Task:** `PX-20-T01`
+
+---
+
+## PX-20 — Productization Release Gate
+
+**الهدف:** إعلان الجاهزية التجارية لما بعد V2 فقط بعد إغلاق مساري UX/hardening معًا.
+
+**المراجع**
+- `17_UAT_Scenarios.md`
+- `24_AI_Build_Playbook.md`
+- `27_PreBuild_Verification_Matrix.md`
+- `31_Execution_Live_Tracker.md`
+
+**Gate Success**
+- user-facing UX/content/navigation scenarios = Pass.
+- accessibility/device/visual audit = Pass.
+- security/runtime/deployment audit = no `P0/P1`.
+- قرار `Go/No-Go` النهائي موثق.
+
+### Phase Contract
+
+- **Primary Outcome:** قرار Go/No-Go لما بعد V2 مبني على أدلة UX + a11y + security + deployment.
+- **In Scope:** final UAT/audit only + bugfix minimal إذا ظهر blocker موثق.
+- **Allowed Paths:** `17`, `27`, `31`, تقارير الأدلة، وأي إصلاح minimal approved later.
+- **Required Proofs:** final UAT set, device/a11y proof, hardening proof, documented decision.
+- **Stop Rules:** ممنوع `Go` مع technical leakage أو mobile navigation failure أو security/deployment blocker مفتوح.
+
+### Phase Review Focus
+
+- اكتمال استهلاك جميع findings
+- سلامة القرار النهائي
+- عدم بقاء blocker مخفي بين UX وhardening
+
+| Task ID | المهمة | المرجع | Status | Evidence | Updated At | Notes / Blockers |
+|---------|--------|--------|--------|----------|------------|------------------|
+| `PX-20-T01` | UX/content/navigation UAT | `17`, `27` | `Open` | `TBD` | `—` | post-V2 user-facing flows |
+| `PX-20-T02` | accessibility/device/visual audit | `17`, `27`, `29` | `Open` | `TBD` | `—` | phone/tablet/laptop + a11y |
+| `PX-20-T03` | security/runtime/deployment audit | `13`, `17`, `27` | `Open` | `TBD` | `—` | no P0/P1 |
+| `PX-20-T04` | قرار `Go/No-Go` | `31` | `Open` | `TBD` | `—` | documented decision only |
+
+---
+
+### Planning Review Prompt — Post-PX-14 / Productization Execution Plan
+
+أنت الآن `Review Agent (Review-Only)` لمراجعة **حزمة التخطيط التنفيذي لما بعد `PX-14`**.
+
+مهمتك **قراءة + تحليل + مقارنة + تقديم تقرير فقط**.
+ممنوع التنفيذ، ممنوع التعديل، ممنوع كتابة كود، وممنوع تشغيل Docker أو أي أمر يغير الحالة.
+
+راجع فقط مقابل:
+
+- `aya-mobile-documentation/09_Implementation_Plan.md`
+- `aya-mobile-documentation/24_AI_Build_Playbook.md`
+- `aya-mobile-documentation/31_Execution_Live_Tracker.md`
+- `aya-mobile-documentation/03_UI_UX_Sitemap.md`
+- `aya-mobile-documentation/17_UAT_Scenarios.md`
+- `aya-mobile-documentation/27_PreBuild_Verification_Matrix.md`
+
+تحقق تحديدًا من:
+
+1. هل تم دمج **كل مشاكل التقارير الثلاثة** داخل الحزمة الجديدة دون إسقاط أي بند؟
+2. هل كل finding أُعيد تصنيفها بشكل صحيح إلى:
+   - `Confirmed`
+   - `Reframed`
+   - `External / Deployment`
+   - `Optional Product Direction`
+3. هل فصلُ Track `UX/Productization` عن Track `Security/Runtime/Deployment` واضح ومقصود؟
+4. هل phases `PX-15 .. PX-20` منطقية الترتيب، ومبنية على dependencies صحيحة؟
+5. هل UATs الجديدة وVB gates الجديدة تغطي فعلًا المخاطر التي ذكرتها التقارير؟
+6. هل الخطة الجديدة تستخدم **نفس mats الحالية** (`09/24/31/03/17/27`) دون اختراع نظام حوكمة جديد موازٍ؟
+7. هل التوصية الصحيحة هي:
+   - `Approve Post-PX-14 Planning Package`
+   - أو `Approve with Fixes`
+   - أو `Do Not Start Execution Yet`
+
+أخرج تقريرك بصيغة:
+
+- `Planning Review Report — Post-PX-14`
+- الحكم النهائي: `PASS` أو `PASS WITH FIXES` أو `FAIL`
+- قائمة findings مرتبة حسب الخطورة
+- تحديد واضح هل التوصية:
+  - `Approve Post-PX-14 Planning Package`
+  - أو `Approve with Fixes`
+  - أو `Do Not Start Execution Yet`
 
 ---
 

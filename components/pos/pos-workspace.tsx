@@ -2,8 +2,9 @@
 
 import React from "react";
 import { useDeferredValue, useEffect, useState, useTransition } from "react";
-import { AlertTriangle, Loader2, RefreshCcw, ScanSearch, ShieldCheck, Trash2 } from "lucide-react";
+import { AlertTriangle, Loader2, RefreshCcw, Search, ShieldCheck, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { StatusBanner } from "@/components/ui/status-banner";
 import { useProducts } from "@/hooks/use-products";
 import { usePosAccounts } from "@/hooks/use-pos-accounts";
 import type { SaleResponseData, StandardEnvelope } from "@/lib/pos/types";
@@ -20,8 +21,20 @@ function normalizeArabic(value: string) {
 }
 
 export function PosWorkspace() {
-  const { products, isLoading: productsLoading, errorMessage: productsError, refresh: refreshProducts } = useProducts();
-  const { accounts, isLoading: accountsLoading, errorMessage: accountsError, refresh: refreshAccounts } = usePosAccounts();
+  const {
+    products,
+    isLoading: productsLoading,
+    isOffline: productsOffline,
+    errorMessage: productsError,
+    refresh: refreshProducts
+  } = useProducts();
+  const {
+    accounts,
+    isLoading: accountsLoading,
+    isOffline: accountsOffline,
+    errorMessage: accountsError,
+    refresh: refreshAccounts
+  } = usePosAccounts();
 
   const items = usePosCartStore((state) => state.items);
   const selectedAccountId = usePosCartStore((state) => state.selectedAccountId);
@@ -47,9 +60,12 @@ export function PosWorkspace() {
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>("all");
+  const [submissionErrorMessage, setSubmissionErrorMessage] = useState<string | null>(null);
   const [isTyping, startTransition] = useTransition();
   const [isSubmitting, startSubmission] = useTransition();
   const deferredQuery = useDeferredValue(searchQuery);
+
+  const isOffline = productsOffline || accountsOffline;
 
   useEffect(() => {
     setCartHydrated(usePosCartStore.persist.hasHydrated());
@@ -102,28 +118,46 @@ export function PosWorkspace() {
   const total = calculateCartTotal(items);
   const selectedAccount = accounts.find((account) => account.id === selectedAccountId) ?? null;
 
+  function clearSubmissionFeedback() {
+    if (submissionErrorMessage) {
+      setSubmissionErrorMessage(null);
+    }
+  }
+
+  function refreshOperationalData() {
+    void refreshProducts();
+    void refreshAccounts();
+  }
+
   async function submitSale() {
     if (!cartHydrated) {
       return;
     }
 
     if (items.length === 0) {
-      toast.error("أضف منتجًا واحدًا على الأقل قبل تأكيد البيع.");
+      const message = "أضف منتجًا واحدًا على الأقل قبل تأكيد البيع.";
+      setSubmissionErrorMessage(message);
+      toast.error(message);
       return;
     }
 
     if (!selectedAccountId) {
-      toast.error("اختر حساب الدفع أولًا.");
+      const message = "اختر حساب الدفع أولًا.";
+      setSubmissionErrorMessage(message);
+      toast.error(message);
       return;
     }
 
     if (!currentIdempotencyKey) {
       refreshIdempotencyKey();
-      toast.error("جاري تهيئة مفتاح الطلب. أعد المحاولة خلال ثوانٍ.");
+      const message = "جارٍ تهيئة الطلب. انتظر لحظة ثم أعد المحاولة.";
+      setSubmissionErrorMessage(message);
+      toast.error(message);
       return;
     }
 
     markSubmitting();
+    setSubmissionErrorMessage(null);
 
     const payload = {
       items: items.map((item) => ({
@@ -155,38 +189,44 @@ export function PosWorkspace() {
 
       if (!response.ok || !envelope.success || !envelope.data) {
         const errorCode = envelope.error?.code ?? "ERR_API_INTERNAL";
+        const message = envelope.error?.message ?? "فشل تنفيذ البيع.";
         markError(errorCode);
 
         if (errorCode === "ERR_IDEMPOTENCY") {
           const existingInvoice = (envelope.error?.details as { existing_result?: SaleResponseData } | undefined)
             ?.existing_result;
-
-          toast.warning(
-            existingInvoice
-              ? `الطلب تكرر مسبقًا. الفاتورة السابقة: ${existingInvoice.invoice_number}.`
-              : "هذا المفتاح استُخدم مسبقًا. لم تُنشأ فاتورة جديدة."
-          );
+          const duplicateMessage = existingInvoice
+            ? `تم تنفيذ الطلب مسبقًا. الفاتورة السابقة: ${existingInvoice.invoice_number}.`
+            : "تم استخدام نفس الطلب مسبقًا، لذلك لم تُنشأ فاتورة جديدة.";
+          setSubmissionErrorMessage(duplicateMessage);
+          toast.warning(duplicateMessage);
           return;
         }
 
         if (errorCode === "ERR_CONCURRENT_STOCK_UPDATE") {
           refreshIdempotencyKey();
-          toast.error("تغير المخزون أثناء التنفيذ. تم توليد مفتاح جديد وأعد المحاولة بعد تحديث السلة.");
+          const concurrencyMessage =
+            "تغير المخزون أثناء التنفيذ. تم توليد طلب جديد تلقائيًا، حدّث السلة ثم أعد المحاولة.";
+          setSubmissionErrorMessage(concurrencyMessage);
+          toast.error(concurrencyMessage);
           void refreshProducts();
           return;
         }
 
-        toast.error(envelope.error?.message ?? "فشل تنفيذ البيع.");
+        setSubmissionErrorMessage(message);
+        toast.error(message);
         return;
       }
 
       completeSale(envelope.data);
+      setSubmissionErrorMessage(null);
       toast.success(`تم إنشاء الفاتورة ${envelope.data.invoice_number} بنجاح.`);
-      void refreshProducts();
-      void refreshAccounts();
+      refreshOperationalData();
     } catch (error) {
+      const message = (error as Error).message || "تعذر الوصول إلى مسار البيع.";
       markError("ERR_API_INTERNAL");
-      toast.error((error as Error).message || "تعذر الوصول إلى مسار البيع.");
+      setSubmissionErrorMessage(message);
+      toast.error(message);
     }
   }
 
@@ -194,11 +234,11 @@ export function PosWorkspace() {
     <section className="workspace-stack">
       <div className="workspace-hero">
         <div>
-          <p className="eyebrow">PX-03 / Sales Core Slice</p>
-          <h1>نقطة البيع الأساسية</h1>
+          <p className="eyebrow">نقطة البيع</p>
+          <h1>شاشة البيع السريع</h1>
           <p className="workspace-lead">
-            قراءة المنتجات تتم من المسارات الآمنة فقط، والبيع يمر عبر <code>POST /api/sales</code> مع
-            <code>service_role + p_created_by</code> وبدون أي سعر قادم من العميل.
+            اختر المنتجات، راجع الحساب، ثم أكمل البيع من شاشة واحدة مصممة للعمل السريع داخل
+            نقطة البيع.
           </p>
         </div>
 
@@ -213,16 +253,60 @@ export function PosWorkspace() {
           </article>
           <article className="hero-stat-card hero-stat-card--safe">
             <ShieldCheck size={18} />
-            <strong>Server-authoritative</strong>
+            <strong>تسعير موحد</strong>
           </article>
         </div>
       </div>
+
+      {isOffline ? (
+        <StatusBanner
+          variant="offline"
+          title="أنت الآن خارج الاتصال"
+          message="يمكنك مراجعة السلة الحالية، لكن إتمام البيع وتحديث المنتجات والحسابات يحتاج اتصالًا نشطًا."
+          actionLabel="إعادة تحميل البيانات"
+          onAction={refreshOperationalData}
+        />
+      ) : null}
+
+      {productsError || accountsError ? (
+        <StatusBanner
+          variant="danger"
+          title="تعذر تحديث بيانات نقطة البيع"
+          message={productsError ?? accountsError ?? "تعذر تحميل البيانات التشغيلية."}
+          actionLabel="إعادة المحاولة"
+          onAction={refreshOperationalData}
+          onDismiss={() => setSubmissionErrorMessage(null)}
+        />
+      ) : null}
+
+      {submissionState === "submitting" || isSubmitting ? (
+        <StatusBanner
+          variant="info"
+          title="جارٍ تنفيذ البيع"
+          message="انتظر قليلًا حتى يصل تأكيد العملية وتُحدّث الأرصدة والمخزون."
+        />
+      ) : null}
+
+      {submissionErrorMessage ? (
+        <StatusBanner
+          variant="warning"
+          title="تحتاج العملية إلى متابعة"
+          message={submissionErrorMessage}
+          actionLabel="إعادة المحاولة"
+          onAction={() => {
+            startSubmission(() => {
+              void submitSale();
+            });
+          }}
+          onDismiss={() => setSubmissionErrorMessage(null)}
+        />
+      ) : null}
 
       <div className="pos-grid">
         <section className="workspace-panel">
           <div className="workspace-toolbar">
             <label className="workspace-search">
-              <ScanSearch size={18} />
+              <Search size={18} />
               <input
                 type="search"
                 autoFocus
@@ -249,6 +333,7 @@ export function PosWorkspace() {
                 key={category}
                 type="button"
                 className={category === activeCategory ? "chip chip--active" : "chip"}
+                aria-pressed={category === activeCategory}
                 onClick={() => setActiveCategory(category)}
               >
                 {category === "all" ? "الكل" : category}
@@ -263,7 +348,10 @@ export function PosWorkspace() {
                   key={product.id}
                   type="button"
                   className="quick-add-card"
-                  onClick={() => addProduct(product)}
+                  onClick={() => {
+                    clearSubmissionFeedback();
+                    addProduct(product);
+                  }}
                 >
                   <span>{product.name}</span>
                   <strong>{formatCurrency(product.sale_price)}</strong>
@@ -273,14 +361,15 @@ export function PosWorkspace() {
           ) : null}
 
           {productsLoading ? (
-            <div className="empty-panel">
-              <Loader2 className="spin" size={18} />
-              <p>جارٍ تحميل منتجات نقطة البيع...</p>
-            </div>
-          ) : productsError ? (
-            <div className="empty-panel empty-panel--danger">
-              <h2>تعذر جلب المنتجات</h2>
-              <p>{productsError}</p>
+            <div className="product-grid product-grid--compact" aria-label="جارٍ تحميل منتجات نقطة البيع">
+              {Array.from({ length: 8 }).map((_, index) => (
+                <article key={`pos-product-skeleton-${index}`} className="product-card product-card--skeleton">
+                  <div className="skeleton-line skeleton-line--sm" />
+                  <div className="skeleton-line skeleton-line--lg" />
+                  <div className="skeleton-line" />
+                  <div className="skeleton-line" />
+                </article>
+              ))}
             </div>
           ) : (
             <div className="product-grid product-grid--compact">
@@ -292,7 +381,10 @@ export function PosWorkspace() {
                     key={product.id}
                     type="button"
                     className="product-card product-card--interactive"
-                    onClick={() => addProduct(product)}
+                    onClick={() => {
+                      clearSubmissionFeedback();
+                      addProduct(product);
+                    }}
                   >
                     <div className="product-card__meta">
                       <span className="product-pill">{product.category}</span>
@@ -332,31 +424,40 @@ export function PosWorkspace() {
           <p className="workspace-footnote">
             {isTyping
               ? "تحديث نتائج البحث..."
-              : "البحث محلي، debounce = 200ms، ولا يتم إرسال أي طلب كتابة أثناء بناء السلة."}
+              : "البحث محلي، بمهلة debounce مقدارها 200ms، ولا يطلق أي كتابة أثناء تجهيز السلة."}
           </p>
         </section>
 
         <aside className="workspace-panel cart-panel">
           <div className="cart-panel__header">
             <div>
-              <p className="eyebrow">Cart State</p>
+              <p className="eyebrow">السلة</p>
               <h2>السلة المحلية</h2>
             </div>
 
-            <button type="button" className="secondary-button" onClick={clearCart} disabled={items.length === 0}>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => {
+                clearSubmissionFeedback();
+                clearCart();
+              }}
+              disabled={items.length === 0}
+            >
               <Trash2 size={16} />
               تفريغ
             </button>
           </div>
 
           {!cartHydrated ? (
-            <div className="empty-panel">
-              <p>جارٍ استعادة السلة المحلية...</p>
+            <div className="stack-list" aria-label="جارٍ استعادة السلة">
+              <div className="skeleton-card" />
+              <div className="skeleton-card" />
             </div>
           ) : items.length === 0 ? (
             <div className="empty-panel">
               <h3>السلة فارغة</h3>
-              <p>اختر منتجًا من القائمة أو من شريط الإضافة السريعة.</p>
+              <p>ابدأ بإضافة منتج من القائمة أو من بطاقات الإضافة السريعة لبدء البيع.</p>
             </div>
           ) : (
             <div className="cart-line-list">
@@ -371,7 +472,10 @@ export function PosWorkspace() {
                     <button
                       type="button"
                       className="icon-button"
-                      onClick={() => removeItem(item.product_id)}
+                      onClick={() => {
+                        clearSubmissionFeedback();
+                        removeItem(item.product_id);
+                      }}
                       aria-label={`حذف ${item.name}`}
                     >
                       <Trash2 size={16} />
@@ -386,7 +490,10 @@ export function PosWorkspace() {
                         min={1}
                         max={item.track_stock ? Math.max(item.stock_quantity, 1) : undefined}
                         value={item.quantity}
-                        onChange={(event) => setQuantity(item.product_id, Number(event.target.value))}
+                        onChange={(event) => {
+                          clearSubmissionFeedback();
+                          setQuantity(item.product_id, Number(event.target.value));
+                        }}
                       />
                     </label>
 
@@ -397,9 +504,10 @@ export function PosWorkspace() {
                         min={0}
                         max={100}
                         value={item.discount_percentage}
-                        onChange={(event) =>
-                          setDiscountPercentage(item.product_id, Number(event.target.value))
-                        }
+                        onChange={(event) => {
+                          clearSubmissionFeedback();
+                          setDiscountPercentage(item.product_id, Number(event.target.value));
+                        }}
                       />
                     </label>
                   </div>
@@ -428,7 +536,10 @@ export function PosWorkspace() {
               <span>حساب الدفع</span>
               <select
                 value={selectedAccountId ?? ""}
-                onChange={(event) => setSelectedAccountId(event.target.value)}
+                onChange={(event) => {
+                  clearSubmissionFeedback();
+                  setSelectedAccountId(event.target.value);
+                }}
                 disabled={accountsLoading || accounts.length === 0}
               >
                 <option value="" disabled>
@@ -448,7 +559,10 @@ export function PosWorkspace() {
                 type="text"
                 maxLength={30}
                 value={posTerminalCode}
-                onChange={(event) => setPosTerminalCode(event.target.value)}
+                onChange={(event) => {
+                  clearSubmissionFeedback();
+                  setPosTerminalCode(event.target.value);
+                }}
                 placeholder="POS-01"
               />
             </label>
@@ -459,27 +573,23 @@ export function PosWorkspace() {
                 rows={3}
                 maxLength={500}
                 value={notes}
-                onChange={(event) => setNotes(event.target.value)}
+                onChange={(event) => {
+                  clearSubmissionFeedback();
+                  setNotes(event.target.value);
+                }}
                 placeholder="ملاحظات اختيارية للفاتورة"
               />
             </label>
 
             <div className="info-strip">
               <span>الحساب الحالي: {selectedAccount?.name ?? "غير محدد"}</span>
-              <span>idempotency_key: {currentIdempotencyKey}</span>
+              <span>كل محاولة بيع محمية تلقائيًا من الإرسال المكرر.</span>
             </div>
-
-            {accountsError ? (
-              <p className="warning-inline">
-                <AlertTriangle size={14} />
-                {accountsError}
-              </p>
-            ) : null}
 
             <button
               type="button"
               className="primary-button"
-              disabled={isSubmitting || submissionState === "submitting" || items.length === 0}
+              disabled={isSubmitting || submissionState === "submitting" || items.length === 0 || isOffline}
               onClick={() => {
                 startSubmission(() => {
                   void submitSale();
@@ -499,7 +609,7 @@ export function PosWorkspace() {
 
           {lastCompletedSale ? (
             <div className="result-card">
-              <p className="eyebrow">Last Sale</p>
+              <p className="eyebrow">آخر عملية بيع</p>
               <h3>{lastCompletedSale.invoice_number}</h3>
               <p>الإجمالي: {formatCurrency(lastCompletedSale.total)}</p>
               <p>الباقي: {formatCurrency(lastCompletedSale.change ?? 0)}</p>

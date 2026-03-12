@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { ArrowRightLeft, Loader2, SmartphoneCharging, Wallet } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { StatusBanner } from "@/components/ui/status-banner";
 import type {
   OperationsAccountOption,
   TopupOption,
@@ -34,6 +35,7 @@ type TransferResponse = {
   transfer_number: string;
   ledger_entry_ids: string[];
 };
+type OperationsRetryAction = "topup" | "transfer";
 
 function createUuid() {
   return crypto.randomUUID();
@@ -65,6 +67,8 @@ export function OperationsWorkspace({
   const [transferKey, setTransferKey] = useState("");
   const [topupResult, setTopupResult] = useState<TopupResponse | null>(null);
   const [transferResult, setTransferResult] = useState<TransferResponse | null>(null);
+  const [actionErrorMessage, setActionErrorMessage] = useState<string | null>(null);
+  const [retryAction, setRetryAction] = useState<OperationsRetryAction | null>(null);
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -104,12 +108,24 @@ export function OperationsWorkspace({
 
   const canManageTransfers = role === "admin";
 
+  function clearActionFeedback() {
+    setActionErrorMessage(null);
+    setRetryAction(null);
+  }
+
+  function failAction(message: string, action: OperationsRetryAction) {
+    setActionErrorMessage(message);
+    setRetryAction(action);
+    toast.error(message);
+  }
+
   async function handleTopupSubmit() {
     if (!topupAccountId) {
-      toast.error("اختر حساب الاستلام أولًا.");
+      failAction("اختر حساب الاستلام أولًا.", "topup");
       return;
     }
 
+    clearActionFeedback();
     startTransition(() => {
       void (async () => {
         const response = await fetch("/api/topups", {
@@ -127,7 +143,7 @@ export function OperationsWorkspace({
 
         const envelope = (await response.json()) as StandardEnvelope<TopupResponse>;
         if (!response.ok || !envelope.success || !envelope.data) {
-          toast.error(getApiErrorMessage(envelope));
+          failAction(getApiErrorMessage(envelope), "topup");
           return;
         }
 
@@ -136,6 +152,7 @@ export function OperationsWorkspace({
         setTopupProfit("");
         setTopupNotes("");
         setTopupKey(createUuid());
+        clearActionFeedback();
         toast.success(`تم تسجيل الشحن ${envelope.data.topup_number} بنجاح.`);
         router.refresh();
       })();
@@ -144,10 +161,11 @@ export function OperationsWorkspace({
 
   async function handleTransferSubmit() {
     if (!canManageTransfers) {
-      toast.error("التحويلات الداخلية محصورة بالـ Admin.");
+      failAction("التحويلات الداخلية محصورة بالحساب الإداري.", "transfer");
       return;
     }
 
+    clearActionFeedback();
     startTransition(() => {
       void (async () => {
         const response = await fetch("/api/transfers", {
@@ -164,7 +182,7 @@ export function OperationsWorkspace({
 
         const envelope = (await response.json()) as StandardEnvelope<TransferResponse>;
         if (!response.ok || !envelope.success || !envelope.data) {
-          toast.error(getApiErrorMessage(envelope));
+          failAction(getApiErrorMessage(envelope), "transfer");
           return;
         }
 
@@ -172,40 +190,54 @@ export function OperationsWorkspace({
         setTransferAmount("");
         setTransferNotes("");
         setTransferKey(createUuid());
+        clearActionFeedback();
         toast.success(`تم تسجيل التحويل ${envelope.data.transfer_number} بنجاح.`);
         router.refresh();
       })();
     });
   }
 
+  function retryLastAction() {
+    switch (retryAction) {
+      case "topup":
+        void handleTopupSubmit();
+        break;
+      case "transfer":
+        void handleTransferSubmit();
+        break;
+      default:
+        break;
+    }
+  }
+
   return (
     <section className="workspace-stack">
       <div className="workspace-hero">
         <div>
-          <p className="eyebrow">PX-07-T02</p>
+          <p className="eyebrow">العمليات</p>
           <h1>الشحن والتحويلات</h1>
           <p className="workspace-lead">
-            تسجيل الشحن متاح للـ Admin وPOS، بينما التحويل الداخلي محصور بالـ Admin فقط. نفس
-            السطح يعرض أيضًا baseline تقرير الشحن وربحية آخر العمليات.
+            سجّل عمليات الشحن اليومية، وتابع التحويلات الداخلية، وراجع ربحية أحدث العمليات من
+            نفس الشاشة.
           </p>
         </div>
       </div>
 
       <div className="summary-grid">
         <article className="workspace-panel">
-          <p className="eyebrow">TopUp Report</p>
+          <p className="eyebrow">ملخص الشحن</p>
           <h2>{formatCurrency(topupSummary.total_profit)}</h2>
           <p className="workspace-footnote">إجمالي ربح الشحن خلال آخر 30 يومًا.</p>
         </article>
 
         <article className="workspace-panel">
-          <p className="eyebrow">Collected Amount</p>
+          <p className="eyebrow">إجمالي التحصيل</p>
           <h2>{formatCurrency(topupSummary.total_amount)}</h2>
           <p className="workspace-footnote">إجمالي المبالغ المستلمة من عمليات الشحن.</p>
         </article>
 
         <article className="workspace-panel">
-          <p className="eyebrow">Activity</p>
+          <p className="eyebrow">النشاط</p>
           <h2>{formatCompactNumber(topupSummary.entry_count)}</h2>
           <p className="workspace-footnote">
             {topupSummary.top_supplier_name
@@ -215,11 +247,30 @@ export function OperationsWorkspace({
         </article>
       </div>
 
+      {isPending ? (
+        <StatusBanner
+          variant="info"
+          title="جاري تنفيذ الإجراء"
+          message="انتظر حتى يكتمل تحديث عمليات الشحن أو التحويل الحالية قبل بدء إجراء جديد."
+        />
+      ) : null}
+
+      {actionErrorMessage ? (
+        <StatusBanner
+          variant="danger"
+          title="تعذر إكمال الإجراء"
+          message={actionErrorMessage}
+          actionLabel={retryAction ? "إعادة المحاولة" : undefined}
+          onAction={retryAction ? retryLastAction : undefined}
+          onDismiss={clearActionFeedback}
+        />
+      ) : null}
+
       <div className="detail-grid">
         <section className="workspace-panel">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">TopUp</p>
+              <p className="eyebrow">شحن جديد</p>
               <h2>تسجيل شحن جديد</h2>
             </div>
             <SmartphoneCharging size={18} />
@@ -309,7 +360,7 @@ export function OperationsWorkspace({
 
           {topupResult ? (
             <div className="result-card">
-              <h3>TopUp Saved</h3>
+              <h3>تم تسجيل الشحن</h3>
               <p>رقم العملية: {topupResult.topup_number}</p>
               <p>عدد القيود: {topupResult.ledger_entry_ids.length}</p>
             </div>
@@ -319,7 +370,7 @@ export function OperationsWorkspace({
         <section className="workspace-panel">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">Transfer</p>
+              <p className="eyebrow">تحويل داخلي</p>
               <h2>تحويل داخلي بين الحسابات</h2>
             </div>
             <ArrowRightLeft size={18} />
@@ -414,13 +465,13 @@ export function OperationsWorkspace({
           ) : (
             <div className="empty-panel">
               <Wallet size={18} />
-              <p>التحويلات الداخلية محصورة بالـ Admin. يمكن لحسابات POS تسجيل الشحن فقط.</p>
+              <p>التحويلات الداخلية محصورة بالحساب الإداري، بينما يمكن لحسابات نقطة البيع تسجيل الشحن فقط.</p>
             </div>
           )}
 
           {transferResult ? (
             <div className="result-card">
-              <h3>Transfer Saved</h3>
+              <h3>تم تسجيل التحويل</h3>
               <p>رقم التحويل: {transferResult.transfer_number}</p>
               <p>عدد القيود: {transferResult.ledger_entry_ids.length}</p>
             </div>
@@ -432,14 +483,14 @@ export function OperationsWorkspace({
         <section className="workspace-panel">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">Recent TopUps</p>
+              <p className="eyebrow">آخر عمليات الشحن</p>
               <h2>آخر عمليات الشحن</h2>
             </div>
           </div>
 
           {recentTopups.length === 0 ? (
             <div className="empty-panel">
-              <p>لا توجد عمليات شحن حتى الآن.</p>
+              <p>لا توجد عمليات شحن حتى الآن. سجّل أول عملية شحن لتظهر هنا.</p>
             </div>
           ) : (
             <div className="table-wrap">
@@ -474,18 +525,18 @@ export function OperationsWorkspace({
         <section className="workspace-panel">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">Recent Transfers</p>
+              <p className="eyebrow">آخر التحويلات</p>
               <h2>آخر التحويلات</h2>
             </div>
           </div>
 
           {!canManageTransfers ? (
             <div className="empty-panel">
-              <p>هذه القائمة تظهر للـ Admin فقط.</p>
+              <p>هذه القائمة تظهر للحساب الإداري فقط.</p>
             </div>
           ) : recentTransfers.length === 0 ? (
             <div className="empty-panel">
-              <p>لا توجد تحويلات داخلية حتى الآن.</p>
+              <p>لا توجد تحويلات داخلية حتى الآن. ستظهر هنا آخر التحويلات بين الحسابات بعد تسجيلها.</p>
             </div>
           ) : (
             <div className="table-wrap">

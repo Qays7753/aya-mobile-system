@@ -40,7 +40,7 @@ describe("POST /api/notifications/debts/run", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.CRON_SECRET = "secret";
+    process.env.CRON_SECRET = "secret-secret-1234";
   });
 
   afterAll(() => {
@@ -57,10 +57,7 @@ describe("POST /api/notifications/debts/run", () => {
     });
 
     const response = await POST(createRequest({ mode: "due", as_of_date: "2026-03-11" }) as never);
-    if (!response) {
-      throw new Error("Expected a response object.");
-    }
-    expect(response.status).toBe(403);
+    expect(response?.status).toBe(403);
   });
 
   it("runs the scheduler through the cron bearer path", async () => {
@@ -79,15 +76,12 @@ describe("POST /api/notifications/debts/run", () => {
     const response = await POST(
       createRequest(
         { mode: "due", as_of_date: "2026-03-11" },
-        { authorization: "Bearer secret" }
+        { authorization: "Bearer secret-secret-1234" }
       ) as never
     );
-    if (!response) {
-      throw new Error("Expected a response object.");
-    }
-    const payload = await response.json();
+    const payload = await response?.json();
 
-    expect(response.status).toBe(200);
+    expect(response?.status).toBe(200);
     expect(payload.data.created_count).toBe(2);
     expect(rpc).toHaveBeenCalledWith("run_debt_reminder_scheduler", {
       p_mode: "due",

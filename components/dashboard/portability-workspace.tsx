@@ -4,6 +4,8 @@ import { useMemo, useState, useTransition } from "react";
 import { AlertTriangle, Download, Loader2, ShieldCheck, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
+import { StatusBanner } from "@/components/ui/status-banner";
 import type {
   PortabilityImportJobOption,
   PortabilityPackageOption,
@@ -47,6 +49,13 @@ type RevokeResponse = {
   revoked_at: string;
 };
 
+type RetryAction = "create-export" | "dry-run-import" | "commit-import" | "restore-drill" | "revoke-package" | null;
+type ConfirmAction =
+  | { type: "commit-import"; jobId: string }
+  | { type: "restore-drill" }
+  | { type: "revoke-package"; packageId: string }
+  | null;
+
 function getApiMessage<T>(envelope: StandardEnvelope<T>) {
   return envelope.error?.message ?? "تعذرت العملية.";
 }
@@ -60,11 +69,11 @@ function getStatusLabel(status: string) {
     case "expired":
       return "منتهية";
     case "dry_run_ready":
-      return "dry-run جاهز";
+      return "الفحص الأولي جاهز";
     case "dry_run_failed":
-      return "dry-run أخفق";
+      return "الفحص الأولي لم يكتمل";
     case "committed":
-      return "تم commit";
+      return "تم الاستيراد";
     case "started":
       return "قيد التشغيل";
     case "completed":
@@ -93,13 +102,28 @@ export function PortabilityWorkspace({
   const [selectedBackupId, setSelectedBackupId] = useState("");
   const [lastExport, setLastExport] = useState<ExportResponse | null>(null);
   const [lastRestore, setLastRestore] = useState<RestoreResponse | null>(null);
+  const [actionErrorMessage, setActionErrorMessage] = useState<string | null>(null);
+  const [retryAction, setRetryAction] = useState<RetryAction>(null);
+  const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
 
   const backupPackages = useMemo(
     () => packages.filter((item) => item.scope === "backup" && item.status === "ready" && !item.is_expired),
     [packages]
   );
 
-  async function handleCreateExport() {
+  function clearActionFeedback() {
+    setActionErrorMessage(null);
+    setRetryAction(null);
+  }
+
+  function failAction(message: string, action: RetryAction) {
+    setActionErrorMessage(message);
+    setRetryAction(action);
+    toast.error(message);
+  }
+
+  function handleCreateExport() {
+    clearActionFeedback();
     startTransition(() => {
       void (async () => {
         const response = await fetch("/api/export/packages", {
@@ -118,18 +142,20 @@ export function PortabilityWorkspace({
 
         const envelope = (await response.json()) as StandardEnvelope<ExportResponse>;
         if (!response.ok || !envelope.success || !envelope.data) {
-          toast.error(getApiMessage(envelope));
+          failAction(getApiMessage(envelope), "create-export");
           return;
         }
 
         setLastExport(envelope.data);
-        toast.success("تم إنشاء package التصدير.");
+        setRetryAction(null);
+        toast.success("تم إنشاء حزمة التصدير.");
         router.refresh();
       })();
     });
   }
 
-  async function handleRevokePackage(packageId: string) {
+  function handleRevokePackage(packageId: string) {
+    clearActionFeedback();
     startTransition(() => {
       void (async () => {
         const response = await fetch(`/api/export/packages/${packageId}`, {
@@ -138,11 +164,13 @@ export function PortabilityWorkspace({
 
         const envelope = (await response.json()) as StandardEnvelope<RevokeResponse>;
         if (!response.ok || !envelope.success) {
-          toast.error(getApiMessage(envelope));
+          failAction(getApiMessage(envelope), "revoke-package");
           return;
         }
 
-        toast.success("تم إبطال package التصدير.");
+        setConfirmAction(null);
+        setRetryAction(null);
+        toast.success("تم إبطال حزمة التصدير.");
         router.refresh();
       })();
     });
@@ -150,10 +178,11 @@ export function PortabilityWorkspace({
 
   async function handleDryRunImport() {
     if (!selectedFile) {
-      toast.error("اختر ملف JSON أو CSV أولًا.");
+      failAction("اختر ملف JSON أو CSV أولًا.", "dry-run-import");
       return;
     }
 
+    clearActionFeedback();
     const sourceContent = await selectedFile.text();
     const lowerName = selectedFile.name.toLowerCase();
     const sourceFormat = lowerName.endsWith(".json") ? "json" : "csv";
@@ -173,18 +202,20 @@ export function PortabilityWorkspace({
 
         const envelope = (await response.json()) as StandardEnvelope<ImportResponse>;
         if (!response.ok || !envelope.success || !envelope.data) {
-          toast.error(getApiMessage(envelope));
+          failAction(getApiMessage(envelope), "dry-run-import");
           return;
         }
 
         setDryRunResult(envelope.data);
-        toast.success("تم تنفيذ dry-run لملف المنتجات.");
+        setRetryAction(null);
+        toast.success("تم فحص ملف المنتجات بنجاح.");
         router.refresh();
       })();
     });
   }
 
-  async function handleCommitImport(jobId: string) {
+  function handleCommitImport(jobId: string) {
+    clearActionFeedback();
     startTransition(() => {
       void (async () => {
         const response = await fetch("/api/import/products", {
@@ -198,23 +229,26 @@ export function PortabilityWorkspace({
 
         const envelope = (await response.json()) as StandardEnvelope<ImportResponse>;
         if (!response.ok || !envelope.success || !envelope.data) {
-          toast.error(getApiMessage(envelope));
+          failAction(getApiMessage(envelope), "commit-import");
           return;
         }
 
         setDryRunResult(envelope.data);
-        toast.success("تم تنفيذ commit للمنتجات المستوردة.");
+        setConfirmAction(null);
+        setRetryAction(null);
+        toast.success("تم استيراد المنتجات المعتمدة بنجاح.");
         router.refresh();
       })();
     });
   }
 
-  async function handleRestoreDrill() {
+  function handleRestoreDrill() {
     if (!selectedBackupId) {
-      toast.error("اختر backup package أولًا.");
+      failAction("اختر حزمة نسخ احتياطي أولًا.", "restore-drill");
       return;
     }
 
+    clearActionFeedback();
     startTransition(() => {
       void (async () => {
         const response = await fetch("/api/restore/drill", {
@@ -229,42 +263,89 @@ export function PortabilityWorkspace({
 
         const envelope = (await response.json()) as StandardEnvelope<RestoreResponse>;
         if (!response.ok || !envelope.success || !envelope.data) {
-          toast.error(getApiMessage(envelope));
+          failAction(getApiMessage(envelope), "restore-drill");
           return;
         }
 
         setLastRestore(envelope.data);
-        toast.success("تم تشغيل restore drill.");
+        setConfirmAction(null);
+        setRetryAction(null);
+        toast.success("تم تشغيل الاستعادة التجريبية.");
         router.refresh();
       })();
     });
+  }
+
+  function retryLastAction() {
+    switch (retryAction) {
+      case "create-export":
+        handleCreateExport();
+        break;
+      case "dry-run-import":
+        void handleDryRunImport();
+        break;
+      case "commit-import":
+        if (dryRunResult) {
+          handleCommitImport(dryRunResult.job_id);
+        }
+        break;
+      case "restore-drill":
+        handleRestoreDrill();
+        break;
+      case "revoke-package":
+        if (confirmAction?.type === "revoke-package") {
+          handleRevokePackage(confirmAction.packageId);
+        }
+        break;
+      default:
+        break;
+    }
   }
 
   return (
     <section className="workspace-stack">
       <div className="workspace-hero">
         <div>
-          <p className="eyebrow">PX-12</p>
+          <p className="eyebrow">النقل والنسخ</p>
           <h1>مركز النقل والنسخ الاحتياطي</h1>
           <p className="workspace-lead">
-            إدارة export/import/restore drill بشكل إداري فقط مع audit صريح، expiry للحزم، وتحذير دائم بأن
-            portability لا تعمل أبدًا على البيئة الأساسية مباشرة.
+            إدارة التصدير والاستيراد والاستعادة التجريبية من مكان واحد، مع صلاحيات واضحة وتنبيه دائم بأن
+            الاستعادة تعمل داخل بيئة معزولة فقط.
           </p>
         </div>
       </div>
 
+      {isPending ? (
+        <StatusBanner
+          variant="info"
+          title="جارٍ تنفيذ العملية"
+          message="انتظر حتى يكتمل الإجراء الحالي قبل بدء عملية نقل أو استعادة جديدة."
+        />
+      ) : null}
+
+      {actionErrorMessage ? (
+        <StatusBanner
+          variant="danger"
+          title="تعذر إكمال العملية"
+          message={actionErrorMessage}
+          actionLabel={retryAction ? "إعادة المحاولة" : undefined}
+          onAction={retryAction ? retryLastAction : undefined}
+          onDismiss={clearActionFeedback}
+        />
+      ) : null}
+
       <section className="workspace-panel">
         <div className="section-heading">
           <div>
-            <p className="eyebrow">Privacy / Audit</p>
+            <p className="eyebrow">الخصوصية والتتبع</p>
             <h2>تحذير تشغيلي</h2>
           </div>
           <AlertTriangle size={18} />
         </div>
         <div className="empty-panel">
           <p>
-            كل عملية portability هنا تُسجل في audit_logs، وتولد إشعارًا إداريًا، وتعمل بحزم bounded +
-            expirable فقط. لا يوجد restore على البيئة الأساسية من هذه الشاشة.
+            كل عملية هنا تُسجل في السجل الإداري، وتولد إشعارًا مناسبًا، وتبقى صالحة لفترة محددة فقط.
+            لا تُجرى أي استعادة مباشرة على البيئة الأساسية من هذه الشاشة.
           </p>
         </div>
       </section>
@@ -273,8 +354,8 @@ export function PortabilityWorkspace({
         <section className="workspace-panel">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">Export</p>
-              <h2>إنشاء package تصدير</h2>
+              <p className="eyebrow">التصدير</p>
+              <h2>إنشاء حزمة تصدير</h2>
             </div>
             <Download size={18} />
           </div>
@@ -286,7 +367,7 @@ export function PortabilityWorkspace({
                 <option value="products">المنتجات</option>
                 <option value="reports">التقارير</option>
                 <option value="customers">العملاء</option>
-                <option value="backup">backup bundle</option>
+                <option value="backup">نسخة احتياطية</option>
               </select>
             </label>
 
@@ -309,7 +390,7 @@ export function PortabilityWorkspace({
                   checked={activeOnly}
                   onChange={(event) => setActiveOnly(event.target.checked)}
                 />{" "}
-                active only
+                العناصر النشطة فقط
               </span>
             </label>
 
@@ -326,15 +407,15 @@ export function PortabilityWorkspace({
               </>
             ) : null}
 
-            <button type="button" className="primary-button" disabled={isPending} onClick={() => void handleCreateExport()}>
-              {isPending ? <Loader2 className="spin" size={16} /> : "إنشاء package"}
+            <button type="button" className="primary-button" disabled={isPending} onClick={handleCreateExport}>
+              {isPending ? <Loader2 className="spin" size={16} /> : "إنشاء حزمة"}
             </button>
           </div>
 
           {lastExport ? (
             <div className="result-card">
-              <h3>آخر package</h3>
-              <p>التحميل: {lastExport.download_url}</p>
+              <h3>آخر حزمة</h3>
+              <p>الحزمة جاهزة للتنزيل من قائمة الحزم الأخيرة.</p>
               <p>تنتهي الصلاحية: {formatDate(lastExport.expires_at)}</p>
             </div>
           ) : null}
@@ -343,7 +424,7 @@ export function PortabilityWorkspace({
         <section className="workspace-panel">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">Import</p>
+              <p className="eyebrow">الاستيراد</p>
               <h2>استيراد المنتجات</h2>
             </div>
             <Upload size={18} />
@@ -352,23 +433,37 @@ export function PortabilityWorkspace({
           <div className="stack-form">
             <label className="stack-field">
               <span>ملف JSON أو CSV</span>
-              <input type="file" accept=".json,.csv,text/csv,application/json" onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)} />
+              <input
+                type="file"
+                accept=".json,.csv,text/csv,application/json"
+                onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
+              />
             </label>
 
-            <button type="button" className="primary-button" disabled={isPending || !selectedFile} onClick={() => void handleDryRunImport()}>
-              {isPending ? <Loader2 className="spin" size={16} /> : "تشغيل dry-run"}
+            <button
+              type="button"
+              className="primary-button"
+              disabled={isPending || !selectedFile}
+              onClick={() => void handleDryRunImport()}
+            >
+              {isPending ? <Loader2 className="spin" size={16} /> : "تشغيل الفحص الأولي"}
             </button>
           </div>
 
           {dryRunResult ? (
             <div className="result-card">
               <h3>نتيجة الاستيراد</h3>
-              <p>Rows total: {formatCompactNumber(dryRunResult.rows_total)}</p>
-              <p>Rows valid: {formatCompactNumber(dryRunResult.rows_valid)}</p>
-              <p>Rows invalid: {formatCompactNumber(dryRunResult.rows_invalid)}</p>
+              <p>إجمالي الصفوف: {formatCompactNumber(dryRunResult.rows_total)}</p>
+              <p>الصفوف السليمة: {formatCompactNumber(dryRunResult.rows_valid)}</p>
+              <p>الصفوف غير السليمة: {formatCompactNumber(dryRunResult.rows_invalid)}</p>
               {dryRunResult.mode === "dry_run" && dryRunResult.rows_invalid === 0 ? (
-                <button type="button" className="secondary-button" disabled={isPending} onClick={() => void handleCommitImport(dryRunResult.job_id)}>
-                  تنفيذ commit
+                <button
+                  type="button"
+                  className="secondary-button"
+                  disabled={isPending}
+                  onClick={() => setConfirmAction({ type: "commit-import", jobId: dryRunResult.job_id })}
+                >
+                  تنفيذ الاستيراد
                 </button>
               ) : null}
             </div>
@@ -379,7 +474,7 @@ export function PortabilityWorkspace({
       <section className="workspace-panel">
         <div className="section-heading">
           <div>
-            <p className="eyebrow">Restore Drill</p>
+            <p className="eyebrow">الاستعادة التجريبية</p>
             <h2>استعادة معزولة</h2>
           </div>
           <ShieldCheck size={18} />
@@ -387,9 +482,9 @@ export function PortabilityWorkspace({
 
         <div className="stack-form">
           <label className="stack-field">
-            <span>Backup package</span>
+            <span>حزمة النسخ الاحتياطي</span>
             <select value={selectedBackupId} onChange={(event) => setSelectedBackupId(event.target.value)}>
-              <option value="">اختر package</option>
+              <option value="">اختر حزمة</option>
               {backupPackages.map((item) => (
                 <option key={item.id} value={item.id}>
                   {item.file_name}
@@ -398,18 +493,22 @@ export function PortabilityWorkspace({
             </select>
           </label>
 
-          <button type="button" className="primary-button" disabled={isPending || !selectedBackupId} onClick={() => void handleRestoreDrill()}>
-            {isPending ? <Loader2 className="spin" size={16} /> : "تشغيل restore drill"}
+          <button
+            type="button"
+            className="primary-button"
+            disabled={isPending || !selectedBackupId}
+            onClick={() => setConfirmAction({ type: "restore-drill" })}
+          >
+            {isPending ? <Loader2 className="spin" size={16} /> : "تشغيل الاستعادة التجريبية"}
           </button>
         </div>
 
         {lastRestore ? (
           <div className="result-card">
-            <h3>آخر restore drill</h3>
-            <p>المعرّف: {lastRestore.drill_id}</p>
+            <h3>آخر استعادة تجريبية</h3>
             <p>الحالة: {getStatusLabel(lastRestore.status)}</p>
-            <p>drift: {formatCompactNumber(lastRestore.drift_count)}</p>
-            <p>RTO: {formatCompactNumber(lastRestore.rto_seconds)}s</p>
+            <p>الفروق: {formatCompactNumber(lastRestore.drift_count)}</p>
+            <p>زمن الاستعادة: {formatCompactNumber(lastRestore.rto_seconds)} ث</p>
           </div>
         ) : null}
       </section>
@@ -418,7 +517,7 @@ export function PortabilityWorkspace({
         <section className="workspace-panel">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">Recent Packages</p>
+              <p className="eyebrow">الحزم الأخيرة</p>
               <h2>الحزم الأخيرة</h2>
             </div>
             <Download size={18} />
@@ -427,7 +526,7 @@ export function PortabilityWorkspace({
           <div className="stack-list">
             {packages.length === 0 ? (
               <div className="empty-panel">
-                <p>لا توجد packages مسجلة بعد.</p>
+                <p>لا توجد حزم محفوظة بعد. ابدأ بإنشاء حزمة تصدير لتظهر نتائجها هنا.</p>
               </div>
             ) : (
               packages.map((item) => (
@@ -437,7 +536,14 @@ export function PortabilityWorkspace({
                     <span>{getStatusLabel(item.is_expired ? "expired" : item.status)}</span>
                   </div>
                   <p className="workspace-footnote">
-                    {item.scope} / {item.package_type} / {formatCompactNumber(item.row_count)} سجل
+                    {item.scope === "backup"
+                      ? "نسخة احتياطية"
+                      : item.scope === "customers"
+                        ? "العملاء"
+                        : item.scope === "reports"
+                          ? "التقارير"
+                          : "المنتجات"}{" "}
+                    / {item.package_type.toUpperCase()} / {formatCompactNumber(item.row_count)} سجل
                   </p>
                   <p className="workspace-footnote">ينتهي: {formatDate(item.expires_at)}</p>
                   <div className="inline-actions">
@@ -445,7 +551,12 @@ export function PortabilityWorkspace({
                       تنزيل
                     </a>
                     {item.status === "ready" && !item.is_expired ? (
-                      <button type="button" className="ghost-button" disabled={isPending} onClick={() => void handleRevokePackage(item.id)}>
+                      <button
+                        type="button"
+                        className="ghost-button"
+                        disabled={isPending}
+                        onClick={() => setConfirmAction({ type: "revoke-package", packageId: item.id })}
+                      >
                         إبطال
                       </button>
                     ) : null}
@@ -459,7 +570,7 @@ export function PortabilityWorkspace({
         <section className="workspace-panel">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">Import / Restore</p>
+              <p className="eyebrow">آخر عمليات النقل</p>
               <h2>آخر العمليات</h2>
             </div>
             <ShieldCheck size={18} />
@@ -473,8 +584,8 @@ export function PortabilityWorkspace({
                   <span>{getStatusLabel(job.status)}</span>
                 </div>
                 <p className="workspace-footnote">
-                  صالح: {formatCompactNumber(job.rows_valid)} / خطأ: {formatCompactNumber(job.rows_invalid)} / commit:{" "}
-                  {formatCompactNumber(job.rows_committed)}
+                  سليم: {formatCompactNumber(job.rows_valid)} / غير سليم: {formatCompactNumber(job.rows_invalid)} /
+                  مستورد: {formatCompactNumber(job.rows_committed)}
                 </p>
               </article>
             ))}
@@ -482,17 +593,57 @@ export function PortabilityWorkspace({
             {restoreDrills.map((drill) => (
               <article key={drill.id} className="list-card">
                 <div className="list-card__header">
-                  <strong>{drill.package_file_name ?? "backup غير معروف"}</strong>
+                  <strong>{drill.package_file_name ?? "نسخة احتياطية غير معروفة"}</strong>
                   <span>{getStatusLabel(drill.status)}</span>
                 </div>
                 <p className="workspace-footnote">
-                  drift: {formatCompactNumber(drill.drift_count ?? 0)} / RTO: {formatCompactNumber(drill.rto_seconds ?? 0)}s
+                  الفروق: {formatCompactNumber(drill.drift_count ?? 0)} / زمن الاستعادة:{" "}
+                  {formatCompactNumber(drill.rto_seconds ?? 0)} ث
                 </p>
               </article>
             ))}
           </div>
         </section>
       </div>
+
+      <ConfirmationDialog
+        open={confirmAction?.type === "revoke-package"}
+        title="إبطال حزمة التصدير"
+        description="سيُبطل هذا الإجراء الحزمة الحالية ويمنع تنزيلها لاحقًا. استخدمه فقط إذا انتهت الحاجة إليها أو تغير نطاق البيانات."
+        confirmLabel="إبطال الحزمة"
+        onConfirm={() => {
+          if (confirmAction?.type === "revoke-package") {
+            handleRevokePackage(confirmAction.packageId);
+          }
+        }}
+        onCancel={() => setConfirmAction(null)}
+        isPending={isPending}
+        tone="danger"
+      />
+
+      <ConfirmationDialog
+        open={confirmAction?.type === "commit-import"}
+        title="تأكيد استيراد المنتجات"
+        description="سيتحول الفحص الأولي الحالي إلى استيراد فعلي للصفوف السليمة فقط. أكمل العملية بعد مراجعة نتيجة الفحص."
+        confirmLabel="تنفيذ الاستيراد"
+        onConfirm={() => {
+          if (confirmAction?.type === "commit-import") {
+            handleCommitImport(confirmAction.jobId);
+          }
+        }}
+        onCancel={() => setConfirmAction(null)}
+        isPending={isPending}
+      />
+
+      <ConfirmationDialog
+        open={confirmAction?.type === "restore-drill"}
+        title="تأكيد الاستعادة التجريبية"
+        description="سيُشغّل هذا الإجراء استعادة معزولة باستخدام حزمة النسخ الاحتياطي المحددة دون التأثير على البيئة الأساسية."
+        confirmLabel="تشغيل الاستعادة"
+        onConfirm={handleRestoreDrill}
+        onCancel={() => setConfirmAction(null)}
+        isPending={isPending}
+      />
     </section>
   );
 }

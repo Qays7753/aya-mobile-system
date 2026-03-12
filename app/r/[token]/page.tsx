@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { getPublicReceiptViewByToken } from "@/lib/api/communication";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { formatCurrency, formatDate } from "@/lib/utils/formatters";
@@ -6,6 +7,11 @@ type PublicReceiptPageProps = {
   params: {
     token: string;
   };
+};
+
+export const metadata: Metadata = {
+  title: "الإيصال",
+  description: "عرض الإيصال في صفحة قراءة فقط مع بيانات البيع الأساسية."
 };
 
 function PublicReceiptStateMessage(props: {
@@ -58,7 +64,7 @@ export default async function PublicReceiptPage({ params }: PublicReceiptPagePro
       <section className="workspace-stack">
         <div className="workspace-hero">
           <div>
-            <p className="eyebrow">Public Receipt</p>
+            <p className="eyebrow">الإيصال</p>
             <h1>{result.data.store_name}</h1>
             <p className="workspace-lead">
               هذا العرض للقراءة فقط. لا يعرض أي تكلفة أو ربح أو ملاحظات داخلية.
@@ -69,7 +75,7 @@ export default async function PublicReceiptPage({ params }: PublicReceiptPagePro
         <section className="workspace-panel print-receipt">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">Invoice</p>
+              <p className="eyebrow">الفاتورة</p>
               <h2>{result.data.invoice_number}</h2>
             </div>
           </div>

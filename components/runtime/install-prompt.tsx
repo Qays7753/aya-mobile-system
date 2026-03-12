@@ -73,7 +73,7 @@ export function InstallPrompt() {
   return (
     <section className="install-card" aria-labelledby="install-card-title">
       <div className="install-card__body">
-        <p className="eyebrow">Installability Baseline</p>
+        <p className="eyebrow">التثبيت على الجهاز</p>
         <h2 id="install-card-title">التثبيت على الهاتف أو التابلت أو اللابتوب</h2>
         <p className="install-copy">
           النظام يعمل كتطبيق ويب واحد على الهاتف والتابلت واللابتوب والديسكتوب، مع

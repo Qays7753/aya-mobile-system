@@ -23,10 +23,16 @@ function createRequest(body: Record<string, unknown>) {
 }
 
 function buildAuthorization(options?: {
-  paymentsCount?: number | null;
   rpcData?: Record<string, unknown> | null;
   rpcError?: { message: string } | null;
 }) {
+  const rpcData = options && "rpcData" in options
+    ? options.rpcData
+    : {
+        success: true,
+        reversed_entries_count: 2
+      };
+
   return {
     authorized: true,
     role: "admin",
@@ -36,24 +42,8 @@ function buildAuthorization(options?: {
     maxDiscountPercentage: null,
     discountRequiresApproval: false,
     supabase: {
-      from() {
-        return {
-          select() {
-            return {
-              eq: vi.fn().mockResolvedValue({
-                count: options?.paymentsCount ?? 2,
-                error: null
-              })
-            };
-          }
-        };
-      },
       rpc: vi.fn().mockResolvedValue({
-        data:
-          options?.rpcData ?? {
-            success: true,
-            reversed_entries_count: 2
-          },
+        data: rpcData,
         error: options?.rpcError ?? null
       })
     }
@@ -84,7 +74,7 @@ describe("POST /api/invoices/cancel", () => {
     expect(response.status).toBe(403);
   });
 
-  it("returns reversed_entries_count from the contract", async () => {
+  it("returns reversed_entries_count from the RPC contract", async () => {
     const authorization = buildAuthorization();
     vi.mocked(authorizeRequest).mockResolvedValue(authorization as never);
 
@@ -104,5 +94,20 @@ describe("POST /api/invoices/cancel", () => {
       p_cancel_reason: "خطأ",
       p_created_by: "admin-1"
     });
+  });
+
+  it("fails safely when the RPC response shape is invalid", async () => {
+    vi.mocked(authorizeRequest).mockResolvedValue(buildAuthorization({ rpcData: null }) as never);
+
+    const response = await POST(
+      createRequest({
+        invoice_id: invoiceId,
+        cancel_reason: "خطأ"
+      })
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(500);
+    expect(payload.error.code).toBe("ERR_API_INTERNAL");
   });
 });

@@ -2,11 +2,13 @@ import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { getPublicEnv } from "@/lib/env";
 
+type SupabaseDatabase = any;
+
 export function createSupabaseServerClient() {
   const env = getPublicEnv();
   const cookieStore = cookies();
 
-  return createServerClient(
+  return createServerClient<SupabaseDatabase>(
     env.NEXT_PUBLIC_SUPABASE_URL,
     env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {

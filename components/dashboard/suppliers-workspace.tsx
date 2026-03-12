@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { Loader2, Plus, Save, Search, ShoppingCart, Wallet } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { StatusBanner } from "@/components/ui/status-banner";
 import type {
   AccountOption,
   PurchaseOrderOption,
@@ -58,6 +59,7 @@ type SuppliersWorkspaceProps = {
 };
 
 type SupplierBalanceFilter = "all" | "with_balance" | "zero_balance";
+type SuppliersRetryAction = "supplier" | "purchase" | "payment";
 
 const emptySupplierDraft: SupplierDraft = {
   name: "",
@@ -102,6 +104,8 @@ export function SuppliersWorkspace({
   const [supplierResult, setSupplierResult] = useState<SupplierMutationResponse | null>(null);
   const [purchaseResult, setPurchaseResult] = useState<PurchaseResponse | null>(null);
   const [paymentResult, setPaymentResult] = useState<SupplierPaymentResponse | null>(null);
+  const [actionErrorMessage, setActionErrorMessage] = useState<string | null>(null);
+  const [retryAction, setRetryAction] = useState<SuppliersRetryAction | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const filteredSuppliers = useMemo(() => {
@@ -196,6 +200,17 @@ export function SuppliersWorkspace({
   const projectedSupplierBalance =
     paymentSupplier && paymentAmount ? paymentSupplier.current_balance - Number(paymentAmount) : null;
 
+  function clearActionFeedback() {
+    setActionErrorMessage(null);
+    setRetryAction(null);
+  }
+
+  function failAction(message: string, action: SuppliersRetryAction) {
+    setActionErrorMessage(message);
+    setRetryAction(action);
+    toast.error(message);
+  }
+
   function addProductToDraft(product: PurchaseProductOption) {
     setPurchaseItems((current) => {
       const existing = current.find((item) => item.product_id === product.id);
@@ -218,6 +233,7 @@ export function SuppliersWorkspace({
   }
 
   async function handleSupplierSubmit() {
+    clearActionFeedback();
     const targetUrl = isCreateMode ? "/api/suppliers" : `/api/suppliers/${selectedSupplierId}`;
     const method = isCreateMode ? "POST" : "PATCH";
 
@@ -234,7 +250,7 @@ export function SuppliersWorkspace({
 
     const envelope = (await response.json()) as StandardEnvelope<SupplierMutationResponse>;
     if (!response.ok || !envelope.success || !envelope.data) {
-      toast.error(getApiErrorMessage(envelope));
+      failAction(getApiErrorMessage(envelope), "supplier");
       return;
     }
 
@@ -243,11 +259,13 @@ export function SuppliersWorkspace({
     setSelectedSupplierId(envelope.data.id);
     setPaymentSupplierId(envelope.data.id);
     setPurchaseSupplierId(envelope.data.id);
+    clearActionFeedback();
     toast.success(isCreateMode ? "تم إنشاء المورد بنجاح." : "تم تحديث بيانات المورد بنجاح.");
     router.refresh();
   }
 
   async function handlePurchaseSubmit() {
+    clearActionFeedback();
     const response = await fetch("/api/purchases", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -267,7 +285,7 @@ export function SuppliersWorkspace({
 
     const envelope = (await response.json()) as StandardEnvelope<PurchaseResponse>;
     if (!response.ok || !envelope.success || !envelope.data) {
-      toast.error(getApiErrorMessage(envelope));
+      failAction(getApiErrorMessage(envelope), "purchase");
       return;
     }
 
@@ -275,11 +293,13 @@ export function SuppliersWorkspace({
     setPurchaseItems([]);
     setPurchaseNotes("");
     setPurchaseKey(createUuid());
+    clearActionFeedback();
     toast.success("تم تسجيل أمر الشراء بنجاح.");
     router.refresh();
   }
 
   async function handleSupplierPaymentSubmit() {
+    clearActionFeedback();
     const response = await fetch("/api/payments/supplier", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -294,7 +314,7 @@ export function SuppliersWorkspace({
 
     const envelope = (await response.json()) as StandardEnvelope<SupplierPaymentResponse>;
     if (!response.ok || !envelope.success || !envelope.data) {
-      toast.error(getApiErrorMessage(envelope));
+      failAction(getApiErrorMessage(envelope), "payment");
       return;
     }
 
@@ -302,22 +322,57 @@ export function SuppliersWorkspace({
     setPaymentAmount("");
     setPaymentNotes("");
     setPaymentKey(createUuid());
+    clearActionFeedback();
     toast.success("تم تسجيل تسديد المورد بنجاح.");
     router.refresh();
+  }
+
+  function retryLastAction() {
+    switch (retryAction) {
+      case "supplier":
+        void handleSupplierSubmit();
+        break;
+      case "purchase":
+        void handlePurchaseSubmit();
+        break;
+      case "payment":
+        void handleSupplierPaymentSubmit();
+        break;
+      default:
+        break;
+    }
   }
 
   return (
     <section className="workspace-stack">
       <div className="workspace-hero">
         <div>
-          <p className="eyebrow">PX-07-T01</p>
+          <p className="eyebrow">الموردون</p>
           <h1>الموردون والمشتريات</h1>
           <p className="workspace-lead">
-            إدارة الموردين، أوامر الشراء النقدية والآجلة، وتسديد الموردين من نفس surface
-            الإدارية مع بقاء الكتابة عبر API فقط.
+            أدر الموردين، سجّل أوامر الشراء، وتابع التسديدات من شاشة إدارية واحدة وواضحة.
           </p>
         </div>
       </div>
+
+      {isPending ? (
+        <StatusBanner
+          variant="info"
+          title="جاري تنفيذ الإجراء"
+          message="انتظر حتى يكتمل تحديث الموردين أو المشتريات الحالية قبل بدء إجراء جديد."
+        />
+      ) : null}
+
+      {actionErrorMessage ? (
+        <StatusBanner
+          variant="danger"
+          title="تعذر إكمال الإجراء"
+          message={actionErrorMessage}
+          actionLabel={retryAction ? "إعادة المحاولة" : undefined}
+          onAction={retryAction ? retryLastAction : undefined}
+          onDismiss={clearActionFeedback}
+        />
+      ) : null}
 
       <div className="detail-grid">
         <section className="workspace-panel">
@@ -401,7 +456,7 @@ export function SuppliersWorkspace({
               ))
             ) : (
               <div className="empty-panel">
-                <p>لا يوجد موردون يطابقون هذا الفلتر.</p>
+                <p>لا يوجد موردون يطابقون هذا الفلتر. جرّب توسيع البحث أو إنشاء مورد جديد.</p>
               </div>
             )}
           </div>
@@ -512,7 +567,7 @@ export function SuppliersWorkspace({
         <section className="workspace-panel">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">Purchase Order</p>
+              <p className="eyebrow">أمر شراء</p>
               <h2>أمر شراء جديد</h2>
             </div>
           </div>
@@ -679,8 +734,8 @@ export function SuppliersWorkspace({
             </label>
 
             <div className="info-strip">
-              <span>idempotency_key: {purchaseKey}</span>
               <span>الإجمالي: {formatCurrency(purchaseTotal)}</span>
+              <span>يتم حماية تسجيل أمر الشراء من التكرار تلقائيًا.</span>
             </div>
 
             <button
@@ -706,7 +761,7 @@ export function SuppliersWorkspace({
           {purchaseResult ? (
             <div className="result-card">
               <h3>تم إنشاء أمر الشراء</h3>
-              <p>purchase_number: {purchaseResult.purchase_number}</p>
+              <p>رقم أمر الشراء: {purchaseResult.purchase_number}</p>
               <p>الإجمالي: {formatCurrency(purchaseResult.total)}</p>
             </div>
           ) : null}
@@ -715,7 +770,7 @@ export function SuppliersWorkspace({
         <section className="workspace-panel">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">Supplier Payment</p>
+              <p className="eyebrow">تسديد المورد</p>
               <h2>تسديد مورد</h2>
             </div>
           </div>
@@ -741,7 +796,7 @@ export function SuppliersWorkspace({
               </div>
             ) : (
               <div className="empty-panel">
-                <p>لا يوجد موردون عليهم رصيد مستحق حاليًا.</p>
+                <p>لا يوجد موردون عليهم رصيد مستحق حاليًا. ستظهر هنا الحسابات التي تحتاج إلى تسديد.</p>
               </div>
             )}
 
@@ -780,7 +835,7 @@ export function SuppliersWorkspace({
             </label>
 
             <div className="info-strip">
-              <span>idempotency_key: {paymentKey}</span>
+              <span>يتم حماية تسجيل التسديد من التكرار تلقائيًا.</span>
             </div>
 
             <button
@@ -801,7 +856,7 @@ export function SuppliersWorkspace({
           {paymentResult ? (
             <div className="result-card">
               <h3>تم تسجيل التسديد</h3>
-              <p>payment_number: {paymentResult.payment_number}</p>
+              <p>رقم التسديد: {paymentResult.payment_number}</p>
               <p>الرصيد المتبقي: {formatCurrency(paymentResult.remaining_balance)}</p>
             </div>
           ) : null}
@@ -812,7 +867,7 @@ export function SuppliersWorkspace({
         <section className="workspace-panel">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">Recent Purchases</p>
+              <p className="eyebrow">آخر المشتريات</p>
               <h2>آخر أوامر الشراء</h2>
             </div>
           </div>
@@ -846,7 +901,7 @@ export function SuppliersWorkspace({
               ))
             ) : (
               <div className="empty-panel">
-                <p>لا توجد أوامر شراء حتى الآن.</p>
+                <p>لا توجد أوامر شراء حتى الآن. أنشئ أول أمر شراء ليظهر هنا.</p>
               </div>
             )}
           </div>
@@ -855,7 +910,7 @@ export function SuppliersWorkspace({
         <section className="workspace-panel">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">Recent Supplier Payments</p>
+              <p className="eyebrow">آخر التسديدات</p>
               <h2>آخر تسديدات الموردين</h2>
             </div>
           </div>
@@ -878,7 +933,7 @@ export function SuppliersWorkspace({
               ))
             ) : (
               <div className="empty-panel">
-                <p>لا توجد تسديدات موردين حتى الآن.</p>
+                <p>لا توجد تسديدات موردين حتى الآن. ستظهر آخر عمليات السداد هنا بعد تسجيلها.</p>
               </div>
             )}
           </div>

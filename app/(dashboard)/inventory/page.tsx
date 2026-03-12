@@ -1,9 +1,15 @@
+import type { Metadata } from "next";
 import { getWorkspaceAccess } from "@/app/(dashboard)/access";
 import { AccessRequired } from "@/components/dashboard/access-required";
 import { InventoryWorkspace } from "@/components/dashboard/inventory-workspace";
 import { getInventoryPageBaseline } from "@/lib/api/dashboard";
 import { hasPermission } from "@/lib/permissions";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+
+export const metadata: Metadata = {
+  title: "الجرد والتسوية",
+  description: "بدء الجرد، مراجعة الفروقات، وتسجيل التسويات من مساحة إدارية واضحة."
+};
 
 export default async function InventoryPage() {
   const access = await getWorkspaceAccess();
@@ -12,7 +18,7 @@ export default async function InventoryPage() {
     return (
       <AccessRequired
         title="يلزم تسجيل الدخول لفتح الجرد والتسوية"
-        description="هذه الشاشة مخصصة لإدارة الجرد اليومي والشامل وتسويات الحسابات من حساب Admin فقط."
+        description="سجّل الدخول لبدء الجرد ومراجعة الفروقات من الحساب المصرح له."
       />
     );
   }
@@ -20,8 +26,8 @@ export default async function InventoryPage() {
   if (access.state !== "ok" || !hasPermission(access.permissions, "inventory.read")) {
     return (
       <AccessRequired
-        title="هذه الشاشة تتطلب bundle جرد صالحًا"
-        description="الجرد يحتاج `inventory.read`. التسوية المالية نفسها تبقى محصورة بالـ Admin داخل نفس الشاشة."
+        title="هذه الشاشة غير متاحة لهذا الحساب"
+        description="تحتاج إلى صلاحية عرض الجرد، بينما تبقى التسويات المالية للحسابات الإدارية فقط."
       />
     );
   }

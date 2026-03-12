@@ -10,14 +10,14 @@ type AccessRequiredProps = {
 export function AccessRequired({
   title,
   description,
-  actionLabel = "الذهاب إلى تسجيل الدخول",
+  actionLabel = "الانتقال إلى تسجيل الدخول",
   actionHref = "/login"
 }: AccessRequiredProps) {
   return (
     <section className="workspace-stack">
       <div className="workspace-hero">
         <div>
-          <p className="eyebrow">Protected Workspace</p>
+          <p className="eyebrow">يتطلب صلاحية</p>
           <h1>{title}</h1>
           <p className="workspace-lead">{description}</p>
         </div>
@@ -25,11 +25,10 @@ export function AccessRequired({
 
       <div className="workspace-panel">
         <div className="empty-panel">
-          <h2>الوصول يتطلب جلسة وصلاحية مناسبة</h2>
+          <h2>هذه الشاشة غير متاحة بالحالة الحالية</h2>
           <p>
-            هذه الشاشة تعتمد على جلسة Supabase صالحة، كما أن بعض الأدوات محصورة بحساب
-            <code> Admin </code>
-            فقط.
+            سجّل الدخول أولًا، ثم استخدم الحساب الذي يملك الصلاحية المناسبة لعرض هذه الشاشة أو
+            تنفيذ إجراءاتها.
           </p>
           <div className="action-row">
             <Link href={actionHref} className="primary-button">

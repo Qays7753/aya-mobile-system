@@ -60,6 +60,22 @@
 
 ---
 
+## امتدادات Productization / ما بعد `PX-14` (Planned Gates)
+
+| ID | المحور | الفحص | المرجع | آلية التحقق | معيار النجاح | الخطورة إذا فشل | الحالة |
+|----|--------|-------|--------|-------------|--------------|-----------------|--------|
+| `VB-27` | UX Copy | لا يوجد تسريب لمصطلحات داخلية أو معرفات تشغيلية للمستخدم | `03`, `17`, `24`, `31` | UAT-52 + grep proof + screenshots | اختفاء `PX/baseline/SOP/idempotency_key` من UI | Blocker | Pass |
+| `VB-28` | Navigation / IA | navigation والـ IA قابلة للاستخدام على الهاتف/التابلت/اللابتوب | `03`, `17`, `29`, `31` | UAT-53/54/55/56 | drawer/sidebar + role-aware context + screen decomposition ناجحة | Blocker | Pass |
+| `VB-29` | Async UX | loading/error/retry/pending/confirm patterns مكتملة | `03`, `17`, `25` | UAT-57/58/59/60 | لا blank states صامتة ولا destructive action بلا confirm | Critical | Pass |
+| `VB-30` | Visual System | visual consistency وmetadata/page hierarchy واضحة | `03`, `17`, `24` | UAT-61 | typography/tokens/titles/page context متسقة | High | Pass |
+| `VB-31` | Accessibility | keyboard/focus/touch/dark-mode/device regression تحت السيطرة | `17`, `29` | UAT-62/63 | a11y/device pass بلا readability regressions | Blocker | Pass |
+| `VB-32` | Security Hardening | security headers + rate limiting + internal error sanitization | `13`, `17`, `27` | UAT-64 + manual header review | لا hardening gap حرجة في responses والlimits | Blocker | Pass |
+| `VB-33` | Deployment Policy | env/deployment/cron/runtime compatibility policy محكمة | `13`, `17`, `24`, `31` | UAT-65 + deployment checklist | production env واضحة ولا تفشل بصمت | Critical | Pass |
+| `VB-34` | Runtime Integrity | client/cart/runtime hardening مغلقة | `13`, `17`, `25`, `31` | UAT-66 + runtime proofs | stale stock/bootstrap/route strictness/test gaps مغلقة | High | Pass |
+| `VB-35` | Productization Gate | قرار الجاهزية لما بعد V2 مدعوم بأدلة UX/a11y/security/deployment | `17`, `24`, `31` | UAT-67 + phase review | لا يوجد `P0/P1` مفتوح والقرار موثق | Blocker | Planned |
+
+---
+
 ## شروط Go/No-Go
 
 ### Go (يسمح بالبدء الفعلي في الكود)
@@ -85,6 +101,18 @@
 2. أي privacy leak في public receipt links أو packages المحمولة.
 3. أي privilege escalation أو shadow write/read path جديد بعد role expansion.
 4. فشل restore drill أو بقاء `drift > 0` بعده.
+
+### Go لما بعد V2 / Productization
+1. `VB-27`, `VB-28`, `VB-31`, `VB-32`, `VB-35` = `Pass`.
+2. لا يوجد `Fail` في `VB-29` أو `VB-33`.
+3. `VB-30` و`VB-34` يمكن أن تبقيا `High` فقط إذا وُجدت remediation صريحة ومجدولة، لكن لا يجوز أن تبقيا `Fail`.
+4. لا يوجد finding `P0/P1` مفتوح في UX/accessibility/security/deployment audit النهائي.
+
+### No-Go لما بعد V2 / Productization
+1. أي `Fail` في `VB-27`, `VB-28`, `VB-31`, `VB-32`, أو `VB-35`.
+2. بقاء technical leakage ظاهرًا للمستخدم النهائي.
+3. فشل navigation/mobile IA أو accessibility الأساسية على `360px/768px/1280px`.
+4. بقاء hardening gap حرجة في headers/rate limiting/env/deployment policy أو runtime integrity.
 
 ---
 

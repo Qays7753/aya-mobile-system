@@ -1,9 +1,15 @@
+import type { Metadata } from "next";
 import { getWorkspaceAccess } from "@/app/(dashboard)/access";
 import { AccessRequired } from "@/components/dashboard/access-required";
 import { ExpensesWorkspace } from "@/components/dashboard/expenses-workspace";
 import { getExpensesPageBaseline } from "@/lib/api/expenses";
 import { hasPermission } from "@/lib/permissions";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+
+export const metadata: Metadata = {
+  title: "المصروفات",
+  description: "متابعة المصروفات التشغيلية والفئات المرتبطة بها من مساحة عمل واضحة."
+};
 
 export default async function ExpensesPage() {
   const access = await getWorkspaceAccess();
@@ -20,8 +26,8 @@ export default async function ExpensesPage() {
   if (access.state !== "ok" || !hasPermission(access.permissions, "expenses.read")) {
     return (
       <AccessRequired
-        title="هذه الشاشة تتطلب bundle مصروفات صالحًا"
-        description="يحتاج المستخدم إلى صلاحية `expenses.read` لفتح شاشة المصروفات. إدارة الفئات ما تزال محصورة بالـ Admin."
+        title="هذه الشاشة غير متاحة لهذا الحساب"
+        description="عرض المصروفات متاح للحسابات المصرح لها فقط، بينما تبقى إدارة الفئات للحسابات الإدارية."
       />
     );
   }

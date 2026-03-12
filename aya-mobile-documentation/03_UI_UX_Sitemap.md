@@ -1330,6 +1330,170 @@
 
 ---
 
-**الإصدار:** 1.9
-**تاريخ التحديث:** 11 مارس 2026
-**التغييرات:** v1.9 — مواءمة شاشة portability مع تنفيذ `PX-12`: packages قابلة للتنزيل/الإبطال، restore drill تعرض drift/RTO، وحزم العملاء تُظهر masking بدل البيانات الخام. v1.8 — إضافة أسطح V2 المخططة: `public receipt view`, `roles/permissions center`, `advanced analytics`, `portability center`, و`global search + alert aggregation`. v1.7 — إضافة بطاقة سلامة الأرصدة (Balance Integrity Card) في Dashboard + توثيق `POST /api/health/balance-check`. v1.6 — توضيح رؤية POS لشاشة الحسابات (Blind POS).
+## ✨ إضافات Productization المخططة (Post-PX-14 Addendum)
+
+> هذا القسم يحدد الأسطح والأنماط المشتركة التي ستُفتح في `PX-15 .. PX-20`.
+> الهدف ليس فتح features business جديدة، بل تحويل الأسطح الحالية إلى منتج أوضح وأكثر اتساقًا واعتمادية.
+
+### Shell جديدة: Navigation + Context
+
+| البند | التفاصيل |
+|-------|----------|
+| **الهدف** | استبدال التنقل الأفقي المزدحم بـ sidebar/drawer responsive |
+| **المستخدمون** | `Admin`, `POS` |
+| **المحتوى** | nav grouped by domain, icons, role-aware sections, global search entry point, logout/action area |
+| **السلوك** | `drawer` على الهاتف، `sidebar` على التابلت/اللابتوب، مع active state واضح |
+
+**ملاحظات:**
+- لا يظهر أي label تنفيذية أو dev-facing داخل shell.
+- وجود breadcrumbs أو page hierarchy في كل صفحة داخل dashboard.
+- البحث الشامل يجب أن يكون discoverable من shell نفسها لا مدفونًا داخل شاشة ثانوية.
+
+---
+
+### Shell إضافية: Role-Aware Landing
+
+| البند | التفاصيل |
+|-------|----------|
+| **الهدف** | فصل surface البداية بين `Admin` و`POS` دون كسر authority أو مسارات العمل |
+| **المستخدمون** | `Admin`, `POS` |
+| **المحتوى** | tiles/shortcuts/summary مختلف حسب الدور |
+
+**ملاحظات:**
+- `POS` ترى surface تشغيلية خفيفة وسريعة.
+- `Admin` ترى summary إدارية أوضح وروابط للوحدات الخلفية.
+- العناوين والcopy يجب أن تكون business-facing لا execution-facing.
+
+---
+
+### نمط مشترك: Page Header + Breadcrumb + Metadata
+
+كل شاشة تشغيلية في `PX-15+` يجب أن تملك:
+- title واضح بالعربية أو بصياغة ثنائية منضبطة
+- subtitle قصير يشرح الغرض التشغيلي
+- breadcrumb أو page hierarchy حيث يلزم
+- `metadata.title` و`metadata.description` تعكسان الصفحة الحالية
+
+**ممنوع:**
+- عنوان عام ثابت لكل الصفحات
+- ظهور `PX-*`, `baseline`, `SOP`, أو أي نص تنفيذي داخلي في العناوين
+
+---
+
+### نمط مشترك: حالات الشاشة بعد Productization
+
+#### Loading State
+- skeletons أو fallbacks واضحة لكل surface حرجة
+- لا تظهر الصفحة فارغة أو "جامدة" أثناء التحميل
+
+#### Empty State
+- رسالة واضحة
+- next action صريح
+- role-specific guidance إذا لزم
+
+#### Error State
+- رسالة مفهومة
+- زر `إعادة المحاولة`
+- الاحتفاظ بالمدخلات غير المرسلة قدر الإمكان
+
+#### Pending State
+- تعطيل الإجراء الجاري فقط
+- إبقاء السياق مفهومًا
+- لا silent pending
+
+#### Confirmation State
+- dialog واضح للأفعال الحساسة أو التخريبية
+- وصف مختصر للأثر قبل التأكيد
+
+#### Offline / Degraded State
+- banner أو indicator واضح
+- لا ادعاء بإمكانية offline financial writes
+- توضيح أن بعض الإجراءات ستفشل أو تنتظر الاتصال
+
+---
+
+### إعادة تنظيم الأسطح الحالية
+
+#### `/`
+- تتحول من صفحة ذات لغة تنفيذية إلى landing page أوضح
+- CTA أساسي واضح
+- ملخص قيمة المنتج بدل شرح phases التنفيذية
+
+#### `/login`
+- إزالة النصوص التنفيذية الجانبية
+- إبقاء شرح الدورين بلغة تشغيلية مفهومة
+- نجاح الدخول لا يعتمد على full reload
+
+#### `/pos`
+- إزالة أي ظهور مرئي لـ `idempotency_key`
+- إزالة أو إعادة تعريف affordance الباركود إذا لم تكن feature منفذة
+- تحسين hierarchy البصرية للمنتجات والسلة
+
+#### `/invoices`
+- تخفيف تكدّس الطباعة/receipt/WhatsApp/return/cancel داخل نفس المنطقة
+- تحسين feedback الخاص بمشاركة الإيصال والإرسال
+
+#### `/debts`
+- إضافة summary أوضح للديون
+- إزالة الحقول/الاختيارات المربكة عندما تكون فارغة
+
+#### `/inventory`
+- تحسين mobile ergonomics
+- تحسين selected-scope search/discovery
+- تقليل كثافة inputs المتجاورة
+
+#### `/notifications`
+- فصل inbox عن alert aggregation وعن global search بصريًا ووظيفيًا
+- الحفاظ على scoping الحالي
+
+#### `/reports`
+- تقليل الضوضاء البصرية
+- hierarchy أوضح بين cards/charts/tables/export
+
+#### `/settings`
+- تحويل جداول الصلاحيات الخام إلى سطح أوضح إنسانيًا
+- إبقاء العقود والقيود كما هي دون كشف technical internals
+
+---
+
+### Visual System المخطط
+
+- typography حديثة تدعم العربية بوضوح
+- design tokens موحدة: colors, spacing, radii, shadows, surface elevations
+- primitives مشتركة: buttons, cards, tables, forms, dialogs, alerts, tabs
+- table states: hover, selected, empty, loading, dense vs roomy
+- dark mode اختياري لكنه مخطط صراحة داخل `PX-18`
+- motion policy controlled: transitions قصيرة وهادفة، بلا ضوضاء أو إزعاج
+
+---
+
+### Accessibility وErgonomics
+
+- `focus-visible` واضح
+- keyboard navigation على login/nav/forms/dialogs
+- labels وdescriptions للعناصر التفاعلية
+- touch targets ملائمة للهاتف
+- لا overflow أفقي على `360px`
+- لا regressions على `tablet/laptop`
+
+---
+
+### Cleanup Rules للمحتوى المرئي
+
+- لا يظهر للمستخدم:
+  - `PX-*`
+  - `baseline`
+  - `SOP-*`
+  - `idempotency_key`
+  - raw operational IDs
+  - hints توحي بميزة غير منفذة
+- يسمح ببقاء هذه العناصر فقط في:
+  - logs
+  - dev tooling
+  - tracker/docs الداخلية
+
+---
+
+**الإصدار:** 2.0
+**تاريخ التحديث:** 12 مارس 2026
+**التغييرات:** v2.0 — إضافة Post-PX-14 Productization Addendum لتغطية shell/navigation الجديدة, role-aware landing, page context/metadata, shared screen states, إعادة تنظيم الأسطح الحالية, visual system, accessibility, وقواعد cleanup للمحتوى المرئي. v1.9 — مواءمة شاشة portability مع تنفيذ `PX-12`: packages قابلة للتنزيل/الإبطال، restore drill تعرض drift/RTO، وحزم العملاء تُظهر masking بدل البيانات الخام. v1.8 — إضافة أسطح V2 المخططة: `public receipt view`, `roles/permissions center`, `advanced analytics`, `portability center`, و`global search + alert aggregation`. v1.7 — إضافة بطاقة سلامة الأرصدة (Balance Integrity Card) في Dashboard + توثيق `POST /api/health/balance-check`. v1.6 — توضيح رؤية POS لشاشة الحسابات (Blind POS).

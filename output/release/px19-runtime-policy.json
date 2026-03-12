@@ -1,0 +1,31 @@
+{
+  "checked_at": "2026-03-12T21:28:51.100Z",
+  "runtime_policy": {
+    "node": ">=20 <25",
+    "npm": ">=10",
+    "next": "14.2.5",
+    "react": "18.2.0",
+    "react_dom": "18.2.0",
+    "xlsx": "^0.18.5",
+    "typescript": "5.6.3"
+  },
+  "compatibility": {
+    "babel_fallback_enabled": false,
+    "skip_lib_check": true
+  },
+  "env_policy": {
+    "env_example_exists": true,
+    "required_keys_present": [
+      "NEXT_PUBLIC_SUPABASE_URL",
+      "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+      "SUPABASE_SERVICE_ROLE_KEY",
+      "CRON_SECRET"
+    ],
+    "missing_keys": []
+  },
+  "decisions": {
+    "dependency_updates": "policy-first",
+    "babel_compatibility": "not-adopted",
+    "skip_lib_check": "retained-with-policy"
+  }
+}

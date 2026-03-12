@@ -85,12 +85,12 @@ describe("balance check routes", () => {
     } as never);
     vi.mocked(resolveFirstAdminActorId).mockResolvedValue("admin-1");
 
-    process.env.CRON_SECRET = "secret";
+    process.env.CRON_SECRET = "secret-secret-1234";
 
     const response = await cronBalanceCheck(
       new Request("http://localhost/api/cron/balance-check", {
         method: "POST",
-        headers: { authorization: "Bearer secret" }
+        headers: { authorization: "Bearer secret-secret-1234" }
       }) as never
     );
     const payload = await response.json();

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { authorizeRequest, errorResponse, extractErrorCode, getApiErrorMeta } from "@/lib/api/common";
+import { authorizeRequest, errorResponse, extractErrorCode, getApiErrorMeta, internalErrorResponse } from "@/lib/api/common";
 import { getCancelInvoiceErrorMeta } from "@/lib/api/invoices";
 import type { StandardEnvelope } from "@/lib/pos/types";
 import { cancelInvoiceSchema } from "@/lib/validations/invoices";
@@ -35,11 +35,6 @@ export async function POST(request: Request) {
     }
 
     const payload = parsedBody.data;
-    const { count: paymentsCount } = await authorization.supabase
-      .from("payments")
-      .select("*", { count: "exact", head: true })
-      .eq("invoice_id", payload.invoice_id);
-
     const { data, error: rpcError } = await authorization.supabase.rpc("cancel_invoice", {
       p_invoice_id: payload.invoice_id,
       p_cancel_reason: payload.cancel_reason,
@@ -52,20 +47,23 @@ export async function POST(request: Request) {
       return errorResponse(code, meta.message, meta.status);
     }
 
+    if (!data || typeof data !== "object") {
+      return internalErrorResponse(new Error("ERR_API_CONTRACT_INVALID"), {
+        context: "invoices.cancel.response-shape"
+      });
+    }
+
     return NextResponse.json<StandardEnvelope<CancelInvoiceResponseData>>(
       {
         success: true,
         data: {
           success: Boolean(data.success ?? true),
-          reversed_entries_count: data.reversed_entries_count ?? paymentsCount ?? 0
+          reversed_entries_count: typeof data.reversed_entries_count === "number" ? data.reversed_entries_count : 0
         }
       },
       { status: 200 }
     );
   } catch (error) {
-    const meta = getApiErrorMeta("ERR_API_INTERNAL");
-    return errorResponse("ERR_API_INTERNAL", meta.message, meta.status, {
-      reason: (error as Error).message
-    });
+    return internalErrorResponse(error, { context: "invoices.cancel.unhandled" });
   }
 }

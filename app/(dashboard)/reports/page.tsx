@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { getWorkspaceAccess } from "@/app/(dashboard)/access";
 import { AccessRequired } from "@/components/dashboard/access-required";
 import { ReportsOverview } from "@/components/dashboard/reports-overview";
@@ -8,6 +9,11 @@ type ReportsPageProps = {
   searchParams?: Record<string, string | string[] | undefined>;
 };
 
+export const metadata: Metadata = {
+  title: "التقارير",
+  description: "مراجعة الأداء المالي والتشغيلي ومقارنة الفترات من شاشة تقارير متقدمة."
+};
+
 export default async function ReportsPage({ searchParams = {} }: ReportsPageProps) {
   const access = await getWorkspaceAccess();
 
@@ -15,7 +21,7 @@ export default async function ReportsPage({ searchParams = {} }: ReportsPageProp
     return (
       <AccessRequired
         title="يلزم تسجيل الدخول لفتح التقارير"
-        description="شاشة التقارير محصورة بحساب Admin نشط لأنها تعرض الأرصدة والحركات والديون واللقطات اليومية."
+        description="سجّل الدخول بحساب إداري لمراجعة التقارير التفصيلية ومقارنة الفترات."
       />
     );
   }
@@ -24,7 +30,7 @@ export default async function ReportsPage({ searchParams = {} }: ReportsPageProp
     return (
       <AccessRequired
         title="التقارير محصورة بحساب Admin"
-        description="حسابات POS لا تفتح تقارير الإدارة التفصيلية ولا ملف التصدير Excel."
+        description="هذه الشاشة مخصصة للإدارة لأنها تعرض التقارير التفصيلية وعمليات التصدير."
       />
     );
   }

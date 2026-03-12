@@ -14,8 +14,9 @@
 - MVP: 4-6 أسابيع
 - V1: +2-3 أسابيع
 - V2: +4-6 أسابيع
+- ما بعد V2 / Productization: +3-5 أسابيع
 - الإطلاق: أسبوع واحد
-- **المجموع: ~14-16 أسبوعاً**
+- **المجموع: ~17-21 أسبوعاً**
 
 **مبادئ ثابتة:**
 - لا يوجد وضع Offline في أي مرحلة (MVP/V1/V2).
@@ -657,3 +658,124 @@ Day 1:          المرحلة 0 — البيئة والأمان
 2. **إعداد عميل Supabase:** تكوين المتغيرات البيئية وإنشاء نقطة الاتصال مع قاعدة البيانات (تطبيقاً لنموذج `service_role`).
 3. **توليد أنواع TypeScript:** استخراج الأنواع محلياً (Database TypeScript Types) لضمان كتابة كود آمن من الأخطاء.
 4. **هيكلة مسارات API (API Routes):** بناء نقاط النهاية (Endpoints) المبدئية التي ستتصل بالدوال المحاسبية والتشغيلية في قاعدة البيانات.
+
+---
+
+## 🧱 المرحلة 4: Post-V2 Productization / Hardening
+
+### الهدف
+تحويل النظام من `V2` جاهزة وظيفيًا إلى منتج تشغيل تجاري أوضح بصريًا، أكثر صلابة في التفاعل، ومحكوم بشكل أفضل على مستوى الأمن والتشغيل والاعتمادية.
+
+### المدة
+3-5 أسابيع
+
+### مبدأ التخطيط في هذه المرحلة
+
+هذه المرحلة لا تعيد فتح المنطق المالي أو authority الأساسية إلا عند الضرورة التصحيحية.
+النطاق هنا هو:
+
+- تنظيف الواجهة من المصطلحات الداخلية
+- تحسين navigation وIA والهوية البصرية
+- تحسين loading/error/confirmation/retry patterns
+- رفع accessibility وmetadata والـ mobile ergonomics
+- hardening تشغيلي وأمني وبيئي
+- سد فجوات الاختبار التي ظهرت في التقارير
+
+### تفكيك تنفيذي جاهز لما بعد `PX-14`
+
+| Phase ID | المحور | المخرجات الأساسية | التبعيات |
+|----------|--------|-------------------|----------|
+| `PX-15` | User-Facing Cleanup + Product Copy Hygiene | إزالة المصطلحات الداخلية, إخفاء المعرفات التشغيلية, page titles, role landing copy, empty states أوضح | `PX-14` |
+| `PX-16` | Navigation + Information Architecture + Role Experience | sidebar/drawer responsive, grouping, breadcrumbs, role-aware home/navigation, تفكيك الشاشات المزدحمة | `PX-15` |
+| `PX-17` | Async UX + Feedback + Action Safety | loading skeletons, Suspense fallbacks, persistent errors, retry, confirmation dialogs, login/navigation polish | `PX-15`, `PX-16` |
+| `PX-18` | Visual System + Accessibility Refresh | typography/tokens, color system, reusable primitives, table states, focus-visible, dark mode, motion polish | `PX-15`, `PX-16`, `PX-17` |
+| `PX-19` | Security / Runtime / Deployment Hardening | security headers, rate limiting, env policy, client lifecycle hardening, cart/runtime hardening, test coverage expansion | `PX-17`, `PX-18` |
+| `PX-20` | Productization Release Gate | UX/device/accessibility/security/deployment audit, final Go/No-Go | `PX-15..PX-19` |
+
+### PX-15 — User-Facing Cleanup + Product Copy Hygiene
+
+| المهمة | التفاصيل | معيار "تم" |
+|--------|----------|------------|
+| `PX-15-T01` | إزالة `PX-*`, `baseline`, `SOP`, وكل المصطلحات التنفيذية من الأسطح المرئية للمستخدم | لا يظهر أي مصطلح داخلي في UI النهائية |
+| `PX-15-T02` | إخفاء `idempotency_key` وأي معرفات تشغيلية أو raw admin strings من الواجهات | كل المعرفات التشغيلية تبقى خلف الكواليس فقط |
+| `PX-15-T03` | توحيد عناوين الصفحات, metadata, context headers, وlanding copy حسب الدور | كل صفحة تحمل عنوانًا واضحًا وغير تقني |
+| `PX-15-T04` | تحسين empty states وrole summaries وcopy الخاصة بالصفحة الرئيسية/الدخول | كل سطح فارغ يقدم next action واضح |
+| `PX-15-T05` | proof `no internal terminology leakage` على الهاتف/التابلت/اللابتوب | grep + screenshots + UAT تثبت اختفاء التسريبات |
+
+### PX-16 — Navigation + Information Architecture + Role Experience
+
+| المهمة | التفاصيل | معيار "تم" |
+|--------|----------|------------|
+| `PX-16-T01` | تحويل navigation إلى sidebar/drawer responsive مع icons وgrouping | الهاتف والتابلت واللابتوب قابلة للاستخدام دون ازدحام |
+| `PX-16-T02` | role-aware home/navigation بين `Admin` و`POS` | كل دور يرى surface أنظف وأوضح |
+| `PX-16-T03` | إضافة breadcrumbs أو page hierarchy واضحة | المستخدم يعرف أين هو دائمًا |
+| `PX-16-T04` | تفكيك الشاشات المزدحمة (`invoices`, `inventory`, `notifications`, `reports`, `settings`) | تقليل الضوضاء وتحسين discoverability |
+| `PX-16-T05` | global search placement + mobile IA proof | البحث والتنقل يعملان بوضوح على 360px |
+
+### PX-17 — Async UX + Feedback + Action Safety
+
+| المهمة | التفاصيل | معيار "تم" |
+|--------|----------|------------|
+| `PX-17-T01` | loading skeletons وSuspense fallbacks للأسطح الحرجة | لا توجد صفحات تبدو فارغة أو "جامدة" عند التحميل |
+| `PX-17-T02` | persistent error states + retry patterns + non-silent failures | الخطأ يبقى مفهومًا وقابلًا لإعادة المحاولة |
+| `PX-17-T03` | استبدال full reload flows مثل `window.location.assign()` بمسارات App Router صحيحة | transitions أنعم وبدون refresh كامل |
+| `PX-17-T04` | confirmation dialogs للأفعال التخريبية أو الحساسة | لا يوجد destructive action بلا تأكيد واضح |
+| `PX-17-T05` | pending/optimistic decision pass للعمليات الآمنة + offline/error banners | feedback واضح أثناء التنفيذ والانقطاع |
+
+### PX-18 — Visual System + Accessibility Refresh
+
+| المهمة | التفاصيل | معيار "تم" |
+|--------|----------|------------|
+| `PX-18-T01` | typography حديثة + design tokens + spacing/shadows/radii | هوية بصرية موحدة على كل الشاشات |
+| `PX-18-T02` | reusable component primitives + table/list/form states | الاتساق البصري والسلوكي يصبح واضحًا |
+| `PX-18-T03` | home/login/POS/report visual refresh + visual hierarchy | الأسطح الأساسية لم تعد developer-facing شكليًا |
+| `PX-18-T04` | accessibility pass (`focus-visible`, labels, keyboard, touch targets) | اجتياز accessibility/device UAT |
+| `PX-18-T05` | dark mode + micro-interactions + motion policy | المظهر والتفاعل متسقان ومتحكمان |
+
+### PX-19 — Security / Runtime / Deployment Hardening
+
+| المهمة | التفاصيل | معيار "تم" |
+|--------|----------|------------|
+| `PX-19-T01` | dependency/runtime policy (`Next`, `React`, `xlsx`, build compatibility) | سياسة تحديث واعتماد واضحة ومختبرة |
+| `PX-19-T02` | security headers + rate limiting + internal error sanitization | hardening فعلي دون privacy leakage |
+| `PX-19-T03` | env/deployment policy (`CRON_SECRET`, Supabase env, cross-env compatibility, Replit/Babel decision`) | البيئة لا تعطل المنتج بصمت |
+| `PX-19-T04` | request/client/cart/runtime hardening | idempotency bootstrap, stale stock, rounding, client reuse, route strictness |
+| `PX-19-T05` | توسيع test coverage (workspace components + formatters + cross-env/browser verification) | gaps الاختبارية الحرجة مغلقة |
+
+### PX-20 — Productization Release Gate
+
+| المهمة | التفاصيل | معيار "تم" |
+|--------|----------|------------|
+| `PX-20-T01` | UX/content/navigation UAT | user-facing productization scenarios = Pass |
+| `PX-20-T02` | accessibility/device/visual audit | لا regressions على الهاتف/التابلت/اللابتوب + a11y pass |
+| `PX-20-T03` | security/runtime/deployment audit | لا `P0/P1` مفتوح في hardening track |
+| `PX-20-T04` | قرار `Go/No-Go` لما بعد V2 | قرار موثق بالأدلة |
+
+### إضافات لازمة اكتُشفت أثناء التطبيع
+
+هذه البنود لم تكن موجودة كمرحلة مستقلة في الخطة السابقة، لكنها أصبحت ضرورية بعد دمج التقارير الثلاثة:
+
+1. **فصل Track المنتج/UX عن Track البيئة والتشغيل**
+   - لأن غياب env vars أو مشاكل Replit لا يجب أن يختلط مع مشاكل التصميم والتنقل.
+
+2. **تنظيف affordances غير المنفذة قبل تحسين الشكل**
+   - مثل barcode affordance في POS أو أي surface توحي بقدرة غير موجودة.
+
+3. **إضافة Layer صريح لسلامة التفاعل**
+   - loading, pending, retry, confirmation, persistent errors.
+
+4. **تعريف Productization كمرحلة مستقلة بعد V2**
+   - حتى لا تبقى V2 "مكتملة وظيفيًا" بينما الواجهة والصلابة التشغيلية دون المستوى التجاري.
+
+### معيار اكتمال ما بعد V2
+
+```
+✅ كل ما في V2 +
+   - لا مصطلحات داخلية أو معرفات تشغيلية مكشوفة للمستخدم
+   - navigation وIA تعمل بوضوح على الهاتف/التابلت/اللابتوب
+   - loading/error/confirmation patterns مكتملة
+   - visual system موحد + accessibility مجتازة
+   - hardening الأمني والتشغيلي والبيئي مكتمل
+   - test coverage ارتفعت في طبقة الـ UI/runtime
+   - `PX-20` = `Go`
+```

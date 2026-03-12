@@ -1,8 +1,14 @@
+import type { Metadata } from "next";
 import { getWorkspaceAccess } from "@/app/(dashboard)/access";
 import { AccessRequired } from "@/components/dashboard/access-required";
 import { SettingsOps } from "@/components/dashboard/settings-ops";
 import { getSettingsPageBaseline } from "@/lib/api/dashboard";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+
+export const metadata: Metadata = {
+  title: "الإعدادات",
+  description: "متابعة الإعدادات التشغيلية واللقطات اليومية والصلاحيات من مساحة إدارية واحدة."
+};
 
 export default async function SettingsPage() {
   const access = await getWorkspaceAccess();
@@ -11,7 +17,7 @@ export default async function SettingsPage() {
     return (
       <AccessRequired
         title="يلزم تسجيل الدخول لفتح الإعدادات التشغيلية"
-        description="اللقطة اليومية، التسوية، الجرد، وفحص الأرصدة كلها أدوات تشغيلية محصورة بحساب Admin."
+        description="سجّل الدخول بحساب إداري لإدارة الإعدادات اليومية ومتابعة أدوات التشغيل."
       />
     );
   }
@@ -19,8 +25,8 @@ export default async function SettingsPage() {
   if (access.state !== "ok" || access.role !== "admin") {
     return (
       <AccessRequired
-        title="هذه الشاشة مخصصة للـ Admin فقط"
-        description="POS لا يجب أن يرى أو ينفذ اللقطة اليومية أو التسوية أو فحص سلامة الأرصدة."
+        title="هذه الشاشة مخصصة للإدارة فقط"
+        description="هذه المساحة مخصصة لإدارة الإعدادات والمهام التشغيلية الحساسة."
       />
     );
   }

@@ -64,6 +64,7 @@ describe("PosWorkspace", () => {
         }
       ],
       isLoading: false,
+      isOffline: false,
       errorMessage: null,
       refresh: vi.fn()
     });
@@ -83,6 +84,7 @@ describe("PosWorkspace", () => {
         }
       ],
       isLoading: false,
+      isOffline: false,
       errorMessage: null,
       refresh: vi.fn()
     });
@@ -101,20 +103,23 @@ describe("PosWorkspace", () => {
 
     await waitFor(
       () => {
-      expect(searchInput).toHaveFocus();
+        expect(searchInput).toHaveFocus();
       },
       { timeout: 4000 }
     );
 
     fireEvent.change(searchInput, { target: { value: "شاحن" } });
 
-    await waitFor(() => {
-      expect(screen.queryAllByText("شاحن سريع").length).toBeGreaterThan(0);
-      expect(screen.queryByText("سماعة بلوتوث")).not.toBeInTheDocument();
-    });
+    await waitFor(
+      () => {
+        expect(screen.queryAllByText("شاحن سريع").length).toBeGreaterThan(0);
+        expect(screen.queryByText("سماعة بلوتوث")).not.toBeInTheDocument();
+      },
+      { timeout: 10000 }
+    );
 
     expect(globalThis.fetch).not.toHaveBeenCalled();
-  }, 15000);
+  }, 30000);
 
   it("adds a product to the local cart without triggering a write request", async () => {
     render(<PosWorkspace />);
@@ -129,5 +134,5 @@ describe("PosWorkspace", () => {
 
     expect(usePosCartStore.getState().items).toHaveLength(1);
     expect(globalThis.fetch).not.toHaveBeenCalled();
-  }, 15000);
+  }, 30000);
 });

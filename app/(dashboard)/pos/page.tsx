@@ -1,6 +1,12 @@
+import type { Metadata } from "next";
 import { getWorkspaceAccess } from "@/app/(dashboard)/access";
 import { PosAccessRequired } from "@/components/pos/access-required";
 import { PosWorkspace } from "@/components/pos/pos-workspace";
+
+export const metadata: Metadata = {
+  title: "نقطة البيع",
+  description: "إدارة البيع السريع والسلة وتأكيد العمليات اليومية من شاشة واحدة واضحة."
+};
 
 export default async function PosPage() {
   const access = await getWorkspaceAccess();
@@ -9,7 +15,7 @@ export default async function PosPage() {
     return (
       <PosAccessRequired
         title="يلزم تسجيل الدخول لفتح نقطة البيع"
-        description="السلة المحلية والبيع عبر POST /api/sales يعتمدان على جلسة Supabase صالحة حتى يمكن تمرير p_created_by وربط العملية بالمستخدم الحالي."
+        description="سجّل الدخول بحساب مخصص للبيع حتى تتمكن من إدارة السلة وتأكيد العملية."
       />
     );
   }
@@ -18,7 +24,7 @@ export default async function PosPage() {
     return (
       <PosAccessRequired
         title="هذا الحساب لا يملك صلاحية نقطة البيع"
-        description="فتح شاشة البيع محصور بحساب Admin أو POS نشط. الحسابات الأخرى يجب ألا ترى هذا المسار أو تحاول القراءة منه."
+        description="هذا الحساب غير مخصص لاستخدام نقطة البيع. استخدم حسابًا مناسبًا للبيع أو تواصل مع الإدارة."
       />
     );
   }

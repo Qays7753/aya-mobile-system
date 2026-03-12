@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { getWorkspaceAccess } from "@/app/(dashboard)/access";
 import { AccessRequired } from "@/components/dashboard/access-required";
 import { NotificationsWorkspace } from "@/components/dashboard/notifications-workspace";
@@ -10,6 +11,11 @@ type NotificationsPageProps = {
   searchParams?: Record<string, string | string[] | undefined>;
 };
 
+export const metadata: Metadata = {
+  title: "الإشعارات",
+  description: "متابعة التنبيهات والإشعارات والبحث السريع من شاشة واحدة واضحة."
+};
+
 export default async function NotificationsPage({ searchParams = {} }: NotificationsPageProps) {
   const access = await getWorkspaceAccess();
 
@@ -17,7 +23,7 @@ export default async function NotificationsPage({ searchParams = {} }: Notificat
     return (
       <AccessRequired
         title="يلزم تسجيل الدخول لفتح مركز التنبيهات والبحث"
-        description="السطح الحالي محمي بجلسة Supabase صالحة ويُستخدم كمركز تشغيل موحد للتنبيهات والبحث السريع."
+        description="سجّل الدخول لمتابعة التنبيهات والبحث السريع من الحساب المصرح له."
       />
     );
   }
@@ -29,8 +35,8 @@ export default async function NotificationsPage({ searchParams = {} }: Notificat
   ) {
     return (
       <AccessRequired
-        title="لا تملك صلاحية الوصول إلى مركز التنبيهات والبحث"
-        description="هذا السطح متاح فقط للمستخدمين الذين يملكون `notifications.read` ضمن الدور أو الـ bundle الفعالة."
+        title="هذه الشاشة غير متاحة لهذا الحساب"
+        description="تحتاج إلى صلاحية عرض الإشعارات والبحث المرتبط بها حتى تتمكن من فتح هذه الشاشة."
       />
     );
   }

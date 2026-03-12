@@ -10,7 +10,7 @@ export function PosAccessRequired({ title, description }: PosAccessRequiredProps
     <section className="workspace-stack">
       <div className="workspace-hero">
         <div>
-          <p className="eyebrow">POS Access Guard</p>
+          <p className="eyebrow">يتطلب تسجيل الدخول</p>
           <h1>{title}</h1>
           <p className="workspace-lead">{description}</p>
         </div>
@@ -18,13 +18,10 @@ export function PosAccessRequired({ title, description }: PosAccessRequiredProps
 
       <div className="workspace-panel">
         <div className="empty-panel">
-          <h2>الوصول يتطلب جلسة صالحة</h2>
+          <h2>نقطة البيع متاحة بعد تسجيل الدخول</h2>
           <p>
-            شاشة نقطة البيع وقائمة المنتجات الآمنة تعملان فقط بعد تسجيل الدخول بحساب
-            <code> Admin </code>
-            أو
-            <code> POS </code>
-            نشط.
+            سجّل الدخول بحساب مخوّل للوصول إلى نقطة البيع والمنتجات، ثم ارجع إلى هذه الشاشة
+            للمتابعة.
           </p>
           <Link href="/" className="secondary-button">
             العودة إلى الصفحة الرئيسية

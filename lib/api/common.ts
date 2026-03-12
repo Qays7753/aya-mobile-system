@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { hasPermission, resolvePermissionContext, type WorkspaceRole } from "@/lib/permissions";
+import type { StandardEnvelope } from "@/lib/pos/types";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import type { StandardEnvelope } from "@/lib/pos/types";
 
 const API_ERROR_MAP = {
   ERR_API_SESSION_INVALID: {
@@ -11,11 +11,23 @@ const API_ERROR_MAP = {
   },
   ERR_API_ROLE_FORBIDDEN: {
     status: 403,
-    message: "ليس لديك صلاحية لهذه العملية."
+    message: "ليست لديك صلاحية لهذه العملية."
   },
   ERR_API_VALIDATION_FAILED: {
     status: 400,
     message: "بيانات الطلب غير صالحة."
+  },
+  ERR_API_RATE_LIMITED: {
+    status: 429,
+    message: "تم تجاوز الحد المؤقت للطلبات. حاول مجددًا بعد لحظات."
+  },
+  ERR_API_RUNTIME_MISCONFIGURED: {
+    status: 503,
+    message: "بيئة التشغيل غير مكتملة حاليًا. حاول لاحقًا أو تواصل مع المشرف."
+  },
+  ERR_PERMISSION_CONTEXT_UNAVAILABLE: {
+    status: 503,
+    message: "تعذر التحقق من الصلاحيات حاليًا. حاول مجددًا بعد لحظات."
   },
   ERR_API_INTERNAL: {
     status: 500,
@@ -61,13 +73,15 @@ export type AuthorizationResult =
     };
 
 export function errorResponse<T = unknown>(code: string, message: string, status: number, details?: unknown) {
+  const exposeDetails = status < 500;
+
   return NextResponse.json<StandardEnvelope<T>>(
     {
       success: false,
       error: {
         code,
         message,
-        ...(details === undefined ? {} : { details })
+        ...(details === undefined || !exposeDetails ? {} : { details })
       }
     },
     { status }
@@ -75,7 +89,7 @@ export function errorResponse<T = unknown>(code: string, message: string, status
 }
 
 export function extractErrorCode(message: string) {
-  const match = message.match(/ERR_[A-Z_]+/);
+  const match = /\bERR_[A-Z0-9_]+\b/.exec(message);
   return match?.[0] ?? "ERR_API_INTERNAL";
 }
 
@@ -85,6 +99,15 @@ export function getApiErrorMeta(code: string) {
   }
 
   return API_ERROR_MAP.ERR_API_INTERNAL;
+}
+
+export function internalErrorResponse(error: unknown, options?: { context?: string }) {
+  if (process.env.NODE_ENV !== "test") {
+    console.error(`[aya-api] ${options?.context ?? "internal"}`, error);
+  }
+
+  const meta = getApiErrorMeta("ERR_API_INTERNAL");
+  return errorResponse("ERR_API_INTERNAL", meta.message, meta.status);
 }
 
 export async function getAuthenticatedUser(serverClient: ReturnType<typeof createSupabaseServerClient>) {
@@ -144,12 +167,7 @@ export async function authorizeRequest(
     .eq("id", user.id)
     .maybeSingle<WorkspaceProfile>();
 
-  if (
-    profileError ||
-    !profile ||
-    !profile.is_active ||
-    !allowedRoles.includes(profile.role)
-  ) {
+  if (profileError || !profile || !profile.is_active || !allowedRoles.includes(profile.role)) {
     const meta = getApiErrorMeta("ERR_API_ROLE_FORBIDDEN");
     return {
       authorized: false,
@@ -157,7 +175,16 @@ export async function authorizeRequest(
     };
   }
 
-  const permissionContext = await resolvePermissionContext(supabase, user.id, profile.role);
+  let permissionContext;
+  try {
+    permissionContext = await resolvePermissionContext(supabase, user.id, profile.role);
+  } catch {
+    const meta = getApiErrorMeta("ERR_PERMISSION_CONTEXT_UNAVAILABLE");
+    return {
+      authorized: false,
+      response: errorResponse("ERR_PERMISSION_CONTEXT_UNAVAILABLE", meta.message, meta.status)
+    };
+  }
 
   if (
     options?.requiredPermissions &&

@@ -702,9 +702,227 @@
 
 ---
 
-**الإصدار:** 1.7
-**تاريخ التحديث:** 10 مارس 2026
-**التغييرات:** v1.7 — إضافة UAT-36..51 لتغطية `PX-08 .. PX-14` (المصروفات، الإشعارات، receipt links, WhatsApp, permissions, advanced reports, portability, restore drill, search, alert aggregation). v1.6 — إضافة UAT-33/34/35 لتغطية توافق الأجهزة (هاتف/تابلت/لابتوب) + اختبار تثبيت Web App.
+## المجموعة 19: Product Copy + Navigation + IA (Post-V2 Productization)
+
+### UAT-52: no internal terminology leakage
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | تفعيل أسطح `home/login/POS/invoices/debts/reports/settings` بعد product copy cleanup |
+| **Steps** | 1. فتح الأسطح الأساسية على `phone/tablet/laptop` 2. البحث بصريًا ونصيًا عن `PX`, `baseline`, `SOP`, `idempotency_key`, أو أي labels تشغيلية 3. مراجعة empty states والعناوين |
+| **Expected Results** | لا يظهر أي مصطلح داخلي للمستخدم النهائي، والعناوين/empty states تقدم لغة منتج واضحة |
+| **Data Created** | لا شيء |
+| **Rollback** | N/A |
+| **Validates** | `PX-15-T01/T02/T03/T04` |
+
+---
+
+### UAT-53: role-aware landing and page context
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | وجود مستخدم `Admin` ومستخدم `POS` فعّالين |
+| **Steps** | 1. تسجيل الدخول بكل دور 2. مراجعة landing surface 3. التنقل بين 3 صفحات على الأقل 4. التحقق من titles/breadcrumbs/context headers |
+| **Expected Results** | كل دور يرى context مناسبًا له، وكل صفحة توضّح المكان الحالي والانتقال السابق/التالي بوضوح |
+| **Data Created** | جلسات مستخدم فقط |
+| **Rollback** | logout |
+| **Validates** | `PX-15-T03`, `PX-16-T02/T03` |
+
+---
+
+### UAT-54: navigation responsive usability
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | sidebar/drawer navigation مفعّلة |
+| **Steps** | 1. فتح التطبيق على `360px`, `768px`, و`1280px` 2. فتح/إغلاق drawer أو sidebar 3. الوصول إلى `POS`, `Invoices`, `Reports`, `Settings` خلال 3 نقرات أو أقل |
+| **Expected Results** | التنقل قابل للاستخدام على المقاسات الثلاثة، ولا يوجد flat overflow أو ازدحام يمنع الوصول السريع |
+| **Data Created** | لا شيء |
+| **Rollback** | N/A |
+| **Validates** | `PX-16-T01` |
+
+---
+
+### UAT-55: IA decomposition on crowded screens
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | إعادة تنظيم `invoices`, `inventory`, `notifications`, `reports`, `settings`, `debts` |
+| **Steps** | 1. تنفيذ flow رئيسي في كل شاشة 2. قياس عدد الأفعال المتنافسة على الشاشة 3. مراجعة discoverability للأفعال الحرجة |
+| **Expected Results** | الشاشات المزدحمة أصبحت أوضح، والأفعال الأساسية تظهر دون إغراق بصري أو تداخل مربك |
+| **Data Created** | حسب السيناريو |
+| **Rollback** | حسب السيناريو |
+| **Validates** | `PX-16-T04` |
+
+---
+
+### UAT-56: global search discoverability and scoping
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | global search موجودة في app shell أو موضع discoverable |
+| **Steps** | 1. تشغيل البحث من `Admin` و`POS` 2. تجربة queries صحيحة وقصيرة جدًا 3. التحقق من scoping على invoices/results |
+| **Expected Results** | البحث سهل الوصول، query القصيرة تُرفض، ونتائج `POS` تبقى ضمن scope الدور |
+| **Data Created** | لا شيء |
+| **Rollback** | N/A |
+| **Validates** | `PX-16-T05` |
+
+---
+
+## المجموعة 20: Async UX + Action Safety
+
+### UAT-57: loading skeletons and non-blank transitions
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | تفعيل loading states أو Suspense fallbacks على الأسطح الحرجة |
+| **Steps** | 1. محاكاة تباطؤ الشبكة أو الخادم 2. فتح `reports`, `inventory`, `notifications`, `suppliers` 3. مراجعة ما يظهر أثناء التحميل |
+| **Expected Results** | لا تظهر الشاشة فارغة أو جامدة؛ يظهر loading state واضح ويحافظ على structure مفهوم |
+| **Data Created** | لا شيء |
+| **Rollback** | إعادة network profile للوضع الطبيعي |
+| **Validates** | `PX-17-T01` |
+
+---
+
+### UAT-58: persistent error state with retry
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | وجود path قابلة للفشل المؤقت أو محاكاة failure |
+| **Steps** | 1. إجبار request على الفشل 2. مراقبة error state 3. الضغط على "إعادة المحاولة" 4. التحقق من عدم فقد الإدخال |
+| **Expected Results** | يظهر خطأ مفهوم وثابت، مع retry واضح، ودون الاعتماد على toast عابرة فقط |
+| **Data Created** | لا شيء |
+| **Rollback** | إزالة failure injection |
+| **Validates** | `PX-17-T02` |
+
+---
+
+### UAT-59: destructive actions require confirmation
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | تفعيل confirmation dialogs للأفعال الحساسة |
+| **Steps** | 1. محاولة `cancel invoice` أو `revoke package` أو فعل حساس مماثل 2. التحقق من ظهور dialog 3. إلغاء العملية 4. إعادة المحاولة وتأكيدها |
+| **Expected Results** | كل فعل تخريبي أو حساس يطلب confirmation واضحًا، وإلغاء dialog لا يغير البيانات |
+| **Data Created** | حسب السيناريو |
+| **Rollback** | حسب السيناريو |
+| **Validates** | `PX-17-T04` |
+
+---
+
+### UAT-60: navigation transitions without full reload
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | login/navigation transitions تعتمد App Router بدل full reload |
+| **Steps** | 1. تسجيل الدخول 2. الانتقال بين صفحتين أو أكثر 3. مراقبة hydration/state continuity وعدم حصول refresh كامل |
+| **Expected Results** | لا يوجد full page reload غير لازم، والانتقال يبقى سريعًا ويحافظ على state المناسبة |
+| **Data Created** | جلسة دخول |
+| **Rollback** | logout |
+| **Validates** | `PX-17-T03` |
+
+---
+
+## المجموعة 21: Visual System + Accessibility
+
+### UAT-61: visual consistency and page metadata
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | typography/tokens/page metadata مطبقة |
+| **Steps** | 1. فتح `home/login/POS/reports/settings` 2. مراجعة الخطوط والألوان والمسافات والـ titles 3. مقارنة card/table/form states |
+| **Expected Results** | الهوية البصرية متسقة، وtitles/metadata تعكس الصفحة الحالية بدل عنوان عام واحد |
+| **Data Created** | لا شيء |
+| **Rollback** | N/A |
+| **Validates** | `PX-18-T01/T02/T03` |
+
+---
+
+### UAT-62: keyboard/focus/touch accessibility
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | a11y pass مطبق على العناصر التفاعلية الأساسية |
+| **Steps** | 1. التنقل بالـ keyboard عبر login/navigation/forms 2. التحقق من `focus-visible` وlabels 3. مراجعة touch targets على الهاتف |
+| **Expected Results** | focus واضح، labels موجودة، ولا توجد عناصر تفاعلية صغيرة أو inaccessible |
+| **Data Created** | لا شيء |
+| **Rollback** | N/A |
+| **Validates** | `PX-18-T04` |
+
+---
+
+### UAT-63: dark mode/motion/device regression
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | dark mode أو motion policy مفعلة إن كانت ضمن النطاق |
+| **Steps** | 1. التبديل بين الثيمات إذا وُجدت 2. تشغيل flows أساسية على `phone/tablet/laptop` 3. مراجعة readability/performance/motion |
+| **Expected Results** | الثيم أو الحركة لا تضر القراءة أو الأداء أو device contract |
+| **Data Created** | لا شيء |
+| **Rollback** | العودة للثيم الافتراضي |
+| **Validates** | `PX-18-T05` + device safety |
+
+---
+
+## المجموعة 22: Security / Runtime / Deployment Hardening
+
+### UAT-64: security headers and rate limiting smoke
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | تطبيق security headers وrate limiting على المسارات المناسبة |
+| **Steps** | 1. فحص response headers 2. تنفيذ burst requests على route حرجة 3. مراجعة error body في حالات الفشل |
+| **Expected Results** | headers الأساسية موجودة، rate limiting يعمل دون كسر العقود، وerror body لا تسرّب تفاصيل داخلية |
+| **Data Created** | request logs فقط |
+| **Rollback** | N/A |
+| **Validates** | `PX-19-T02` |
+
+---
+
+### UAT-65: env/deployment compatibility and cron policy
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | env policy ودليل deployment محددان بوضوح |
+| **Steps** | 1. تشغيل التطبيق في بيئة نظيفة أو smoke env 2. التحقق من سلوك الأسرار الناقصة 3. مراجعة cron auth policy وcompatibility decision |
+| **Expected Results** | البيئة لا تفشل بصمت، والـ production secrets الإلزامية واضحة، وcron policy محكمة |
+| **Data Created** | لا شيء |
+| **Rollback** | إزالة env المؤقتة |
+| **Validates** | `PX-19-T03` |
+
+---
+
+### UAT-66: runtime/cart/test hardening regression
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | تطبيق runtime/cart hardening وتوسيع الاختبارات |
+| **Steps** | 1. مراجعة POS cart long session behavior 2. اختبار stale stock/idempotency bootstrap 3. تشغيل component/runtime tests الجديدة |
+| **Expected Results** | لا تظهر regressions على cart/runtime، وتغطي الاختبارات الجديدة gaps التي وثقتها التقارير |
+| **Data Created** | بيانات جلسة محلية |
+| **Rollback** | reset محلي |
+| **Validates** | `PX-19-T04/T05` |
+
+---
+
+## المجموعة 23: Productization Release Gate
+
+### UAT-67: post-V2 productization walkthrough
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | اكتمال `PX-15 .. PX-19` |
+| **Steps** | 1. تنفيذ walkthrough كامل على `home → login → POS → invoices → reports → settings` 2. مراجعة UX/device/a11y/security/deployment proofs 3. توثيق Go/No-Go |
+| **Expected Results** | لا technical leakage، navigation واضحة، feedback states مكتملة، hardening gates مجتازة، والقرار النهائي موثق |
+| **Data Created** | تقرير release gate فقط |
+| **Rollback** | N/A |
+| **Validates** | `PX-20-T01/T02/T03/T04` |
+
+---
+
+**الإصدار:** 1.8
+**تاريخ التحديث:** 12 مارس 2026
+**التغييرات:** v1.8 — إضافة UAT-52..67 لتغطية حزمة `Post-PX-14 Productization` (`PX-15 .. PX-20`) بما يشمل copy cleanup, navigation/IA, async feedback, accessibility/visual system, security/runtime/deployment hardening, وrelease gate النهائي. v1.7 — إضافة UAT-36..51 لتغطية `PX-08 .. PX-14` (المصروفات، الإشعارات، receipt links, WhatsApp, permissions, advanced reports, portability, restore drill, search, alert aggregation). v1.6 — إضافة UAT-33/34/35 لتغطية توافق الأجهزة (هاتف/تابلت/لابتوب) + اختبار تثبيت Web App.
 
 
 

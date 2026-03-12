@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { BellRing, Loader2, Wallet } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { StatusBanner } from "@/components/ui/status-banner";
 import type {
   ExpenseAccountOption,
   ExpenseCategoryOption,
@@ -39,6 +40,7 @@ type CategoryDraftState = Record<
     sort_order: string;
   }
 >;
+type ExpensesRetryAction = "create-expense" | "create-category" | "update-category";
 
 function getApiErrorMessage<T>(envelope: StandardEnvelope<T>) {
   return envelope.error?.message ?? "تعذر إتمام العملية.";
@@ -50,6 +52,10 @@ function formatBalanceLabel(account: ExpenseAccountOption) {
   }
 
   return `الرصيد الحالي: ${formatCurrency(account.current_balance)}`;
+}
+
+function getCategoryTypeLabel(type: "fixed" | "variable") {
+  return type === "fixed" ? "ثابتة" : "متغيرة";
 }
 
 export function ExpensesWorkspace({
@@ -73,6 +79,9 @@ export function ExpensesWorkspace({
   const [newCategoryIsActive, setNewCategoryIsActive] = useState(true);
   const [newCategorySortOrder, setNewCategorySortOrder] = useState("0");
   const [categoryResult, setCategoryResult] = useState<ExpenseCategoryResponse | null>(null);
+  const [actionErrorMessage, setActionErrorMessage] = useState<string | null>(null);
+  const [retryAction, setRetryAction] = useState<ExpensesRetryAction | null>(null);
+  const [retryCategoryId, setRetryCategoryId] = useState<string | null>(null);
   const [categoryDrafts, setCategoryDrafts] = useState<CategoryDraftState>(() =>
     Object.fromEntries(
       categories.map((category) => [
@@ -88,7 +97,21 @@ export function ExpensesWorkspace({
     )
   );
 
+  function clearActionFeedback() {
+    setActionErrorMessage(null);
+    setRetryAction(null);
+    setRetryCategoryId(null);
+  }
+
+  function failAction(message: string, action: ExpensesRetryAction, categoryIdToUpdate?: string) {
+    setActionErrorMessage(message);
+    setRetryAction(action);
+    setRetryCategoryId(categoryIdToUpdate ?? null);
+    toast.error(message);
+  }
+
   async function handleCreateExpense() {
+    clearActionFeedback();
     startTransition(() => {
       void (async () => {
         const response = await fetch("/api/expenses", {
@@ -106,7 +129,7 @@ export function ExpensesWorkspace({
 
         const envelope = (await response.json()) as StandardEnvelope<CreateExpenseResponse>;
         if (!response.ok || !envelope.success || !envelope.data) {
-          toast.error(getApiErrorMessage(envelope));
+          failAction(getApiErrorMessage(envelope), "create-expense");
           return;
         }
 
@@ -114,6 +137,7 @@ export function ExpensesWorkspace({
         setAmount("");
         setDescription("");
         setNotes("");
+        clearActionFeedback();
         toast.success("تم تسجيل المصروف بنجاح.");
         router.refresh();
       })();
@@ -121,6 +145,7 @@ export function ExpensesWorkspace({
   }
 
   async function handleCreateCategory() {
+    clearActionFeedback();
     startTransition(() => {
       void (async () => {
         const response = await fetch("/api/expense-categories", {
@@ -137,7 +162,7 @@ export function ExpensesWorkspace({
 
         const envelope = (await response.json()) as StandardEnvelope<ExpenseCategoryResponse>;
         if (!response.ok || !envelope.success || !envelope.data) {
-          toast.error(getApiErrorMessage(envelope));
+          failAction(getApiErrorMessage(envelope), "create-category");
           return;
         }
 
@@ -147,6 +172,7 @@ export function ExpensesWorkspace({
         setNewCategoryType("variable");
         setNewCategoryIsActive(true);
         setNewCategorySortOrder("0");
+        clearActionFeedback();
         toast.success("تم إنشاء فئة المصروف بنجاح.");
         router.refresh();
       })();
@@ -159,6 +185,7 @@ export function ExpensesWorkspace({
       return;
     }
 
+    clearActionFeedback();
     startTransition(() => {
       void (async () => {
         const response = await fetch(`/api/expense-categories/${categoryIdToUpdate}`, {
@@ -175,55 +202,92 @@ export function ExpensesWorkspace({
 
         const envelope = (await response.json()) as StandardEnvelope<ExpenseCategoryResponse>;
         if (!response.ok || !envelope.success || !envelope.data) {
-          toast.error(getApiErrorMessage(envelope));
+          failAction(getApiErrorMessage(envelope), "update-category", categoryIdToUpdate);
           return;
         }
 
         setCategoryResult(envelope.data);
+        clearActionFeedback();
         toast.success(`تم تحديث فئة المصروف "${envelope.data.name}".`);
         router.refresh();
       })();
     });
   }
 
+  function retryLastAction() {
+    switch (retryAction) {
+      case "create-expense":
+        void handleCreateExpense();
+        break;
+      case "create-category":
+        void handleCreateCategory();
+        break;
+      case "update-category":
+        if (retryCategoryId) {
+          void handleUpdateCategory(retryCategoryId);
+        }
+        break;
+      default:
+        break;
+    }
+  }
+
   return (
     <section className="workspace-stack">
       <div className="workspace-hero">
         <div>
-          <p className="eyebrow">PX-08 / Expense Core</p>
+          <p className="eyebrow">المصروفات</p>
           <h1>المصروفات ومركز الإشعارات</h1>
           <p className="workspace-lead">
-            تسجيل مصروفات التشغيل عبر API-first مع ledger/audit صحيحين، وإدارة فئات المصروفات
-            من نفس السطح قبل الانتقال إلى التقارير المتقدمة.
+            سجّل المصروفات اليومية، نظّم فئاتها، وراجع أثرها على التشغيل من شاشة واحدة.
           </p>
         </div>
       </div>
 
       <section className="summary-grid">
         <article className="workspace-panel">
-          <p className="eyebrow">Expense Summary</p>
+          <p className="eyebrow">ملخص المصروفات</p>
           <h2>{formatCurrency(summary.total_expenses)}</h2>
           <p className="workspace-footnote">إجمالي المصروفات في الشهر الحالي.</p>
         </article>
 
         <article className="workspace-panel">
-          <p className="eyebrow">Entries</p>
+          <p className="eyebrow">القيود</p>
           <h2>{formatCompactNumber(summary.expense_count)}</h2>
           <p className="workspace-footnote">عدد المصروفات المسجلة خلال الشهر الحالي.</p>
         </article>
 
         <article className="workspace-panel">
-          <p className="eyebrow">Active Categories</p>
+          <p className="eyebrow">الفئات النشطة</p>
           <h2>{formatCompactNumber(summary.active_category_count)}</h2>
           <p className="workspace-footnote">فئات المصروف النشطة المتاحة الآن للتشغيل.</p>
         </article>
       </section>
 
+      {isPending ? (
+        <StatusBanner
+          variant="info"
+          title="جاري تنفيذ الإجراء"
+          message="انتظر حتى يكتمل تحديث المصروفات أو الفئات الحالية قبل بدء إجراء جديد."
+        />
+      ) : null}
+
+      {actionErrorMessage ? (
+        <StatusBanner
+          variant="danger"
+          title="تعذر إكمال الإجراء"
+          message={actionErrorMessage}
+          actionLabel={retryAction ? "إعادة المحاولة" : undefined}
+          onAction={retryAction ? retryLastAction : undefined}
+          onDismiss={clearActionFeedback}
+        />
+      ) : null}
+
       <div className="detail-grid">
         <section className="workspace-panel">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">New Expense</p>
+              <p className="eyebrow">مصروف جديد</p>
               <h2>تسجيل مصروف جديد</h2>
             </div>
             <Wallet size={18} />
@@ -246,7 +310,7 @@ export function ExpensesWorkspace({
               <select value={categoryId} onChange={(event) => setCategoryId(event.target.value)}>
                 {categories.map((category) => (
                   <option key={category.id} value={category.id}>
-                    {category.name} ({category.type})
+                    {category.name} ({getCategoryTypeLabel(category.type)})
                   </option>
                 ))}
               </select>
@@ -287,7 +351,7 @@ export function ExpensesWorkspace({
             <div className="result-card">
               <h3>تم حفظ آخر مصروف</h3>
               <p>رقم المصروف: {createResult.expense_number}</p>
-              <p>Ledger Entry: {createResult.ledger_entry_id}</p>
+              <p>تم تسجيل العملية في السجل المالي بنجاح.</p>
             </div>
           ) : null}
         </section>
@@ -295,7 +359,7 @@ export function ExpensesWorkspace({
         <section className="workspace-panel">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">Recent Expenses</p>
+              <p className="eyebrow">آخر المصروفات</p>
               <h2>آخر المصروفات المسجلة</h2>
             </div>
             <BellRing size={18} />
@@ -320,7 +384,7 @@ export function ExpensesWorkspace({
               ))
             ) : (
               <div className="empty-panel">
-                <p>لا توجد مصروفات مسجلة حتى الآن.</p>
+                <p>لا توجد مصروفات مسجلة حتى الآن. سجّل أول مصروف ليظهر هنا.</p>
               </div>
             )}
           </div>
@@ -331,7 +395,7 @@ export function ExpensesWorkspace({
         <section className="workspace-panel">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">Expense Categories</p>
+              <p className="eyebrow">فئات المصروفات</p>
               <h2>إدارة فئات المصروفات</h2>
             </div>
             <Wallet size={18} />
@@ -351,8 +415,8 @@ export function ExpensesWorkspace({
                     value={newCategoryType}
                     onChange={(event) => setNewCategoryType(event.target.value as "fixed" | "variable")}
                   >
-                    <option value="fixed">fixed</option>
-                    <option value="variable">variable</option>
+                    <option value="fixed">ثابتة</option>
+                    <option value="variable">متغيرة</option>
                   </select>
                 </label>
 
@@ -398,7 +462,7 @@ export function ExpensesWorkspace({
                 <div className="result-card">
                   <h3>آخر تحديث على الفئات</h3>
                   <p>{categoryResult.name}</p>
-                  <p>النوع: {categoryResult.type}</p>
+                  <p>النوع: {getCategoryTypeLabel(categoryResult.type)}</p>
                 </div>
               ) : null}
             </section>
@@ -448,8 +512,8 @@ export function ExpensesWorkspace({
                               }))
                             }
                           >
-                            <option value="fixed">fixed</option>
-                            <option value="variable">variable</option>
+                            <option value="fixed">ثابتة</option>
+                            <option value="variable">متغيرة</option>
                           </select>
                         </label>
 

@@ -128,4 +128,29 @@ describe("POST /api/returns", () => {
       p_created_by: "user-1"
     });
   });
+
+  it("fails safely when the RPC returns an invalid response shape", async () => {
+    vi.mocked(authorizeRequest).mockResolvedValue(
+      buildAuthorization({
+        rpcData: {
+          return_number: "RET-0001"
+        }
+      }) as never
+    );
+
+    const response = await POST(
+      createRequest({
+        invoice_id: invoiceId,
+        items: [{ invoice_item_id: invoiceItemId, quantity: 1 }],
+        refund_account_id: refundAccountId,
+        return_type: "partial",
+        reason: "damaged",
+        idempotency_key: idempotencyKey
+      })
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(500);
+    expect(payload.error.code).toBe("ERR_API_INTERNAL");
+  });
 });

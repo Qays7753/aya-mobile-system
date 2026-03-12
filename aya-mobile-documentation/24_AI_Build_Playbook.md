@@ -752,3 +752,259 @@ Use business rules from 04_Core_Flows.md and 16_Error_Codes.md.
 **الإصدار:** 1.2
 **تاريخ التحديث:** 10 مارس 2026
 **الحالة:** Active Playbook for Build Handoff + Post-V1 Planning
+
+---
+
+## المرحلة 3: ما بعد `PX-14` (Post-V2 Productization / Execution-Ready)
+
+هذا القسم لا يبدأ التنفيذ تلقائيًا.
+هو يحوّل نتائج التقارير الثلاثة إلى phases قابلة للتنفيذ بنفس صرامة `PX-01 .. PX-14`.
+
+### قواعد إلزامية خاصة بما بعد V2
+
+1. لا يُعاد فتح authority المالية أو DB contracts إلا إذا كان الإصلاح hardening ضروريًا ومثبتًا.
+2. لا تُعامل الأحكام الذوقية وحدها كـ blockers؛ يجب دائمًا ربطها بمشكلة منتج أو استخدام أو هوية بصرية قابلة للقياس.
+3. لا تُخلط مشاكل البيئة/التشغيل (`env`, `build`, `Replit`, `cron secrets`) مع مشاكل UX داخل task واحدة.
+4. أي تحسين navigation أو IA يجب أن يحافظ على:
+   - `Blind POS`
+   - role scoping
+   - device contract
+   - print baseline
+5. أي تحسين loading أو retry أو optimistic behavior يجب أن يبقى:
+   - API-first
+   - non-destructive
+   - غير متناقض مع idempotency الحالية
+6. لا يتم اعتماد dark mode أو product media أو motion كـ claims تصميمية إلا بعد تنفيذ فعلي واختبار devices.
+7. أي hardening أمني جديد يجب أن يُثبت أنه لم يكسر:
+   - public receipt links
+   - cron flows
+   - export/import/restore flows
+8. لا يُغلق أي phase في هذا المسار قبل إثبات أن التغيير لم يُدخل regression على الهاتف/التابلت/اللابتوب.
+
+### حزمة التحضير الإلزامية قبل أول Task بعد `PX-14`
+
+1. اقرأ `09_Implementation_Plan.md` — قسم `Post-V2 Productization / Hardening`.
+2. افتح `31_Execution_Live_Tracker.md` — قسم `Post-PX-14 Planning Package`.
+3. راجع `03_UI_UX_Sitemap.md` — addendum الخاص بـ post-V2 IA.
+4. راجع `17_UAT_Scenarios.md` — مجموعة `UAT-52 .. UAT-66`.
+5. راجع `27_PreBuild_Verification_Matrix.md` — البوابات `VB-27 .. VB-35`.
+6. طبّع أي finding جديد إلى أحد الأنواع قبل التنفيذ:
+   - `Confirmed`
+   - `Reframed`
+   - `External / Deployment`
+   - `Optional Product Scope`
+   - `Resolved / Obsolete`
+7. أنشئ `Task Contract` ثم نفّذ الشريحة عموديًا:
+   - `UX / Contract → API/UI state changes → Proof → Review`
+
+---
+
+## PX-15 — User-Facing Cleanup + Product Copy Hygiene
+
+### الهدف التنفيذي
+
+إزالة كل ما يجعل المنتج يبدو أداة داخلية للمطورين بدل منتجًا للمستخدم، مع ضبط copy, metadata, context, وsurface semantics.
+
+### Phase Contract
+
+- **In Scope:** user-facing copy cleanup, metadata, page titles, role landing copy, empty states, hiding internal IDs/strings, misleading affordances review.
+- **Allowed Paths:** `app/*`, `components/*`, `lib/*`, `03`, `17`, `31`, `tests/*`.
+- **Required Proofs:** no internal terminology leakage, no visible `idempotency_key`, page titles/context present, empty states actionable.
+- **Stop Rules:** ممنوع تغيير business behavior أثناء تنظيف النصوص؛ وممنوع حذف أي internal identifier إذا كان ما زال مطلوبًا لdebug دون إيجاد بديل داخلي آمن.
+
+| Task | الهدف | الملفات المرجحة | اختبار القبول | Stop Rules |
+|------|-------|------------------|---------------|------------|
+| `PX-15-T01` | إزالة `PX-*`, `baseline`, `SOP`, وdev labels من UI | `app/*`, `components/*` | grep + screenshots بدون أي مصطلح داخلي ظاهر | ممنوع حذف tracker/debug docs |
+| `PX-15-T02` | إخفاء `idempotency_key` والمعرفات التشغيلية من الأسطح المرئية | `components/pos/*`, `components/dashboard/*` | لا يظهر أي `idempotency_key` أو raw IDs في UI | ممنوع كسر التدفق الفعلي |
+| `PX-15-T03` | page titles + metadata + context headers + breadcrumb model | `app/*`, `metadata`, layout helpers | كل صفحة تحمل عنوانًا واضحًا وغير تقني | ممنوع metadata عامة فقط |
+| `PX-15-T04` | تحسين homepage/login/empty states/role summaries | `app/page.tsx`, `app/login/*`, workspace states | surfaces أوضح للمستخدم النهائي | ممنوع لغة تنفيذية داخلية |
+| `PX-15-T05` | مراجعة affordances المضللة (`barcode`, raw URLs, hidden technical hints) | `POS`, `invoices`, `notifications` | لا يوجد surface توحي بميزة غير منفذة | ممنوع claim feature غير موجودة |
+
+---
+
+## PX-16 — Navigation + Information Architecture + Role Experience
+
+### الهدف التنفيذي
+
+إعادة بناء navigation وIA لتصبح قابلة للاستخدام فعليًا على الهاتف والتابلت واللابتوب، مع فصل أوضح بين تجربة Admin وPOS.
+
+### Phase Contract
+
+- **In Scope:** sidebar/drawer navigation, grouping, role-aware surfaces, breadcrumbs, IA reduction للشاشات المزدحمة, global search placement.
+- **Allowed Paths:** `app/(dashboard)/*`, `components/*`, `03`, `17`, `29`, `tests/e2e/*`.
+- **Required Proofs:** mobile navigation usable, role-aware home flows, overcrowded screens reduced, global search discoverable.
+- **Stop Rules:** ممنوع كسر access scoping أو إخفاء إجراءات حساسة بلا بديل contextual واضح.
+
+| Task | الهدف | الملفات المرجحة | اختبار القبول | Stop Rules |
+|------|-------|------------------|---------------|------------|
+| `PX-16-T01` | sidebar/drawer responsive مع icons وgrouping | dashboard layout/navigation components | phone/tablet/laptop navigation pass | ممنوع بقاء 14 flat links كما هي |
+| `PX-16-T02` | role-aware home/navigation بين `Admin` و`POS` | dashboard home/access helpers | كل دور يرى surface أبسط وأنسب | ممنوع privilege confusion |
+| `PX-16-T03` | breadcrumbs/page hierarchy واضحة | layout + page shells | user context واضح بعد كل تنقل | ممنوع عناوين غامضة |
+| `PX-16-T04` | تخفيف ازدحام `invoices/inventory/notifications/reports/settings` | workspace components | lower cognitive load + actions grouped منطقيًا | ممنوع كسر workflows الحالية |
+| `PX-16-T05` | global search placement + mobile IA proof | nav + notifications + search surfaces | البحث ليس مدفونًا والـ IA صالحة على 360px | ممنوع search خارج scope الصلاحيات |
+
+---
+
+## PX-17 — Async UX + Feedback + Action Safety
+
+### الهدف التنفيذي
+
+معالجة فجوات التحميل والأخطاء والتأكيدات والانتقالات حتى لا تبدو الأسطح جامدة أو صامتة أو غير آمنة.
+
+### Phase Contract
+
+- **In Scope:** loading skeletons, Suspense fallbacks, persistent error states, retry patterns, confirmation dialogs, router transitions, pending/offline banners.
+- **Allowed Paths:** `app/*`, `components/*`, `lib/*`, `tests/*`, `17`, `27`.
+- **Required Proofs:** no blank/frozen states, destructive actions confirmed, retriable failures واضحة, login/navigation no full reload.
+- **Stop Rules:** ممنوع optimistic mutation على أي path مالي حساس دون proof خاص.
+
+| Task | الهدف | الملفات المرجحة | اختبار القبول | Stop Rules |
+|------|-------|------------------|---------------|------------|
+| `PX-17-T01` | loading skeletons + Suspense fallbacks | route segments + workspaces | كل screen critical لها loading state واضحة | ممنوع blank SSR feel |
+| `PX-17-T02` | persistent error states + retry patterns | API consumers + workspace shells | الخطأ يبقى مفهومًا وقابلًا للإعادة | ممنوع toast-only handling |
+| `PX-17-T03` | استبدال full reload flows بـ App Router transitions | auth/navigation flows | no `window.location.assign` in app flows | ممنوع refresh كامل غير لازم |
+| `PX-17-T04` | confirmation dialogs للأفعال الحساسة | invoices/settings/portability/... | destructive flows confirmed | ممنوع destructive action بلا confirm |
+| `PX-17-T05` | pending/offline/optimistic decision pass | shared async patterns | feedback أثناء التنفيذ والانقطاع واضح | ممنوع تضليل المستخدم عن حالة العملية |
+
+---
+
+## PX-18 — Visual System + Accessibility Refresh
+
+### الهدف التنفيذي
+
+رفع الواجهة من طبقة functional prototype إلى سطح بصري متسق وقابل للاستخدام الطويل، مع accessibility حقيقية.
+
+### Phase Contract
+
+- **In Scope:** typography, design tokens, color/spacing/shadows/radii, reusable UI states, focus-visible, labels, touch targets, dark mode, motion, table states, POS visual hierarchy.
+- **Allowed Paths:** `app/globals.css`, `components/*`, `app/*`, `03`, `17`, `29`, `tests/e2e/*`.
+- **Required Proofs:** visual consistency pass, accessibility/device pass, no regression on print/installability.
+- **Stop Rules:** ممنوع visual refresh يكسر readability أو device contract أو print surfaces.
+
+| Task | الهدف | الملفات المرجحة | اختبار القبول | Stop Rules |
+|------|-------|------------------|---------------|------------|
+| `PX-18-T01` | typography حديثة + design tokens | global styles/theme helpers | خط وهوية بصرية موحدة | ممنوع مزج tokens عشوائي |
+| `PX-18-T02` | reusable primitives + table/list/form states | shared components | اتساق بصري وتفاعلي واضح | ممنوع إعادة تشتت CSS الخام |
+| `PX-18-T03` | visual refresh للأسطح الأساسية (`home/login/POS/reports`) | app/components core surfaces | المنتج لم يعد developer-facing بصريًا | ممنوع decorative clutter |
+| `PX-18-T04` | accessibility pass | focus/aria/keyboard/touch targets | a11y UAT pass | ممنوع focus traps أو missing labels |
+| `PX-18-T05` | dark mode + motion/micro-interactions + final visual proof | theme/motion layers | dark mode usable + motion controlled | ممنوع motion يضر الأداء أو القراءة |
+
+---
+
+## PX-19 — Security / Runtime / Deployment Hardening
+
+### الهدف التنفيذي
+
+إغلاق gaps الأمن والهاردننغ والتشغيل والاعتماديات والاختبار التي لا تخص UX مباشرة لكنها تمنع المنتج من أن يكون production-grade.
+
+### Phase Contract
+
+- **In Scope:** dependency/runtime policy, security headers, rate limiting, env policy, CRON secret hardening, client reuse, cart/runtime state hardening, route response strictness, test expansion.
+- **Allowed Paths:** `package.json`, `next.config.*`, `lib/*`, `app/api/*`, `stores/*`, `tests/*`, `13`, `17`, `27`, `31`.
+- **Required Proofs:** no security header gaps, rate limit proof, env/deployment policy documented, runtime/cart fixes proven, expanded test matrix.
+- **Stop Rules:** ممنوع breaking changes على auth/session/public receipt/cron flows بلا staged proof.
+
+| Task | الهدف | الملفات المرجحة | اختبار القبول | Stop Rules |
+|------|-------|------------------|---------------|------------|
+| `PX-19-T01` | dependency/runtime audit + upgrade policy | `package.json`, lockfile, runtime docs | update policy واضحة ومختبرة | ممنوع upgrade blind |
+| `PX-19-T02` | security headers + rate limiting + error sanitization | `next.config.*`, API helpers | hardening pass دون leakage | ممنوع internal detail leak |
+| `PX-19-T03` | env/deployment policy + compatibility | `lib/env.ts`, deployment docs, runtime config | env gaps لا تفشل بصمت + compatibility decision موثق | ممنوع optional production secrets بلا قرار |
+| `PX-19-T04` | request/client/cart/runtime hardening | `lib/api/common.ts`, `lib/supabase/*`, `stores/*`, route files | singleton/reuse/state correctness proven | ممنوع stale stock/idempotency window غير معالجة |
+| `PX-19-T05` | test coverage expansion | workspace tests, formatter tests, cross-env/browser checks | UI/runtime gaps مغطاة اختباريًا | ممنوع إغلاق hardening بلا tests إضافية |
+
+---
+
+## PX-20 — Productization Release Gate
+
+### الهدف التنفيذي
+
+إعلان جاهزية ما بعد V2 فقط بعد إثبات UX, accessibility, security, deployment, and runtime hardening مجتمعة.
+
+### Phase Contract
+
+- **In Scope:** UX/device UAT, accessibility audit, security/runtime/deployment audit, final Go/No-Go.
+- **Allowed Paths:** `31`, `17`, `27`, تقارير الأدلة فقط, وأي bugfix minimal إذا ظهر blocker موثق.
+- **Required Proofs:** post-V2 UAT = Pass, accessibility/device = Pass, security/runtime/deployment = no P0/P1, final decision documented.
+- **Stop Rules:** ممنوع إعلان `Go` مع technical leakage أو mobile navigation failure أو security/deployment blocker مفتوح.
+
+| Task | الهدف | الملفات المرجحة | اختبار القبول | Stop Rules |
+|------|-------|------------------|---------------|------------|
+| `PX-20-T01` | UX/content/navigation UAT | `17`, `tests/*` | post-V2 UX scenarios = Pass | ممنوع تجاهل user-facing regressions |
+| `PX-20-T02` | accessibility/device/visual audit | `17`, `27`, `29` | phone/tablet/laptop + a11y = Pass | ممنوع Go مع a11y blocker |
+| `PX-20-T03` | security/runtime/deployment audit | `27`, `13`, `31` | no `P0/P1` findings | ممنوع Go مع hardening fail |
+| `PX-20-T04` | قرار `Go/No-Go` | `31` | decision documented with evidence | ممنوع إغلاق دون phase review مستقل |
+
+---
+
+## Bundle مراجعة ما بعد `PX-14`
+
+عند مراجعة أي Phase من `PX-15 .. PX-20`، يجب أن يتحقق المراجع من:
+
+1. هل كل finding من التقارير الثلاثة تم:
+   - استهلاكه
+   - أو إعادة صياغته
+   - أو عزله كـ external/deployment item
+   - أو إغلاقه كـ obsolete؟
+2. هل تحسنت الواجهة دون كسر:
+   - authority الحالية
+   - Device Contract
+   - print/installability baselines
+3. هل التحسينات البصرية والـ UX مدعومة بأدلة تشغيلية لا بأحكام ذوقية فقط؟
+4. هل hardening track منفصل بوضوح عن UX track داخل التنفيذ والأدلة؟
+5. هل كل claim جديد للمستخدم النهائي أصبح مدعومًا فعليًا في الكود والاختبارات؟
+
+---
+
+### Prompt I: User-Facing Cleanup
+```text
+Implement user-facing cleanup without changing business behavior.
+Constraints:
+- Remove internal terms like PX/baseline/SOP/idempotency_key from visible UI.
+- Keep internal identifiers available only in logs/dev tooling, not end-user surfaces.
+- Preserve role scoping and existing flows.
+- Provide grep proof + screenshots across phone/tablet/laptop.
+```
+
+### Prompt J: Navigation + IA Refactor
+```text
+Refactor dashboard navigation and information architecture.
+Constraints:
+- Replace flat nav with grouped sidebar/drawer.
+- Mobile-first behavior is mandatory.
+- Add clear page titles/breadcrumbs/context.
+- Reduce overcrowding in invoices/inventory/notifications/reports/settings.
+- Do not break role-based visibility or Blind POS.
+```
+
+### Prompt K: Async UX + Action Safety
+```text
+Improve async UX safely.
+Constraints:
+- Add loading skeletons or Suspense fallbacks for critical workspaces.
+- Add persistent error states with retry.
+- Replace full reload transitions with App Router navigation.
+- Add confirmation dialogs for destructive actions.
+- Do not introduce optimistic writes for sensitive financial mutations unless explicitly proven safe.
+```
+
+### Prompt L: Visual System + Accessibility
+```text
+Introduce a coherent visual system and accessibility pass.
+Constraints:
+- Establish typography and design tokens first.
+- Improve tables, forms, cards, and navigation states consistently.
+- Add focus-visible, labels, keyboard support, and touch-target guarantees.
+- Preserve print/installability/device behavior.
+- Dark mode and motion are allowed only if they remain performant and readable.
+```
+
+### Prompt M: Security / Runtime / Deployment Hardening
+```text
+Harden runtime and deployment without reopening business authority.
+Constraints:
+- Add security headers and rate limiting.
+- Sanitize internal errors.
+- Clarify production env requirements and cron secret policy.
+- Reduce redundant client creation and harden cart/runtime state.
+- Expand tests for workspaces, formatters, and cross-environment behavior.
+```

@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { authorizeRequest, errorResponse, getApiErrorMeta } from "@/lib/api/common";
+import { authorizeRequest, errorResponse, getApiErrorMeta, internalErrorResponse } from "@/lib/api/common";
 import { getNotificationErrorMeta } from "@/lib/api/notifications";
 import type { StandardEnvelope } from "@/lib/pos/types";
-import { markNotificationsReadSchema } from "@/lib/validations/expenses";
+import { markNotificationsReadSchema } from "@/lib/validations/notifications";
 
 type UpdatedNotificationsResponse = {
   updated_count: number;
@@ -53,10 +53,7 @@ export async function POST(request: Request) {
 
       const { data, error } = await query.returns<NotificationIdRow[]>();
       if (error) {
-        const meta = getApiErrorMeta("ERR_API_INTERNAL");
-        return errorResponse("ERR_API_INTERNAL", meta.message, meta.status, {
-          reason: error.message
-        });
+        return internalErrorResponse(error, { context: "notifications.read.lookup-all" });
       }
 
       idsToUpdate = (data ?? []).map((row) => row.id);
@@ -73,10 +70,7 @@ export async function POST(request: Request) {
 
       const { data, error } = await query.returns<NotificationIdRow[]>();
       if (error) {
-        const meta = getApiErrorMeta("ERR_API_INTERNAL");
-        return errorResponse("ERR_API_INTERNAL", meta.message, meta.status, {
-          reason: error.message
-        });
+        return internalErrorResponse(error, { context: "notifications.read.lookup-selection" });
       }
 
       idsToUpdate = (data ?? []).map((row) => row.id);
@@ -108,10 +102,7 @@ export async function POST(request: Request) {
       .select("id");
 
     if (error) {
-      const meta = getApiErrorMeta("ERR_API_INTERNAL");
-      return errorResponse("ERR_API_INTERNAL", meta.message, meta.status, {
-        reason: error.message
-      });
+      return internalErrorResponse(error, { context: "notifications.read.update" });
     }
 
     return NextResponse.json<StandardEnvelope<UpdatedNotificationsResponse>>(
@@ -124,9 +115,6 @@ export async function POST(request: Request) {
       { status: 200 }
     );
   } catch (error) {
-    const meta = getApiErrorMeta("ERR_API_INTERNAL");
-    return errorResponse("ERR_API_INTERNAL", meta.message, meta.status, {
-      reason: (error as Error).message
-    });
+    return internalErrorResponse(error, { context: "notifications.read.unhandled" });
   }
 }

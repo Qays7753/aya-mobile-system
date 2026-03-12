@@ -1,9 +1,15 @@
+import type { Metadata } from "next";
 import { getWorkspaceAccess } from "@/app/(dashboard)/access";
 import { AccessRequired } from "@/components/dashboard/access-required";
 import { OperationsWorkspace } from "@/components/dashboard/operations-workspace";
 import { getOperationsPageBaseline } from "@/lib/api/dashboard";
 import { hasPermission } from "@/lib/permissions";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+
+export const metadata: Metadata = {
+  title: "الشحن والتحويلات",
+  description: "تسجيل عمليات الشحن والتحويلات الداخلية ومتابعة أثرها على الحسابات."
+};
 
 export default async function OperationsPage() {
   const access = await getWorkspaceAccess();
@@ -20,8 +26,8 @@ export default async function OperationsPage() {
   if (access.state !== "ok" || !hasPermission(access.permissions, "operations.read")) {
     return (
       <AccessRequired
-        title="هذه الشاشة تتطلب bundle عمليات صالحًا"
-        description="يحتاج المستخدم إلى صلاحية `operations.read` لعرض الشحن. التحويل الداخلي يبقى محصورًا بالـ Admin."
+        title="هذه الشاشة غير متاحة لهذا الحساب"
+        description="تحتاج إلى صلاحية عرض العمليات، بينما تبقى التحويلات الداخلية للحسابات الإدارية."
       />
     );
   }

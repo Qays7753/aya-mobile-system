@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { authorizeRequest, errorResponse, extractErrorCode, getApiErrorMeta } from "@/lib/api/common";
+import { authorizeRequest, errorResponse, extractErrorCode, getApiErrorMeta, internalErrorResponse } from "@/lib/api/common";
 import { getCreateReturnErrorMeta } from "@/lib/api/returns";
 import type { StandardEnvelope } from "@/lib/pos/types";
 import { createReturnSchema } from "@/lib/validations/returns";
@@ -55,24 +55,46 @@ export async function POST(request: Request) {
       return errorResponse(code, meta.message, meta.status);
     }
 
+    if (!data || typeof data.return_id !== "string" || typeof data.return_number !== "string") {
+      return internalErrorResponse(new Error("ERR_API_CONTRACT_INVALID"), {
+        context: "returns.response-shape"
+      });
+    }
+
+    const refundedAmount =
+      typeof data.refunded_amount === "number"
+        ? data.refunded_amount
+        : typeof data.total === "number"
+          ? data.total
+          : null;
+    const totalAmount =
+      typeof data.total_amount === "number"
+        ? data.total_amount
+        : typeof data.total === "number"
+          ? data.total
+          : refundedAmount;
+
+    if (refundedAmount === null || totalAmount === null) {
+      return internalErrorResponse(new Error("ERR_API_CONTRACT_INVALID"), {
+        context: "returns.response-amounts"
+      });
+    }
+
     return NextResponse.json<StandardEnvelope<ReturnResponseData>>(
       {
         success: true,
         data: {
           return_id: data.return_id,
           return_number: data.return_number,
-          refunded_amount: data.refunded_amount ?? data.total ?? 0,
-          return_type: data.return_type ?? payload.return_type,
-          total_amount: data.total_amount ?? data.total ?? data.refunded_amount ?? 0,
+          refunded_amount: refundedAmount,
+          return_type: data.return_type === "full" || data.return_type === "partial" ? data.return_type : payload.return_type,
+          total_amount: totalAmount,
           debt_reduction: data.debt_reduction ?? 0
         }
       },
       { status: 200 }
     );
   } catch (error) {
-    const meta = getApiErrorMeta("ERR_API_INTERNAL");
-    return errorResponse("ERR_API_INTERNAL", meta.message, meta.status, {
-      reason: (error as Error).message
-    });
+    return internalErrorResponse(error, { context: "returns.unhandled" });
   }
 }

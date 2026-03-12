@@ -48,6 +48,52 @@ describe("usePosCartStore", () => {
     expect(state.items[0].quantity).toBe(2);
   });
 
+  it("refreshes stale product pricing and stock when the same item is added again", () => {
+    const store = usePosCartStore.getState();
+
+    store.addProduct({
+      id: "product-1",
+      name: "سماعة",
+      category: "accessory",
+      sku: null,
+      description: null,
+      sale_price: 5,
+      stock_quantity: 10,
+      min_stock_level: 2,
+      track_stock: true,
+      is_quick_add: true,
+      is_active: true,
+      created_at: "",
+      updated_at: "",
+      created_by: "user-1"
+    });
+
+    store.addProduct({
+      id: "product-1",
+      name: "سماعة محدثة",
+      category: "premium",
+      sku: null,
+      description: null,
+      sale_price: 5.1294,
+      stock_quantity: 1,
+      min_stock_level: 2,
+      track_stock: true,
+      is_quick_add: true,
+      is_active: true,
+      created_at: "",
+      updated_at: "",
+      created_by: "user-1"
+    });
+
+    const state = usePosCartStore.getState();
+
+    expect(state.items[0].name).toBe("سماعة محدثة");
+    expect(state.items[0].category).toBe("premium");
+    expect(state.items[0].sale_price).toBe(5.129);
+    expect(state.items[0].stock_quantity).toBe(1);
+    expect(state.items[0].quantity).toBe(1);
+  });
+
   it("calculates subtotal, discount, and total from the local cart", () => {
     usePosCartStore.setState({
       items: [
@@ -103,6 +149,10 @@ describe("usePosCartStore", () => {
     expect(state.lastCompletedSale?.invoice_number).toBe("INV-0001");
   });
 
+  it("starts with a bootstrapped idempotency key", () => {
+    expect(usePosCartStore.getState().currentIdempotencyKey).not.toBe("");
+  });
+
   it("persists the local cart slice and restores it after hydration", async () => {
     const store = usePosCartStore.getState();
 
@@ -147,5 +197,31 @@ describe("usePosCartStore", () => {
     expect(hydrated.selectedAccountId).toBe("account-1");
     expect(hydrated.posTerminalCode).toBe("POS-09");
     expect(hydrated.notes).toBe("keep me");
+    expect(hydrated.currentIdempotencyKey).not.toBe("");
+  });
+
+  it("replaces an empty persisted idempotency key during hydration", async () => {
+    localStorage.setItem(
+      "aya-mobile-pos-cart",
+      JSON.stringify({
+        state: {
+          items: [],
+          selectedAccountId: null,
+          posTerminalCode: "POS-01",
+          notes: "",
+          currentIdempotencyKey: "",
+          lastCompletedSale: null
+        },
+        version: 0
+      })
+    );
+
+    usePosCartStore.setState({
+      currentIdempotencyKey: ""
+    });
+
+    await usePosCartStore.persist.rehydrate();
+
+    expect(usePosCartStore.getState().currentIdempotencyKey).not.toBe("");
   });
 });

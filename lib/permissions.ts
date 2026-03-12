@@ -97,7 +97,7 @@ export async function resolvePermissionContext(
     .returns<RoleAssignmentWithBundleRow[]>();
 
   if (error) {
-    throw error;
+    throw new Error("ERR_PERMISSION_CONTEXT_UNAVAILABLE");
   }
 
   const basePermissions = getBasePermissions(role);
