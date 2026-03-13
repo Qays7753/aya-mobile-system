@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function LoginPage() {
   return (
-    <main className="baseline-shell baseline-shell--auth">
+    <main className="baseline-shell baseline-shell--auth login-shell">
       <section className="compatibility-strip" aria-label="روابط سريعة">
         <span>الدخول متاح للحسابات النشطة بحسب الصلاحية الممنوحة لها</span>
         <Link href="/" className="secondary-button">

@@ -29,5 +29,5 @@ export default async function ProductsPage() {
     );
   }
 
-  return <ProductsBrowser />;
+  return <ProductsBrowser role={access.role} />;
 }

@@ -64,9 +64,9 @@ test.describe.serial("PX-18 visual system + accessibility", () => {
 
     await login(page, admin.email, admin.password, "/reports");
     await expect(page).toHaveTitle(/التقارير/);
-    await expect(page.getByRole("heading", { name: "التقارير المتقدمة والتحليلات المقارنة" })).toBeVisible();
-    await expect(page.getByText("ملخص الفترة الحالية مقابل فترة المقارنة")).toBeVisible();
-    await expect(page.locator(".summary-grid").first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: "قراءة أوضح للأداء والمقارنات" })).toBeVisible();
+    await expect(page.getByText("ابدأ بالفلاتر، راجع المؤشرات الأساسية")).toBeVisible();
+    await expect(page.locator(".analytical-page__meta-grid").first()).toBeVisible();
     await expect(page.locator(".data-table").first()).toBeVisible();
     await expect(page.locator(".dashboard-breadcrumbs")).toBeVisible();
   });
@@ -80,7 +80,7 @@ test.describe.serial("PX-18 visual system + accessibility", () => {
     const topbarSearchField = page.locator("form.dashboard-quick-search .workspace-search");
     const topbarSearchInput = page.getByPlaceholder("ابحث سريعًا عن فاتورة أو منتج أو عميل");
     const topbarSearchButton = page.getByRole("button", { name: "البحث الشامل" });
-    const productSearchField = page.locator(".pos-grid .workspace-search").first();
+    const productSearchField = page.locator(".transaction-toolbar__search").first();
     const productSearchInput = page.getByPlaceholder("ابحث باسم المنتج أو SKU");
     const confirmSaleButton = page.getByRole("button", { name: "تأكيد البيع" });
 
@@ -159,7 +159,7 @@ test.describe.serial("PX-18 visual system + accessibility", () => {
       expect(visualState.reducedMotionMatches).toBeTruthy();
       expect(visualState.scrollBehavior).toBe("auto");
 
-      await expect(page.getByRole("heading", { name: "التقارير المتقدمة والتحليلات المقارنة" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "قراءة أوضح للأداء والمقارنات" })).toBeVisible();
       await expect(page.getByRole("link", { name: "تصدير Excel المتقدم" })).toBeVisible();
     });
   }

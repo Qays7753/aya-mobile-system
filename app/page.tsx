@@ -1,6 +1,17 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import {
+  ArrowLeft,
+  BellRing,
+  ChartColumnIncreasing,
+  PackageSearch,
+  ShieldCheck,
+  ShoppingCart,
+  Smartphone,
+  Store
+} from "lucide-react";
 import { InstallPrompt } from "@/components/runtime/install-prompt";
+import { SectionCard } from "@/components/ui/section-card";
 
 export const metadata: Metadata = {
   title: "الصفحة الرئيسية",
@@ -10,124 +21,152 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <main className="baseline-shell baseline-shell--landing">
-      <section className="hero-panel hero-panel--landing">
+      <section className="hero-panel hero-panel--landing landing-hero">
         <div className="hero-panel__copy">
-          <p className="eyebrow">لوحة تشغيل موحدة</p>
+          <p className="eyebrow">تشغيل تجزئة عربي وواضح</p>
           <h1>Aya Mobile</h1>
           <p className="hero-panel__lead">
-            نظام تشغيل يومي للمبيعات والمخزون والدين والفواتير، مصمم ليعمل بسلاسة على الهاتف
-            والتابلت والكمبيوتر مع مسارات واضحة لكل دور.
+            منصة تشغيل يومية لنقطة البيع والمخزون والفواتير والمتابعة الإدارية، مصممة لتبقى
+            سريعة وواضحة في بيئة المتجر وعلى كل شاشة.
           </p>
 
           <div className="hero-panel__actions">
             <Link href="/login" className="primary-button">
-              ابدأ جلسة العمل
+              ادخل إلى مساحة العمل
+              <ArrowLeft size={16} />
             </Link>
             <Link href="/pos" className="secondary-button">
-              معاينة نقطة البيع
+              افتح نقطة البيع
             </Link>
+          </div>
+
+          <div className="hero-badge-row" aria-label="أبرز مزايا المنصة">
+            <span className="hero-badge">RTL أصيل للعربية</span>
+            <span className="hero-badge">جاهز للهاتف والتابلت</span>
+            <span className="hero-badge">مسارات واضحة لكل دور</span>
           </div>
         </div>
 
         <div className="hero-panel__visual">
-          <dl className="hero-metrics" aria-label="جاهزية التشغيل">
-            <div>
-              <dt>الأجهزة</dt>
-              <dd>هاتف / تابلت / لابتوب / كمبيوتر مكتبي</dd>
-            </div>
-            <div>
-              <dt>النقاط المرجعية</dt>
-              <dd>360 / 768 / 1024+</dd>
-            </div>
-            <div>
-              <dt>الوضع</dt>
-              <dd>يعمل عبر الاتصال المباشر فقط</dd>
-            </div>
-          </dl>
-
-          <div className="hero-feature-stack" aria-label="أبرز النقاط">
-            <article className="hero-feature-card">
-              <strong>بيع سريع وتتبع يومي</strong>
-              <p>المسارات الأساسية تبقى قريبة من فريق العمل مع ترتيب أوضح للاستخدام اليومي.</p>
+          <div className="hero-stat-grid" aria-label="جاهزية التشغيل">
+            <article className="hero-stat-card">
+              <span>قنوات العمل</span>
+              <strong>بيع - متابعة - تقارير</strong>
             </article>
-            <article className="hero-feature-card">
-              <strong>تجربة متسقة على كل الأجهزة</strong>
-              <p>تعمل نفس المهام الرئيسية على الهاتف والتابلت والكمبيوتر دون إرهاق بصري أو تعقيد.</p>
+            <article className="hero-stat-card">
+              <span>الأجهزة</span>
+              <strong>هاتف / تابلت / كمبيوتر</strong>
+            </article>
+            <article className="hero-stat-card hero-stat-card--safe">
+              <ShieldCheck size={18} />
+              <div>
+                <span>جاهزية التشغيل</span>
+                <strong>مسارات واضحة وصلاحيات مضبوطة</strong>
+              </div>
             </article>
           </div>
+
+          <SectionCard
+            tone="accent"
+            eyebrow="كيف تبدو البداية؟"
+            title="شريط تنقل واضح ومساحات تشغيل متخصصة"
+            description="كل دور يصل سريعًا إلى المسارات المناسبة له: البيع السريع، المتابعة اليومية، والتقارير الإدارية."
+          >
+            <div className="landing-highlight-list">
+              <span>
+                <ShoppingCart size={16} />
+                نقطة بيع سريعة بسلة ظاهرة دائمًا
+              </span>
+              <span>
+                <PackageSearch size={16} />
+                متابعة المنتجات والفواتير والديون من مسار واحد
+              </span>
+              <span>
+                <ChartColumnIncreasing size={16} />
+                تقارير مرئية أوضح للمديرين والمشرفين
+              </span>
+            </div>
+          </SectionCard>
         </div>
       </section>
 
-      <section className="baseline-grid" aria-label="أقسام التشغيل">
-        <article className="baseline-card">
-          <p className="eyebrow">التشغيل اليومي</p>
-          <h2>أدوات واضحة لفريق العمل</h2>
-          <p>
-            من شاشة واحدة يمكن متابعة اللقطة اليومية، مراجعة الأرصدة، تنفيذ التسويات، وإغلاق
-            الجرد بخطوات تشغيلية واضحة.
-          </p>
-        </article>
+      <section className="landing-pillars" aria-label="أعمدة التجربة">
+        <SectionCard
+          eyebrow="التشغيل اليومي"
+          title="نقطة بيع سريعة ومسار واضح للموظف"
+          description="منتجات قابلة للبحث، سلة ظاهرة دائمًا، وخطوات بيع مختصرة تناسب ضغط العمل."
+        >
+          <div className="landing-feature-meta">
+            <span>
+              <ShoppingCart size={16} />
+              بيع سريع
+            </span>
+            <span>
+              <BellRing size={16} />
+              إشعارات واضحة
+            </span>
+          </div>
+        </SectionCard>
 
-        <article className="baseline-card">
-          <p className="eyebrow">التقارير</p>
-          <h2>مؤشرات يومية وتقارير قابلة للتصفية</h2>
-          <p>
-            راقب المبيعات، الديون، الحسابات، المخزون، واللقطات اليومية بفلاتر سهلة حسب التاريخ
-            والموظف والجهاز.
-          </p>
-        </article>
+        <SectionCard
+          eyebrow="المتابعة"
+          title="مساحات منظمة للمخزون والفواتير والديون"
+          description="تنقل مجمّع حسب نوع العمل مع بطاقات وأقسام أسهل للفهم على الشاشات الصغيرة والكبيرة."
+          tone="subtle"
+        >
+          <div className="landing-feature-meta">
+            <span>
+              <Store size={16} />
+              موردون ومشتريات
+            </span>
+            <span>
+              <PackageSearch size={16} />
+              جرد وتسوية
+            </span>
+          </div>
+        </SectionCard>
 
-        <article className="baseline-card">
-          <p className="eyebrow">جاهزية الأجهزة</p>
-          <h2>تجربة موحدة على كل الشاشات</h2>
-          <p>
-            نفس المهام الأساسية تعمل على الهاتف والتابلت والكمبيوتر مع دعم التثبيت من المتصفح
-            والطباعة المباشرة عند الحاجة.
-          </p>
-        </article>
+        <SectionCard
+          eyebrow="التحليل"
+          title="تقارير ومؤشرات تقرأ بسرعة"
+          description="بطاقات KPI، مقارنات أوضح، وتصدير منظم يساعد المدير على متابعة التشغيل دون ازدحام بصري."
+        >
+          <div className="landing-feature-meta">
+            <span>
+              <ChartColumnIncreasing size={16} />
+              مقارنة الفترات
+            </span>
+            <span>
+              <Smartphone size={16} />
+              قابل للاستخدام على كل جهاز
+            </span>
+          </div>
+        </SectionCard>
       </section>
 
-      <section className="baseline-actions" aria-label="نقاط الدخول الرئيسية">
-        <Link href="/login" className="baseline-link-card">
-          <p className="eyebrow">ابدأ من هنا</p>
+      <section className="entry-grid" aria-label="نقاط الدخول الرئيسية">
+        <Link href="/login" className="baseline-link-card landing-link-card">
+          <p className="eyebrow">ابدأ جلسة العمل</p>
           <h2>تسجيل الدخول</h2>
-          <p>افتح جلسة العمل للوصول إلى المسارات المناسبة لدورك.</p>
+          <p>ادخل إلى مساحة العمل المناسبة لدورك مع مسارات واضحة من اللحظة الأولى.</p>
         </Link>
 
-        <Link href="/products" className="baseline-link-card">
+        <Link href="/pos" className="baseline-link-card baseline-link-card--accent landing-link-card">
+          <p className="eyebrow">الأولوية الأولى</p>
+          <h2>نقطة البيع</h2>
+          <p>شاشة بيع سريعة، سلة ثابتة، وخطوات مختصرة لإنهاء العملية بثقة.</p>
+        </Link>
+
+        <Link href="/products" className="baseline-link-card landing-link-card">
           <p className="eyebrow">المنتجات</p>
-          <h2>تصفّح المنتجات</h2>
-          <p>اعرض المنتجات الجاهزة للبيع مع معلومات واضحة ومباشرة.</p>
+          <h2>استعراض الأصناف</h2>
+          <p>تصفّح المنتجات والمخزون بصورة أوضح مع وصول أسرع للفئات والبحث.</p>
         </Link>
 
-        <Link href="/pos" className="baseline-link-card baseline-link-card--accent">
-          <p className="eyebrow">نقطة البيع</p>
-          <h2>شاشة نقطة البيع</h2>
-          <p>أضف المنتجات للسلة وأنهِ البيع من شاشة سريعة ومناسبة للعمل اليومي.</p>
-        </Link>
-
-        <Link href="/invoices" className="baseline-link-card">
-          <p className="eyebrow">الفواتير</p>
-          <h2>الفواتير والمرتجعات</h2>
-          <p>راجع الفواتير الأخيرة ونفّذ المرتجعات واطبع الإيصال مباشرة من المتصفح.</p>
-        </Link>
-
-        <Link href="/debts" className="baseline-link-card">
-          <p className="eyebrow">الديون</p>
-          <h2>الديون والتسديد</h2>
-          <p>تابع العملاء المستحقين وسجّل الديون أو التسديدات من واجهة واحدة.</p>
-        </Link>
-
-        <Link href="/reports" className="baseline-link-card">
-          <p className="eyebrow">التقارير</p>
+        <Link href="/reports" className="baseline-link-card landing-link-card">
+          <p className="eyebrow">التحليل</p>
           <h2>التقارير</h2>
-          <p>اطّلع على المبيعات واللقطات والحسابات والديون والمخزون ضمن تقارير سهلة.</p>
-        </Link>
-
-        <Link href="/settings" className="baseline-link-card">
-          <p className="eyebrow">الإعدادات</p>
-          <h2>الإعدادات التشغيلية</h2>
-          <p>نفّذ اللقطة اليومية وافحص الأرصدة وأكمل الجرد من شاشة تشغيل موحدة.</p>
+          <p>اطّلع على المبيعات والعوائد والمؤشرات اليومية ضمن قراءة أكثر هدوءًا وتنظيمًا.</p>
         </Link>
       </section>
 

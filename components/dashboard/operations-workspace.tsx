@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { ArrowRightLeft, Loader2, SmartphoneCharging, Wallet } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/ui/page-header";
 import { StatusBanner } from "@/components/ui/status-banner";
 import type {
   OperationsAccountOption,
@@ -36,6 +37,7 @@ type TransferResponse = {
   ledger_entry_ids: string[];
 };
 type OperationsRetryAction = "topup" | "transfer";
+type OperationsSection = "topup" | "transfer" | "history";
 
 function createUuid() {
   return crypto.randomUUID();
@@ -69,6 +71,7 @@ export function OperationsWorkspace({
   const [transferResult, setTransferResult] = useState<TransferResponse | null>(null);
   const [actionErrorMessage, setActionErrorMessage] = useState<string | null>(null);
   const [retryAction, setRetryAction] = useState<OperationsRetryAction | null>(null);
+  const [activeSection, setActiveSection] = useState<OperationsSection>("topup");
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -211,40 +214,57 @@ export function OperationsWorkspace({
   }
 
   return (
-    <section className="workspace-stack">
-      <div className="workspace-hero">
-        <div>
-          <p className="eyebrow">العمليات</p>
-          <h1>الشحن والتحويلات</h1>
-          <p className="workspace-lead">
-            سجّل عمليات الشحن اليومية، وتابع التحويلات الداخلية، وراجع ربحية أحدث العمليات من
-            نفس الشاشة.
-          </p>
-        </div>
-      </div>
+    <section className="operational-page">
+      <PageHeader
+        eyebrow="العمليات"
+        title="الشحن والتحويلات"
+        description="تابع عمليات الشحن اليومية والتحويلات الداخلية من مساحة تشغيلية أهدأ وأوضح."
+      />
 
-      <div className="summary-grid">
-        <article className="workspace-panel">
-          <p className="eyebrow">ملخص الشحن</p>
-          <h2>{formatCurrency(topupSummary.total_profit)}</h2>
-          <p className="workspace-footnote">إجمالي ربح الشحن خلال آخر 30 يومًا.</p>
+      <div className="operational-page__meta-grid">
+        <article className="operational-page__meta-card">
+          <span className="operational-page__meta-label">ربح الشحن</span>
+          <strong className="operational-page__meta-value">{formatCurrency(topupSummary.total_profit)}</strong>
+          <p className="operational-page__meta-hint">إجمالي ربح الشحن خلال آخر 30 يومًا.</p>
         </article>
-
-        <article className="workspace-panel">
-          <p className="eyebrow">إجمالي التحصيل</p>
-          <h2>{formatCurrency(topupSummary.total_amount)}</h2>
-          <p className="workspace-footnote">إجمالي المبالغ المستلمة من عمليات الشحن.</p>
+        <article className="operational-page__meta-card">
+          <span className="operational-page__meta-label">إجمالي التحصيل</span>
+          <strong className="operational-page__meta-value">{formatCurrency(topupSummary.total_amount)}</strong>
+          <p className="operational-page__meta-hint">إجمالي المبالغ المستلمة من عمليات الشحن.</p>
         </article>
-
-        <article className="workspace-panel">
-          <p className="eyebrow">النشاط</p>
-          <h2>{formatCompactNumber(topupSummary.entry_count)}</h2>
-          <p className="workspace-footnote">
+        <article className="operational-page__meta-card">
+          <span className="operational-page__meta-label">النشاط</span>
+          <strong className="operational-page__meta-value">{formatCompactNumber(topupSummary.entry_count)}</strong>
+          <p className="operational-page__meta-hint">
             {topupSummary.top_supplier_name
               ? `أعلى مزود ربحًا: ${topupSummary.top_supplier_name}`
               : "لا يوجد مزود مهيمن خلال الفترة الحالية."}
           </p>
         </article>
+      </div>
+
+      <div className="operational-section-nav" aria-label="أقسام شاشة العمليات">
+        <button
+          type="button"
+          className={activeSection === "topup" ? "chip-button is-selected" : "chip-button"}
+          onClick={() => setActiveSection("topup")}
+        >
+          شحن جديد
+        </button>
+        <button
+          type="button"
+          className={activeSection === "transfer" ? "chip-button is-selected" : "chip-button"}
+          onClick={() => setActiveSection("transfer")}
+        >
+          تحويل داخلي
+        </button>
+        <button
+          type="button"
+          className={activeSection === "history" ? "chip-button is-selected" : "chip-button"}
+          onClick={() => setActiveSection("history")}
+        >
+          آخر العمليات
+        </button>
       </div>
 
       {isPending ? (
@@ -266,7 +286,7 @@ export function OperationsWorkspace({
         />
       ) : null}
 
-      <div className="detail-grid">
+      {activeSection === "topup" ? <div className="operational-layout operational-layout--split">
         <section className="workspace-panel">
           <div className="section-heading">
             <div>
@@ -367,119 +387,9 @@ export function OperationsWorkspace({
           ) : null}
         </section>
 
-        <section className="workspace-panel">
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">تحويل داخلي</p>
-              <h2>تحويل داخلي بين الحسابات</h2>
-            </div>
-            <ArrowRightLeft size={18} />
-          </div>
+      </div> : null}
 
-          {canManageTransfers ? (
-            <div className="stack-form">
-              <div className="inline-form-grid">
-                <label className="stack-field">
-                  <span>من حساب</span>
-                  <select
-                    value={transferFromAccountId}
-                    onChange={(event) => setTransferFromAccountId(event.target.value)}
-                  >
-                    {accounts.map((account) => (
-                      <option key={account.id} value={account.id}>
-                        {account.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label className="stack-field">
-                  <span>إلى حساب</span>
-                  <select
-                    value={transferToAccountId}
-                    onChange={(event) => setTransferToAccountId(event.target.value)}
-                  >
-                    {accounts.map((account) => (
-                      <option key={account.id} value={account.id}>
-                        {account.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-
-              <div className="inline-form-grid">
-                <div className="info-strip">
-                  <strong>رصيد المصدر الحالي</strong>
-                  <span>
-                    {selectedFromAccount?.current_balance == null
-                      ? "غير متاح"
-                      : formatCurrency(selectedFromAccount.current_balance)}
-                  </span>
-                </div>
-
-                <div className="info-strip">
-                  <strong>الرصيد المتوقع بعد التحويل</strong>
-                  <span>
-                    {projectedTransferBalance == null
-                      ? "أدخل مبلغ التحويل"
-                      : formatCurrency(projectedTransferBalance)}
-                  </span>
-                </div>
-              </div>
-
-              <label className="stack-field">
-                <span>مبلغ التحويل</span>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.001"
-                  value={transferAmount}
-                  onChange={(event) => setTransferAmount(event.target.value)}
-                  placeholder="50"
-                />
-              </label>
-
-              <label className="stack-field">
-                <span>ملاحظة</span>
-                <textarea
-                  rows={3}
-                  maxLength={255}
-                  value={transferNotes}
-                  onChange={(event) => setTransferNotes(event.target.value)}
-                  placeholder="مثال: نقل سيولة إلى حساب فيزا"
-                />
-              </label>
-
-              <button
-                type="button"
-                className="secondary-button"
-                disabled={isPending}
-                onClick={() => {
-                  void handleTransferSubmit();
-                }}
-              >
-                {isPending ? <Loader2 className="spin" size={16} /> : "تأكيد التحويل"}
-              </button>
-            </div>
-          ) : (
-            <div className="empty-panel">
-              <Wallet size={18} />
-              <p>التحويلات الداخلية محصورة بالحساب الإداري، بينما يمكن لحسابات نقطة البيع تسجيل الشحن فقط.</p>
-            </div>
-          )}
-
-          {transferResult ? (
-            <div className="result-card">
-              <h3>تم تسجيل التحويل</h3>
-              <p>رقم التحويل: {transferResult.transfer_number}</p>
-              <p>عدد القيود: {transferResult.ledger_entry_ids.length}</p>
-            </div>
-          ) : null}
-        </section>
-      </div>
-
-      <div className="detail-grid">
+      {activeSection === "history" ? <div className="operational-layout operational-layout--split">
         <section className="workspace-panel">
           <div className="section-heading">
             <div>
@@ -565,7 +475,114 @@ export function OperationsWorkspace({
             </div>
           )}
         </section>
-      </div>
+      </div> : null}
+
+      {activeSection === "transfer" ? (
+        <div className="operational-layout operational-layout--wide">
+          <section className="workspace-panel operational-content">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">تحويل داخلي</p>
+                <h2>تحويل داخلي بين الحسابات</h2>
+              </div>
+              <ArrowRightLeft size={18} />
+            </div>
+
+            {canManageTransfers ? (
+              <div className="stack-form">
+                <div className="inline-form-grid">
+                  <label className="stack-field">
+                    <span>من حساب</span>
+                    <select
+                      value={transferFromAccountId}
+                      onChange={(event) => setTransferFromAccountId(event.target.value)}
+                    >
+                      {accounts.map((account) => (
+                        <option key={account.id} value={account.id}>
+                          {account.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="stack-field">
+                    <span>إلى حساب</span>
+                    <select value={transferToAccountId} onChange={(event) => setTransferToAccountId(event.target.value)}>
+                      {accounts.map((account) => (
+                        <option key={account.id} value={account.id}>
+                          {account.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+
+                <div className="inline-form-grid">
+                  <div className="info-strip">
+                    <strong>رصيد المصدر الحالي</strong>
+                    <span>
+                      {selectedFromAccount?.current_balance == null
+                        ? "غير متاح"
+                        : formatCurrency(selectedFromAccount.current_balance)}
+                    </span>
+                  </div>
+
+                  <div className="info-strip">
+                    <strong>الرصيد المتوقع بعد التحويل</strong>
+                    <span>{projectedTransferBalance == null ? "أدخل المبلغ" : formatCurrency(projectedTransferBalance)}</span>
+                  </div>
+                </div>
+
+                <label className="stack-field">
+                  <span>المبلغ</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.001"
+                    value={transferAmount}
+                    onChange={(event) => setTransferAmount(event.target.value)}
+                    placeholder="0.000"
+                  />
+                </label>
+
+                <label className="stack-field">
+                  <span>ملاحظات</span>
+                  <textarea
+                    rows={3}
+                    maxLength={255}
+                    value={transferNotes}
+                    onChange={(event) => setTransferNotes(event.target.value)}
+                    placeholder="سبب التحويل أو تفاصيله"
+                  />
+                </label>
+
+                <button
+                  type="button"
+                  className="primary-button"
+                  disabled={isPending}
+                  onClick={() => {
+                    void handleTransferSubmit();
+                  }}
+                >
+                  {isPending ? <Loader2 className="spin" size={16} /> : "تأكيد التحويل"}
+                </button>
+              </div>
+            ) : (
+              <div className="empty-panel">
+                <p>التحويلات الداخلية محصورة بالحساب الإداري.</p>
+              </div>
+            )}
+
+            {transferResult ? (
+              <div className="result-card">
+                <h3>تم تسجيل التحويل</h3>
+                <p>رقم التحويل: {transferResult.transfer_number}</p>
+                <p>عدد القيود: {transferResult.ledger_entry_ids.length}</p>
+              </div>
+            ) : null}
+          </section>
+        </div>
+      ) : null}
     </section>
   );
 }

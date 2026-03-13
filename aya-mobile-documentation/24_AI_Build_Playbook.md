@@ -89,6 +89,60 @@
 
 ---
 
+## Lean Execution Mode — Frontend-Only Phases
+
+**قرار رسمي:** ابتداءً من `PX-22` وحتى `PX-25` تُدار مراحل Frontend-only بوضع تنفيذ أخف (`Lean Execution Mode`) للحفاظ على الجودة مع تقليل overhead التوثيق والتكرار.
+
+**متى يُستخدم**
+- phases التي يقتصر نطاقها على:
+  - layout
+  - presentation
+  - navigation
+  - component hierarchy
+  - responsiveness
+  - UX interaction patterns
+- لا يُستخدم للمراحل التي تمس:
+  - DB
+  - security-sensitive backend logic
+  - auth rules
+  - financial logic
+  - deployment hardening الحرج
+
+**ما الذي يبقى إلزاميًا**
+1. `Phase Contract`
+2. table المهام داخل التراكر
+3. `Phase Execution Report`
+4. `Phase Review Prompt`
+5. `Phase Review Report`
+6. `Phase Close Decision`
+7. independent review قبل الإغلاق
+8. full verification قبل إغلاق المرحلة
+
+**ما الذي يُخفَّف**
+- لا يلزم إنشاء حزمة إغلاق كاملة لكل task فرعية ما لم تكن:
+  - high-risk
+  - security/auth/deployment sensitive
+  - أو تتطلب review معزولة بوضوح
+- أثناء التنفيذ اليومي يكون **التراكر (`31`) هو المرجع التنفيذي الحي الأساسي**.
+- تحديث `17_UAT_Scenarios.md` و`27_PreBuild_Verification_Matrix.md` يتم عند نهاية المرحلة أو عند تحقق gate فعلية، لا بعد كل subtask صغيرة.
+- يمكن تنفيذ التحقق بشكل انتقائي أثناء الشرائح الداخلية، ثم إعادة full verification مرة واحدة في نهاية المرحلة.
+
+**الهدف من الوضع**
+- الحفاظ على:
+  - الوضوح
+  - المراجعة المستقلة
+  - قابلية التتبع
+- مع تقليل:
+  - التكرار الوثائقي
+  - زمن الإغلاق الإداري
+  - كلفة task-by-task packaging في مراحل الواجهة
+
+**مخرجات التعلم**
+- يُعتمد هذا الوضع كممارسة تنفيذية للموجات الأمامية المستقبلية المشابهة.
+- لا يلغي الاستراتيجية الأساسية؛ بل يطبق نسخة أخف منها على النطاقات المناسبة فقط.
+
+---
+
 ## شكل المهمة القياسي (Task Card)
 
 استخدم هذا القالب لكل مهمة أثناء البناء:
@@ -1007,4 +1061,124 @@ Constraints:
 - Clarify production env requirements and cron secret policy.
 - Reduce redundant client creation and harden cart/runtime state.
 - Expand tests for workspaces, formatters, and cross-environment behavior.
+```
+
+---
+
+## المرحلة 5: ما بعد PX-20 (Frontend Redesign / Execution-Ready)
+
+هذه المرحلة تعالج redesign الواجهة بعد اكتمال `PX-15 .. PX-20` وإغلاق Productization Gate الأولى.
+
+**المبدأ الحاكم**
+- Frontend-only
+- لا تعديل على backend logic أو APIs أو auth أو DB أو business rules
+- preserve workflows بالكامل
+- focus على hierarchy, navigation, responsiveness, usability, and visual system
+
+**ترتيب التنفيذ**
+1. `PX-21` foundation + shell
+2. `PX-22` transactional UX
+3. `PX-23` operational workspaces
+4. `PX-24` analytical + configuration surfaces
+5. `PX-25` release gate نهائي
+
+### PX-21 — UI Foundation + Shell + Auth Entry
+
+| Task | ماذا ننفذ | Stop Rules |
+|------|-----------|------------|
+| `PX-21-T01` | visual direction + design tokens + typography hierarchy | ممنوع redesign صفحة منفردة قبل تثبيت tokens |
+| `PX-21-T02` | shell + grouped navigation + breadcrumbs + page header | ممنوع كسر access scoping أو route structure |
+| `PX-21-T03` | shared patterns: section cards / KPI cards / filter bars / search surfaces | ممنوع page-specific one-off styles بدل patterns قابلة لإعادة الاستخدام |
+| `PX-21-T04` | homepage + login refresh | ممنوع تغيير auth flow أو redirect logic business-wise |
+| `PX-21-T05` | RTL shell proof + device shell proof | ممنوع claim success بدون proof على desktop/tablet/mobile |
+
+### PX-22 — Transactional UX
+
+| Task | ماذا ننفذ | Stop Rules |
+|------|-----------|------------|
+| `PX-22-T01` | POS browsing/search/category rail | ممنوع تغيير product/query logic أو business filters |
+| `PX-22-T02` | cart, totals, checkout emphasis, payment visibility | ممنوع تغيير cart rules أو sale payloads |
+| `PX-22-T03` | invoice transactional layout/action grouping | ممنوع تغيير return/cancel authority |
+| `PX-22-T04` | debts summaries + payment flow clarity | ممنوع تغيير debt calculation أو account behavior |
+| `PX-22-T05` | tablet/mobile ergonomics للـ transactional surfaces | ممنوع تقليل state visibility أو إخفاء critical totals |
+
+### PX-23 — Operational Workspaces
+
+| Task | ماذا ننفذ | Stop Rules |
+|------|-----------|------------|
+| `PX-23-T01` | notifications inbox/alerts/search IA | ممنوع تغيير notification/search logic |
+| `PX-23-T02` | products catalog/admin usability | ممنوع تغيير stock/data/business rules |
+| `PX-23-T03` | inventory/suppliers/purchases master-detail restructuring | ممنوع تغيير العمليات أو authority |
+| `PX-23-T04` | expenses/operations/maintenance grouping | ممنوع تغيير mutation logic أو validation |
+| `PX-23-T05` | shared operational table/list system | ممنوع كسر responsive readability أو action affordances |
+
+### PX-24 — Analytical + Configuration Surfaces
+
+| Task | ماذا ننفذ | Stop Rules |
+|------|-----------|------------|
+| `PX-24-T01` | reports filter-first layout + KPI/storytelling | ممنوع تغيير report calculations أو export behavior |
+| `PX-24-T02` | chart/table narrative cleanup | ممنوع decorative overload أو chart regressions |
+| `PX-24-T03` | settings grouping + risk-aware sections | ممنوع إخفاء critical admin actions أو تخفيف التحذير عليها |
+| `PX-24-T04` | permissions/portability progressive disclosure | ممنوع تغيير permission logic أو portability flows |
+| `PX-24-T05` | responsive proof للأسطح التحليلية والإعدادية | ممنوع claim success بدون tablet/mobile verification |
+
+### PX-25 — Frontend UX Release Gate
+
+| Task | ماذا ننفذ | Stop Rules |
+|------|-----------|------------|
+| `PX-25-T01` | UX/content/navigation/device walkthrough | ممنوع الإغلاق مع technical leakage أو role confusion |
+| `PX-25-T02` | RTL/accessibility/visual consistency audit | ممنوع الإغلاق مع keyboard/touch/RTL regressions |
+| `PX-25-T03` | frontend performance/non-regression audit | ممنوع الإغلاق إذا workflows الحالية تضررت |
+| `PX-25-T04` | Go/No-Go decision | ممنوع `Go` مع `P0/P1` مفتوح |
+
+### Prompt N: UI Foundation + Shell + Auth Entry
+```text
+Establish the frontend visual foundation without changing product behavior.
+Constraints:
+- Create/reinforce a reusable RTL shell with grouped navigation, breadcrumbs, and page headers.
+- Introduce a restrained retail-tech visual system: deep navy primary, cyan/teal accent, green support accent, calm light backgrounds.
+- Standardize shared primitives before page-by-page redesign.
+- Refresh home and login to feel product-facing, not developer-facing.
+- Preserve access control, route structure, and authentication logic.
+```
+
+### Prompt O: Transactional UX
+```text
+Redesign transactional surfaces for speed, clarity, and touch ergonomics.
+Constraints:
+- Prioritize POS above all other surfaces.
+- Make product discovery, cart visibility, totals, and checkout hierarchy obvious.
+- Improve invoice/debt action grouping without changing the underlying workflows.
+- Optimize for tablet/mobile store pressure and minimal-click operation.
+- Do not alter sale, debt, return, cancel, or payment business logic.
+```
+
+### Prompt P: Operational Workspaces
+```text
+Redesign operational workspaces to feel structured, efficient, and easier to scan.
+Constraints:
+- Use master-detail or sectioned layouts where useful.
+- Unify lists, tables, and action panels across notifications, products, inventory, suppliers, expenses, operations, and maintenance.
+- Keep operational density practical, not decorative.
+- Preserve all data flows, validations, and authority boundaries.
+```
+
+### Prompt Q: Analytical + Configuration Surfaces
+```text
+Redesign analytical and configuration surfaces for readability and safety.
+Constraints:
+- Use filter-first reporting with KPI summaries and clearer chart/table storytelling.
+- Group settings and permissions by risk and purpose.
+- Apply progressive disclosure to portability and advanced admin controls.
+- Keep exports, permission assignment, and integrity tools intact.
+```
+
+### Prompt R: Frontend UX Release Gate
+```text
+Run a frontend-only release gate after redesign execution.
+Constraints:
+- Verify RTL behavior, accessibility, device ergonomics, and visual consistency.
+- Confirm no technical leakage or role confusion remains.
+- Confirm current workflows remain intact with no frontend regressions.
+- Produce a Go/No-Go decision based only on UX/device/a11y/non-regression evidence.
 ```

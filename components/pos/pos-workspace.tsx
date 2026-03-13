@@ -4,6 +4,8 @@ import React from "react";
 import { useDeferredValue, useEffect, useState, useTransition } from "react";
 import { AlertTriangle, Loader2, RefreshCcw, Search, ShieldCheck, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/ui/page-header";
+import { SectionCard } from "@/components/ui/section-card";
 import { StatusBanner } from "@/components/ui/status-banner";
 import { useProducts } from "@/hooks/use-products";
 import { usePosAccounts } from "@/hooks/use-pos-accounts";
@@ -231,32 +233,28 @@ export function PosWorkspace() {
   }
 
   return (
-    <section className="workspace-stack">
-      <div className="workspace-hero">
-        <div>
-          <p className="eyebrow">نقطة البيع</p>
-          <h1>شاشة البيع السريع</h1>
-          <p className="workspace-lead">
-            اختر المنتجات، راجع الحساب، ثم أكمل البيع من شاشة واحدة مصممة للعمل السريع داخل
-            نقطة البيع.
-          </p>
-        </div>
-
-        <div className="hero-stat-grid">
-          <article className="hero-stat-card">
-            <span>عناصر السلة</span>
-            <strong>{formatCompactNumber(items.length)}</strong>
-          </article>
-          <article className="hero-stat-card">
-            <span>الإجمالي الحالي</span>
-            <strong>{formatCurrency(total)}</strong>
-          </article>
-          <article className="hero-stat-card hero-stat-card--safe">
-            <ShieldCheck size={18} />
-            <strong>تسعير موحد</strong>
-          </article>
-        </div>
-      </div>
+    <section className="workspace-stack transaction-page">
+      <PageHeader
+        eyebrow="نقطة البيع"
+        title="نقطة البيع السريعة"
+        description="ابحث بسرعة، أضف المنتجات، وراجع الحساب ثم أكمل البيع من مساحة واحدة مصممة للعمل تحت ضغط المتجر."
+        meta={
+          <div className="transaction-page__meta" aria-label="ملخص نقطة البيع">
+            <article className="transaction-page__meta-card">
+              <span>عناصر السلة</span>
+              <strong>{formatCompactNumber(items.length)}</strong>
+            </article>
+            <article className="transaction-page__meta-card">
+              <span>الإجمالي الحالي</span>
+              <strong>{formatCurrency(total)}</strong>
+            </article>
+            <article className="transaction-page__meta-card transaction-page__meta-card--safe">
+              <ShieldCheck size={18} />
+              <strong>{selectedAccount?.name ?? "اختر حساب الدفع"}</strong>
+            </article>
+          </div>
+        }
+      />
 
       {isOffline ? (
         <StatusBanner
@@ -302,319 +300,349 @@ export function PosWorkspace() {
         />
       ) : null}
 
-      <div className="pos-grid">
-        <section className="workspace-panel">
-          <div className="workspace-toolbar">
-            <label className="workspace-search">
-              <Search size={18} />
-              <input
-                type="search"
-                autoFocus
-                placeholder="ابحث باسم المنتج أو SKU"
-                value={searchInput}
-                onChange={(event) => {
-                  const nextValue = event.target.value;
-                  startTransition(() => {
-                    setSearchInput(nextValue);
-                  });
-                }}
-              />
-            </label>
-
-            <button type="button" className="secondary-button" onClick={refreshProducts}>
-              <RefreshCcw size={16} />
-              تحديث المنتجات
-            </button>
-          </div>
-
-          <div className="chip-row" aria-label="product categories">
-            {categories.map((category) => (
-              <button
-                key={category}
-                type="button"
-                className={category === activeCategory ? "chip chip--active" : "chip"}
-                aria-pressed={category === activeCategory}
-                onClick={() => setActiveCategory(category)}
-              >
-                {category === "all" ? "الكل" : category}
-              </button>
-            ))}
-          </div>
-
-          {quickAddProducts.length > 0 ? (
-            <div className="quick-add-row">
-              {quickAddProducts.map((product) => (
-                <button
-                  key={product.id}
-                  type="button"
-                  className="quick-add-card"
-                  onClick={() => {
-                    clearSubmissionFeedback();
-                    addProduct(product);
+      <div className="transaction-layout transaction-layout--pos">
+        <div className="transaction-stack">
+          <SectionCard
+            eyebrow="تصفح سريع"
+            title="أدوات البيع السريع"
+            description="ابدأ بالبحث أو اختر فئة جاهزة، ثم استخدم بطاقات الإضافة السريعة لتقليل عدد الخطوات."
+            tone="accent"
+            className="transaction-card transaction-card--filters"
+          >
+            <div className="workspace-toolbar transaction-toolbar">
+              <label className="workspace-search transaction-toolbar__search">
+                <Search size={18} />
+                <input
+                  type="search"
+                  autoFocus
+                  placeholder="ابحث باسم المنتج أو SKU"
+                  value={searchInput}
+                  onChange={(event) => {
+                    const nextValue = event.target.value;
+                    startTransition(() => {
+                      setSearchInput(nextValue);
+                    });
                   }}
+                />
+              </label>
+
+              <button type="button" className="secondary-button" onClick={refreshProducts}>
+                <RefreshCcw size={16} />
+                تحديث المنتجات
+              </button>
+            </div>
+
+            <div className="chip-row transaction-chip-row" aria-label="فئات المنتجات">
+              {categories.map((category) => (
+                <button
+                  key={category}
+                  type="button"
+                  className={category === activeCategory ? "chip chip--active" : "chip"}
+                  aria-pressed={category === activeCategory}
+                  onClick={() => setActiveCategory(category)}
                 >
-                  <span>{product.name}</span>
-                  <strong>{formatCurrency(product.sale_price)}</strong>
+                  {category === "all" ? "الكل" : category}
                 </button>
               ))}
             </div>
-          ) : null}
 
-          {productsLoading ? (
-            <div className="product-grid product-grid--compact" aria-label="جارٍ تحميل منتجات نقطة البيع">
-              {Array.from({ length: 8 }).map((_, index) => (
-                <article key={`pos-product-skeleton-${index}`} className="product-card product-card--skeleton">
-                  <div className="skeleton-line skeleton-line--sm" />
-                  <div className="skeleton-line skeleton-line--lg" />
-                  <div className="skeleton-line" />
-                  <div className="skeleton-line" />
-                </article>
-              ))}
-            </div>
-          ) : (
-            <div className="product-grid product-grid--compact">
-              {filteredProducts.map((product) => {
-                const lowStock = product.track_stock && product.stock_quantity <= product.min_stock_level;
-
-                return (
+            {quickAddProducts.length > 0 ? (
+              <div className="quick-add-row">
+                {quickAddProducts.map((product) => (
                   <button
                     key={product.id}
                     type="button"
-                    className="product-card product-card--interactive"
+                    className="quick-add-card"
                     onClick={() => {
                       clearSubmissionFeedback();
                       addProduct(product);
                     }}
                   >
-                    <div className="product-card__meta">
-                      <span className="product-pill">{product.category}</span>
-                      {product.is_quick_add ? (
-                        <span className="product-pill product-pill--accent">سريع</span>
-                      ) : null}
-                    </div>
-
-                    <div className="product-card__copy">
-                      <h2>{product.name}</h2>
-                      <p>{product.description || "بدون وصف إضافي."}</p>
-                    </div>
-
-                    <dl className="product-card__stats">
-                      <div>
-                        <dt>السعر</dt>
-                        <dd>{formatCurrency(product.sale_price)}</dd>
-                      </div>
-                      <div>
-                        <dt>المخزون</dt>
-                        <dd>{product.track_stock ? formatCompactNumber(product.stock_quantity) : "خدمة"}</dd>
-                      </div>
-                    </dl>
-
-                    {lowStock ? (
-                      <p className="warning-inline">
-                        <AlertTriangle size={14} />
-                        الكمية قريبة من حد التنبيه
-                      </p>
-                    ) : null}
+                    <span>{product.name}</span>
+                    <strong>{formatCurrency(product.sale_price)}</strong>
                   </button>
-                );
-              })}
-            </div>
-          )}
+                ))}
+              </div>
+            ) : (
+              <div className="info-strip">
+                <span>أضف منتجات شائعة إلى الإضافة السريعة لخفض زمن التنقل أثناء البيع.</span>
+              </div>
+            )}
+          </SectionCard>
 
-          <p className="workspace-footnote">
-            {isTyping
-              ? "تحديث نتائج البحث..."
-              : "البحث محلي، بمهلة debounce مقدارها 200ms، ولا يطلق أي كتابة أثناء تجهيز السلة."}
-          </p>
-        </section>
+          <SectionCard
+            eyebrow="المخزون المعروض"
+            title="المنتجات الجاهزة للبيع"
+            description="بطاقات مضغوطة وسهلة المسح البصري تعرض السعر والمخزون بوضوح، مع تحذير فوري عند اقتراب نفاد الكمية."
+            className="transaction-card"
+          >
+            {productsLoading ? (
+              <div className="product-grid product-grid--compact" aria-label="جارٍ تحميل منتجات نقطة البيع">
+                {Array.from({ length: 8 }).map((_, index) => (
+                  <article key={`pos-product-skeleton-${index}`} className="product-card product-card--skeleton">
+                    <div className="skeleton-line skeleton-line--sm" />
+                    <div className="skeleton-line skeleton-line--lg" />
+                    <div className="skeleton-line" />
+                    <div className="skeleton-line" />
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="product-grid product-grid--compact transaction-product-grid">
+                {filteredProducts.map((product) => {
+                  const lowStock = product.track_stock && product.stock_quantity <= product.min_stock_level;
 
-        <aside className="workspace-panel cart-panel">
-          <div className="cart-panel__header">
-            <div>
-              <p className="eyebrow">السلة</p>
-              <h2>السلة المحلية</h2>
-            </div>
-
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={() => {
-                clearSubmissionFeedback();
-                clearCart();
-              }}
-              disabled={items.length === 0}
-            >
-              <Trash2 size={16} />
-              تفريغ
-            </button>
-          </div>
-
-          {!cartHydrated ? (
-            <div className="stack-list" aria-label="جارٍ استعادة السلة">
-              <div className="skeleton-card" />
-              <div className="skeleton-card" />
-            </div>
-          ) : items.length === 0 ? (
-            <div className="empty-panel">
-              <h3>السلة فارغة</h3>
-              <p>ابدأ بإضافة منتج من القائمة أو من بطاقات الإضافة السريعة لبدء البيع.</p>
-            </div>
-          ) : (
-            <div className="cart-line-list">
-              {items.map((item) => (
-                <article key={item.product_id} className="cart-line-card">
-                  <div className="cart-line-card__header">
-                    <div>
-                      <strong>{item.name}</strong>
-                      <p>{formatCurrency(item.sale_price)} للوحدة</p>
-                    </div>
-
+                  return (
                     <button
+                      key={product.id}
                       type="button"
-                      className="icon-button"
+                      className="product-card product-card--interactive"
                       onClick={() => {
                         clearSubmissionFeedback();
-                        removeItem(item.product_id);
+                        addProduct(product);
                       }}
-                      aria-label={`حذف ${item.name}`}
                     >
-                      <Trash2 size={16} />
+                      <div className="product-card__meta">
+                        <span className="product-pill">{product.category}</span>
+                        {product.is_quick_add ? (
+                          <span className="product-pill product-pill--accent">سريع</span>
+                        ) : null}
+                      </div>
+
+                      <div className="product-card__copy">
+                        <h2>{product.name}</h2>
+                        <p>{product.description || "بدون وصف إضافي."}</p>
+                      </div>
+
+                      <dl className="product-card__stats">
+                        <div>
+                          <dt>السعر</dt>
+                          <dd>{formatCurrency(product.sale_price)}</dd>
+                        </div>
+                        <div>
+                          <dt>المخزون</dt>
+                          <dd>{product.track_stock ? formatCompactNumber(product.stock_quantity) : "خدمة"}</dd>
+                        </div>
+                      </dl>
+
+                      {lowStock ? (
+                        <p className="warning-inline">
+                          <AlertTriangle size={14} />
+                          الكمية قريبة من حد التنبيه
+                        </p>
+                      ) : null}
                     </button>
-                  </div>
+                  );
+                })}
+              </div>
+            )}
 
-                  <div className="cart-line-card__controls">
-                    <label>
-                      <span>الكمية</span>
-                      <input
-                        type="number"
-                        min={1}
-                        max={item.track_stock ? Math.max(item.stock_quantity, 1) : undefined}
-                        value={item.quantity}
-                        onChange={(event) => {
-                          clearSubmissionFeedback();
-                          setQuantity(item.product_id, Number(event.target.value));
-                        }}
-                      />
-                    </label>
-
-                    <label>
-                      <span>خصم %</span>
-                      <input
-                        type="number"
-                        min={0}
-                        max={100}
-                        value={item.discount_percentage}
-                        onChange={(event) => {
-                          clearSubmissionFeedback();
-                          setDiscountPercentage(item.product_id, Number(event.target.value));
-                        }}
-                      />
-                    </label>
-                  </div>
-                </article>
-              ))}
+            <div className="transaction-card__footer">
+              <p className="workspace-footnote">
+                {isTyping
+                  ? "تحديث نتائج البحث..."
+                  : "البحث محلي بمُهلة 200ms ويعرض النتائج فورًا بدون أي كتابة أو محاولة بيع حتى تضغط تأكيد البيع."}
+              </p>
+              <span className="product-pill product-pill--accent">{formatCompactNumber(filteredProducts.length)} منتجًا معروضًا</span>
             </div>
-          )}
+          </SectionCard>
+        </div>
 
-          <div className="cart-summary">
-            <dl>
+        <aside className="transaction-stack transaction-stack--sticky">
+          <SectionCard
+            eyebrow="سلة الطلب"
+            title="سلة الطلب الحالية"
+            description="راجع البنود والتعديلات الحسابية في مساحة ثابتة وواضحة قبل إرسال البيع."
+            className="transaction-card transaction-card--checkout"
+          >
+            <div className="cart-panel__header">
               <div>
-                <dt>المجموع قبل الخصم</dt>
-                <dd>{formatCurrency(subtotal)}</dd>
+                <p className="workspace-footnote">آخر اختيار محفوظ داخل المتصفح حتى تنهي البيع أو تفرغ السلة.</p>
               </div>
-              <div>
-                <dt>إجمالي الخصم</dt>
-                <dd>{formatCurrency(totalDiscount)}</dd>
-              </div>
-              <div className="cart-summary__total">
-                <dt>الإجمالي النهائي</dt>
-                <dd>{formatCurrency(total)}</dd>
-              </div>
-            </dl>
 
-            <label className="stack-field">
-              <span>حساب الدفع</span>
-              <select
-                value={selectedAccountId ?? ""}
-                onChange={(event) => {
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => {
                   clearSubmissionFeedback();
-                  setSelectedAccountId(event.target.value);
+                  clearCart();
                 }}
-                disabled={accountsLoading || accounts.length === 0}
+                disabled={items.length === 0}
               >
-                <option value="" disabled>
-                  {accountsLoading ? "تحميل الحسابات..." : "اختر حساب الدفع"}
-                </option>
-                {accounts.map((account) => (
-                  <option key={account.id} value={account.id}>
-                    {account.name}
-                  </option>
+                <Trash2 size={16} />
+                تفريغ السلة
+              </button>
+            </div>
+
+            {!cartHydrated ? (
+              <div className="stack-list" aria-label="جارٍ استعادة السلة">
+                <div className="skeleton-card" />
+                <div className="skeleton-card" />
+              </div>
+            ) : items.length === 0 ? (
+              <div className="empty-panel transaction-empty-panel">
+                <h3>السلة فارغة</h3>
+                <p>ابدأ بإضافة منتج من القائمة أو من بطاقات الإضافة السريعة ليظهر ملخص الطلب هنا مباشرة.</p>
+              </div>
+            ) : (
+              <div className="cart-line-list">
+                {items.map((item) => (
+                  <article key={item.product_id} className="cart-line-card">
+                    <div className="cart-line-card__header">
+                      <div>
+                        <strong>{item.name}</strong>
+                        <p>{formatCurrency(item.sale_price)} للوحدة</p>
+                      </div>
+
+                      <button
+                        type="button"
+                        className="icon-button"
+                        onClick={() => {
+                          clearSubmissionFeedback();
+                          removeItem(item.product_id);
+                        }}
+                        aria-label={`حذف ${item.name}`}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+
+                    <div className="cart-line-card__controls">
+                      <label>
+                        <span>الكمية</span>
+                        <input
+                          type="number"
+                          min={1}
+                          max={item.track_stock ? Math.max(item.stock_quantity, 1) : undefined}
+                          value={item.quantity}
+                          onChange={(event) => {
+                            clearSubmissionFeedback();
+                            setQuantity(item.product_id, Number(event.target.value));
+                          }}
+                        />
+                      </label>
+
+                      <label>
+                        <span>خصم %</span>
+                        <input
+                          type="number"
+                          min={0}
+                          max={100}
+                          value={item.discount_percentage}
+                          onChange={(event) => {
+                            clearSubmissionFeedback();
+                            setDiscountPercentage(item.product_id, Number(event.target.value));
+                          }}
+                        />
+                      </label>
+                    </div>
+                  </article>
                 ))}
-              </select>
-            </label>
+              </div>
+            )}
 
-            <label className="stack-field">
-              <span>رمز الجهاز</span>
-              <input
-                type="text"
-                maxLength={30}
-                value={posTerminalCode}
-                onChange={(event) => {
-                  clearSubmissionFeedback();
-                  setPosTerminalCode(event.target.value);
+            <div className="cart-summary transaction-checkout-summary">
+              <dl>
+                <div>
+                  <dt>المجموع قبل الخصم</dt>
+                  <dd>{formatCurrency(subtotal)}</dd>
+                </div>
+                <div>
+                  <dt>إجمالي الخصم</dt>
+                  <dd>{formatCurrency(totalDiscount)}</dd>
+                </div>
+                <div className="cart-summary__total">
+                  <dt>الإجمالي النهائي</dt>
+                  <dd>{formatCurrency(total)}</dd>
+                </div>
+              </dl>
+
+              <div className="transaction-checkout-fields">
+                <label className="stack-field">
+                  <span>حساب الدفع</span>
+                  <select
+                    value={selectedAccountId ?? ""}
+                    onChange={(event) => {
+                      clearSubmissionFeedback();
+                      setSelectedAccountId(event.target.value);
+                    }}
+                    disabled={accountsLoading || accounts.length === 0}
+                  >
+                    <option value="" disabled>
+                      {accountsLoading ? "تحميل الحسابات..." : "اختر حساب الدفع"}
+                    </option>
+                    {accounts.map((account) => (
+                      <option key={account.id} value={account.id}>
+                        {account.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="stack-field">
+                  <span>رمز الجهاز</span>
+                  <input
+                    type="text"
+                    maxLength={30}
+                    value={posTerminalCode}
+                    onChange={(event) => {
+                      clearSubmissionFeedback();
+                      setPosTerminalCode(event.target.value);
+                    }}
+                    placeholder="POS-01"
+                  />
+                </label>
+
+                <label className="stack-field">
+                  <span>ملاحظات</span>
+                  <textarea
+                    rows={3}
+                    maxLength={500}
+                    value={notes}
+                    onChange={(event) => {
+                      clearSubmissionFeedback();
+                      setNotes(event.target.value);
+                    }}
+                    placeholder="ملاحظات اختيارية للفاتورة"
+                  />
+                </label>
+              </div>
+
+              <div className="info-strip">
+                <span>الحساب الحالي: {selectedAccount?.name ?? "غير محدد"}</span>
+                <span>كل محاولة بيع محمية تلقائيًا من الإرسال المكرر والتعارض في المخزون.</span>
+              </div>
+
+              <button
+                type="button"
+                className="primary-button transaction-checkout-button"
+                disabled={isSubmitting || submissionState === "submitting" || items.length === 0 || isOffline}
+                onClick={() => {
+                  startSubmission(() => {
+                    void submitSale();
+                  });
                 }}
-                placeholder="POS-01"
-              />
-            </label>
-
-            <label className="stack-field">
-              <span>ملاحظات</span>
-              <textarea
-                rows={3}
-                maxLength={500}
-                value={notes}
-                onChange={(event) => {
-                  clearSubmissionFeedback();
-                  setNotes(event.target.value);
-                }}
-                placeholder="ملاحظات اختيارية للفاتورة"
-              />
-            </label>
-
-            <div className="info-strip">
-              <span>الحساب الحالي: {selectedAccount?.name ?? "غير محدد"}</span>
-              <span>كل محاولة بيع محمية تلقائيًا من الإرسال المكرر.</span>
+              >
+                {isSubmitting || submissionState === "submitting" ? (
+                  <>
+                    <Loader2 className="spin" size={16} />
+                    جارٍ تنفيذ البيع...
+                  </>
+                ) : (
+                  "تأكيد البيع"
+                )}
+              </button>
             </div>
 
-            <button
-              type="button"
-              className="primary-button"
-              disabled={isSubmitting || submissionState === "submitting" || items.length === 0 || isOffline}
-              onClick={() => {
-                startSubmission(() => {
-                  void submitSale();
-                });
-              }}
-            >
-              {isSubmitting || submissionState === "submitting" ? (
-                <>
-                  <Loader2 className="spin" size={16} />
-                  جارٍ تنفيذ البيع...
-                </>
-              ) : (
-                "تأكيد البيع"
-              )}
-            </button>
-          </div>
-
-          {lastCompletedSale ? (
-            <div className="result-card">
-              <p className="eyebrow">آخر عملية بيع</p>
-              <h3>{lastCompletedSale.invoice_number}</h3>
-              <p>الإجمالي: {formatCurrency(lastCompletedSale.total)}</p>
-              <p>الباقي: {formatCurrency(lastCompletedSale.change ?? 0)}</p>
-            </div>
-          ) : null}
+            {lastCompletedSale ? (
+              <div className="result-card transaction-result-card">
+                <p className="eyebrow">آخر عملية بيع</p>
+                <h3>{lastCompletedSale.invoice_number}</h3>
+                <p>الإجمالي: {formatCurrency(lastCompletedSale.total)}</p>
+                <p>الباقي: {formatCurrency(lastCompletedSale.change ?? 0)}</p>
+              </div>
+            ) : null}
+          </SectionCard>
         </aside>
       </div>
     </section>

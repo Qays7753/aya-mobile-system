@@ -128,7 +128,7 @@ describe("PosWorkspace", () => {
     fireEvent.click(quickAddButton);
 
     await waitFor(() => {
-      expect(screen.getByText("السلة المحلية")).toBeInTheDocument();
+      expect(screen.getByText("سلة الطلب الحالية")).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "حذف شاحن سريع" })).toBeInTheDocument();
     });
 

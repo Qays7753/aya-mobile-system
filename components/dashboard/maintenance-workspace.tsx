@@ -5,6 +5,7 @@ import { Loader2, ShieldCheck, Wrench } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
+import { PageHeader } from "@/components/ui/page-header";
 import { StatusBanner } from "@/components/ui/status-banner";
 import type {
   MaintenanceAccountOption,
@@ -46,6 +47,7 @@ type JobDraftState = Record<
 type MaintenanceRetryAction =
   | { kind: "create" }
   | { kind: "update"; jobId: string; nextStatus: "in_progress" | "ready" | "delivered" | "cancelled" };
+type MaintenanceSection = "overview" | "create" | "jobs";
 
 function getApiErrorMessage<T>(envelope: StandardEnvelope<T>) {
   return envelope.error?.message ?? "تعذر إتمام العملية.";
@@ -104,6 +106,7 @@ export function MaintenanceWorkspace({
   const [actionErrorMessage, setActionErrorMessage] = useState<string | null>(null);
   const [retryAction, setRetryAction] = useState<MaintenanceRetryAction | null>(null);
   const [confirmCancelJobId, setConfirmCancelJobId] = useState<string | null>(null);
+  const [activeSection, setActiveSection] = useState<MaintenanceSection>("overview");
   const [jobDrafts, setJobDrafts] = useState<JobDraftState>(() =>
     Object.fromEntries(
       jobs.map((job) => [
@@ -223,15 +226,53 @@ export function MaintenanceWorkspace({
   }
 
   return (
-    <section className="workspace-stack">
-      <div className="workspace-hero">
-        <div>
-          <p className="eyebrow">الصيانة</p>
-          <h1>الصيانة الأساسية</h1>
-          <p className="workspace-lead">
-            أنشئ أوامر الصيانة، تابع حالة كل جهاز حتى التسليم، وسجّل التحصيل في حساب الصيانة.
-          </p>
-        </div>
+    <section className="operational-page">
+      <PageHeader
+        eyebrow="الصيانة"
+        title="الصيانة الأساسية"
+        description="أنشئ أوامر الصيانة، تابع حالة كل جهاز، وسجّل التحصيل من مساحة تشغيلية أوضح وأهدأ."
+      />
+
+      <div className="operational-page__meta-grid">
+        <article className="operational-page__meta-card">
+          <span className="operational-page__meta-label">أوامر مفتوحة</span>
+          <strong className="operational-page__meta-value">{formatCompactNumber(summary.open_count)}</strong>
+          <p className="operational-page__meta-hint">الأجهزة التي ما زالت قيد المتابعة.</p>
+        </article>
+        <article className="operational-page__meta-card">
+          <span className="operational-page__meta-label">جاهزة للتسليم</span>
+          <strong className="operational-page__meta-value">{formatCompactNumber(summary.ready_count)}</strong>
+          <p className="operational-page__meta-hint">طلبات تنتظر التسليم أو التحصيل.</p>
+        </article>
+        <article className="operational-page__meta-card">
+          <span className="operational-page__meta-label">إيراد الصيانة</span>
+          <strong className="operational-page__meta-value">{formatCurrency(summary.delivered_revenue)}</strong>
+          <p className="operational-page__meta-hint">إجمالي الإيراد من أوامر الصيانة المسلّمة.</p>
+        </article>
+      </div>
+
+      <div className="operational-section-nav" aria-label="أقسام شاشة الصيانة">
+        <button
+          type="button"
+          className={activeSection === "overview" ? "chip-button is-selected" : "chip-button"}
+          onClick={() => setActiveSection("overview")}
+        >
+          الملخص
+        </button>
+        <button
+          type="button"
+          className={activeSection === "create" ? "chip-button is-selected" : "chip-button"}
+          onClick={() => setActiveSection("create")}
+        >
+          طلب جديد
+        </button>
+        <button
+          type="button"
+          className={activeSection === "jobs" ? "chip-button is-selected" : "chip-button"}
+          onClick={() => setActiveSection("jobs")}
+        >
+          أوامر الصيانة
+        </button>
       </div>
 
       {isPending ? (
@@ -253,7 +294,7 @@ export function MaintenanceWorkspace({
         />
       ) : null}
 
-      <div className="detail-grid">
+      {activeSection === "overview" ? <div className="operational-layout operational-layout--wide">
         <section className="workspace-panel">
           <div className="section-heading">
             <div>
@@ -307,8 +348,10 @@ export function MaintenanceWorkspace({
             </div>
           ) : null}
         </section>
+      </div> : null}
 
-        <section className="workspace-panel">
+      {activeSection === "create" ? <div className="operational-layout operational-layout--wide">
+        <section className="workspace-panel operational-content">
           <div className="section-heading">
             <div>
               <p className="eyebrow">طلب جديد</p>
@@ -372,9 +415,9 @@ export function MaintenanceWorkspace({
             </div>
           ) : null}
         </section>
-      </div>
+      </div> : null}
 
-      <section className="workspace-panel">
+      {activeSection === "jobs" ? <section className="workspace-panel">
         <div className="section-heading">
           <div>
             <p className="eyebrow">سير العمل</p>
@@ -532,7 +575,7 @@ export function MaintenanceWorkspace({
             })
           )}
         </div>
-      </section>
+      </section> : null}
 
       <ConfirmationDialog
         open={Boolean(confirmCancelJobId)}

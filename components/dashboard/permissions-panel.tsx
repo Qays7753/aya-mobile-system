@@ -5,6 +5,8 @@ import { KeyRound, Loader2, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
+import { PageHeader } from "@/components/ui/page-header";
+import { SectionCard } from "@/components/ui/section-card";
 import { StatusBanner } from "@/components/ui/status-banner";
 import type {
   PermissionAssignmentOption,
@@ -172,18 +174,29 @@ export function PermissionsPanel({
   }
 
   return (
-    <section className="workspace-panel">
-      <div className="section-heading">
-        <div>
-          <p className="eyebrow">الصلاحيات</p>
-          <h2>مركز الحِزم والصلاحيات الدقيقة</h2>
-        </div>
-        <ShieldCheck size={18} />
-      </div>
-
-      <p className="workspace-footnote">
-        يُحدَّد نطاق عمل كل حساب من خلال الدور الأساسي والحِزم التشغيلية المسندة له من هذه الشاشة.
-      </p>
+    <section className="workspace-stack configuration-shell">
+      <PageHeader
+        eyebrow="الصلاحيات"
+        title="مركز الحِزم والصلاحيات الدقيقة"
+        description="عاين الحزمة أولًا، ثم راقب أثرها على الدور الأساسي وحدود الخصم قبل الإسناد أو الإلغاء."
+        meta={
+          <div className="configuration-summary-grid">
+            <article className="configuration-summary-card">
+              <span>الحزم المتاحة</span>
+              <strong>{permissionBundles.length}</strong>
+            </article>
+            <article className="configuration-summary-card">
+              <span>المستخدمون المتوافقون</span>
+              <strong>{eligibleUsers.length}</strong>
+            </article>
+            <article className="configuration-summary-card">
+              <span>الحِزم النشطة للمستخدم</span>
+              <strong>{selectedUserAssignments.length}</strong>
+            </article>
+          </div>
+        }
+        actions={<ShieldCheck size={18} aria-hidden="true" />}
+      />
 
       {isPending ? (
         <StatusBanner
@@ -204,97 +217,134 @@ export function PermissionsPanel({
         />
       ) : null}
 
-      <div className="stack-form">
-        <label className="stack-field">
-          <span>الحزمة</span>
-          <select value={selectedBundleKey} onChange={(event) => setSelectedBundleKey(event.target.value)}>
-            {permissionBundles.map((bundle) => (
-              <option key={bundle.id} value={bundle.key}>
-                {bundle.label} ({getRoleLabel(bundle.base_role)})
-              </option>
-            ))}
-          </select>
-        </label>
+      <div className="configuration-shell configuration-shell--split">
+        <SectionCard
+          eyebrow="إدارة الإسناد"
+          title="حدّد الحزمة والمستخدم أولًا"
+          description="استخدم هذه المساحة لمعاينة الحزمة، ثم أكمل الإسناد أو الإلغاء بعد مراجعة أثرها على الدور الأساسي."
+          tone="accent"
+          className="configuration-card"
+        >
+          <div className="stack-form">
+            <label className="stack-field">
+              <span>الحزمة</span>
+              <select value={selectedBundleKey} onChange={(event) => setSelectedBundleKey(event.target.value)}>
+                {permissionBundles.map((bundle) => (
+                  <option key={bundle.id} value={bundle.key}>
+                    {bundle.label} ({getRoleLabel(bundle.base_role)})
+                  </option>
+                ))}
+              </select>
+            </label>
 
-        <label className="stack-field">
-          <span>المستخدم</span>
-          <select
-            value={selectedUser?.id ?? ""}
-            onChange={(event) => setSelectedUserId(event.target.value)}
-            disabled={eligibleUsers.length === 0}
-          >
-            {eligibleUsers.map((user) => (
-              <option key={user.id} value={user.id}>
-                {user.full_name ?? user.id} ({getRoleLabel(user.role)})
-              </option>
-            ))}
-          </select>
-        </label>
+            <label className="stack-field">
+              <span>المستخدم</span>
+              <select
+                value={selectedUser?.id ?? ""}
+                onChange={(event) => setSelectedUserId(event.target.value)}
+                disabled={eligibleUsers.length === 0}
+              >
+                {eligibleUsers.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.full_name ?? user.id} ({getRoleLabel(user.role)})
+                  </option>
+                ))}
+              </select>
+            </label>
 
-        <label className="stack-field">
-          <span>ملاحظة التعيين / الإلغاء</span>
-          <textarea
-            rows={3}
-            maxLength={500}
-            value={notes}
-            onChange={(event) => setNotes(event.target.value)}
-            placeholder="مثال: صلاحية الجرد لنوبة المساء"
-          />
-        </label>
+            <label className="stack-field">
+              <span>ملاحظة التعيين / الإلغاء</span>
+              <textarea
+                rows={3}
+                maxLength={500}
+                value={notes}
+                onChange={(event) => setNotes(event.target.value)}
+                placeholder="مثال: صلاحية الجرد لنوبة المساء"
+              />
+            </label>
 
-        <div className="actions-row">
-          <button type="button" className="secondary-button" disabled={isPending || !selectedBundleKey} onClick={runPreview}>
-            {isPending ? <Loader2 className="spin" size={16} /> : <KeyRound size={16} />}
-            معاينة الحزمة
-          </button>
-          <button
-            type="button"
-            className="primary-button"
-            disabled={isPending || !selectedUser || !selectedBundle}
-            onClick={() => setConfirmAction({ type: "assign-bundle" })}
-          >
-            إسناد
-          </button>
-          <button
-            type="button"
-            className="secondary-button"
-            disabled={isPending || !selectedUser || !selectedBundle}
-            onClick={() => setConfirmAction({ type: "revoke-bundle" })}
-          >
-            إلغاء
-          </button>
+            <div className="configuration-action-cluster">
+              <button
+                type="button"
+                className="secondary-button"
+                disabled={isPending || !selectedBundleKey}
+                onClick={runPreview}
+              >
+                {isPending ? <Loader2 className="spin" size={16} /> : <KeyRound size={16} />}
+                معاينة الحزمة
+              </button>
+              <button
+                type="button"
+                className="primary-button"
+                disabled={isPending || !selectedUser || !selectedBundle}
+                onClick={() => setConfirmAction({ type: "assign-bundle" })}
+              >
+                إسناد
+              </button>
+              <button
+                type="button"
+                className="secondary-button"
+                disabled={isPending || !selectedUser || !selectedBundle}
+                onClick={() => setConfirmAction({ type: "revoke-bundle" })}
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </SectionCard>
+
+        <div className="workspace-stack">
+          {preview ? (
+            <SectionCard
+              eyebrow="معاينة الحزمة"
+              title={selectedBundle?.label ?? preview.bundle_key}
+              description={selectedBundle?.description ?? "هذه المعاينة توضّح أثر الحزمة قبل إسنادها فعليًا."}
+              className="configuration-card"
+            >
+              <div className="configuration-summary-grid">
+                <article className="configuration-summary-card">
+                  <span>الدور الأساسي</span>
+                  <strong>{getRoleLabel(preview.base_role)}</strong>
+                </article>
+                <article className="configuration-summary-card">
+                  <span>الحد الأقصى للخصم</span>
+                  <strong>{preview.max_discount_percentage ?? "غير محدد"}</strong>
+                </article>
+                <article className="configuration-summary-card">
+                  <span>اعتماد الخصم</span>
+                  <strong>{preview.discount_requires_approval ? "نعم" : "لا"}</strong>
+                </article>
+              </div>
+              <p className="configuration-inline-note">
+                العمليات المتاحة: {preview.permissions.map(formatPermissionLabel).join("، ") || "لا يوجد"}
+              </p>
+            </SectionCard>
+          ) : null}
+
+          {selectedUser ? (
+            <SectionCard
+              eyebrow="الإسنادات الحالية"
+              title={selectedUser.full_name ?? selectedUser.id}
+              description="راجع الحِزم الحالية للمستخدم قبل تنفيذ أي تعديل إضافي."
+              tone="subtle"
+              className="configuration-card"
+            >
+              {selectedUserAssignments.length > 0 ? (
+                <ul className="compact-list">
+                  {selectedUserAssignments.map((assignment) => (
+                    <li key={assignment.id}>
+                      <strong>{assignment.bundle_label}</strong>
+                      {assignment.notes ? <span> - {assignment.notes}</span> : null}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="workspace-footnote">لا توجد حِزم نشطة لهذا المستخدم.</p>
+              )}
+            </SectionCard>
+          ) : null}
         </div>
       </div>
-
-      {preview ? (
-        <div className="result-card">
-          <h3>{selectedBundle?.label ?? preview.bundle_key}</h3>
-          {selectedBundle?.description ? <p>{selectedBundle.description}</p> : null}
-          <p>الدور الأساسي: {getRoleLabel(preview.base_role)}</p>
-          <p>الحد الأقصى للخصم: {preview.max_discount_percentage ?? "غير محدد"}</p>
-          <p>يتطلب اعتماد خصم: {preview.discount_requires_approval ? "نعم" : "لا"}</p>
-          <p>العمليات المتاحة: {preview.permissions.map(formatPermissionLabel).join("، ") || "لا يوجد"}</p>
-        </div>
-      ) : null}
-
-      {selectedUser ? (
-        <div className="workspace-panel workspace-panel--muted">
-          <p className="eyebrow">الصلاحيات النشطة</p>
-          <h3>{selectedUser.full_name ?? selectedUser.id}</h3>
-          {selectedUserAssignments.length > 0 ? (
-            <ul className="compact-list">
-              {selectedUserAssignments.map((assignment) => (
-                <li key={assignment.id}>
-                  <strong>{assignment.bundle_label}</strong>
-                  {assignment.notes ? <span> - {assignment.notes}</span> : null}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="workspace-footnote">لا توجد حِزم نشطة لهذا المستخدم.</p>
-          )}
-        </div>
-      ) : null}
 
       <ConfirmationDialog
         open={confirmAction?.type === "assign-bundle"}

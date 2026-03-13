@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { ReportsAdvancedCharts } from "@/components/dashboard/reports-advanced-charts";
+import { PageHeader } from "@/components/ui/page-header";
+import { SectionCard } from "@/components/ui/section-card";
 import type { WorkspaceUserOption } from "@/lib/api/dashboard";
 import type { ReportBaseline, SalesHistoryFilters } from "@/lib/api/reports";
 import { formatCompactNumber, formatCurrency, formatDate, formatDateTime } from "@/lib/utils/formatters";
@@ -21,6 +23,16 @@ const STATUS_LABELS: Record<string, string> = {
   ready: "جاهزة",
   delivered: "مسلّمة"
 };
+
+const REPORT_SECTIONS = [
+  { href: "#reports-filters", label: "الفلاتر" },
+  { href: "#reports-compare", label: "المقارنة" },
+  { href: "#reports-baseline", label: "لوحة المؤشرات" },
+  { href: "#reports-sales", label: "المبيعات" },
+  { href: "#reports-returns", label: "المرتجعات" },
+  { href: "#reports-movements", label: "الحسابات" },
+  { href: "#reports-maintenance", label: "الصيانة" }
+] as const;
 
 function getStatusLabel(status: string) {
   return STATUS_LABELS[status] ?? status;
@@ -58,64 +70,68 @@ export function ReportsOverview({ filters, users, terminals, reportBaseline }: R
   const { advancedReport } = reportBaseline;
 
   return (
-    <section className="workspace-stack">
-      <div className="workspace-hero">
-        <div>
-          <p className="eyebrow">التقارير</p>
-          <h1>التقارير المتقدمة والتحليلات المقارنة</h1>
-          <p className="workspace-lead">
-            تنقل بين الفلاتر، المقارنة، المتابعة اليومية، وسجلات التفاصيل من خلال أقسام أوضح بدل عرض جميع التقارير مرة
-            واحدة بصريًا.
-          </p>
-        </div>
-
-        <div className="action-row">
-          <a href={exportHref} className="primary-button">
-            تصدير Excel المتقدم
-          </a>
-          <Link href="/settings" className="secondary-button">
-            فتح الإعدادات
-          </Link>
-        </div>
-      </div>
-
-      <div className="chip-row" aria-label="الانتقال بين أقسام التقارير">
-        <a href="#reports-filters" className="chip">
-          الفلاتر
-        </a>
-        <a href="#reports-compare" className="chip">
-          المقارنة
-        </a>
-        <a href="#reports-baseline" className="chip">
-          الملخص اليومي
-        </a>
-        <a href="#reports-sales" className="chip">
-          المبيعات
-        </a>
-        <a href="#reports-returns" className="chip">
-          المرتجعات
-        </a>
-        <a href="#reports-movements" className="chip">
-          الحسابات
-        </a>
-        <a href="#reports-maintenance" className="chip">
-          الصيانة
-        </a>
-      </div>
-
-      <section id="reports-filters" className="workspace-panel">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">الفلاتر</p>
-            <h2>تحديد نطاق التقرير</h2>
+    <section className="workspace-stack analytical-page">
+      <PageHeader
+        eyebrow="التقارير التحليلية"
+        title="قراءة أوضح للأداء والمقارنات"
+        description="ابدأ بالفلاتر، راجع المؤشرات الأساسية، ثم انزل إلى الاتجاهات والتفاصيل من دون تكديس كل التقارير في مساحة واحدة."
+        meta={
+          <div className="analytical-page__meta-grid">
+            <div className="analytical-page__meta-card">
+              <span className="analytical-page__meta-label">الفترة الحالية</span>
+              <strong className="analytical-page__meta-value">{filters.fromDate}</strong>
+              <span className="analytical-page__meta-hint">حتى {filters.toDate}</span>
+            </div>
+            <div className="analytical-page__meta-card">
+              <span className="analytical-page__meta-label">المبيعات الحالية</span>
+              <strong className="analytical-page__meta-value">
+                {formatCurrency(advancedReport.currentPeriod.sales_total)}
+              </strong>
+              <span className="analytical-page__meta-hint">
+                {formatCompactNumber(reportBaseline.salesHistory.total_count)} فاتورة بعد الفلاتر
+              </span>
+            </div>
+            <div className="analytical-page__meta-card">
+              <span className="analytical-page__meta-label">فرق الربح</span>
+              <strong className="analytical-page__meta-value">{formatCurrency(advancedReport.delta.net_profit)}</strong>
+              <span className="analytical-page__meta-hint">مقارنة بالفترة المرجعية المحددة</span>
+            </div>
           </div>
-          <p className="workspace-footnote">
-            الحالي: {filters.fromDate} → {filters.toDate}
-            {filters.compareFromDate && filters.compareToDate
-              ? ` | المقارنة: ${filters.compareFromDate} → ${filters.compareToDate}`
-              : " | لا توجد فترة مقارنة محددة"}
-          </p>
-        </div>
+        }
+        actions={
+          <div className="action-row">
+            <a href={exportHref} className="primary-button">
+              تصدير Excel المتقدم
+            </a>
+            <Link href="/settings" className="secondary-button">
+              فتح الإعدادات
+            </Link>
+          </div>
+        }
+      />
+
+      <nav className="analytical-section-nav" aria-label="التنقل داخل أقسام التقارير">
+        {REPORT_SECTIONS.map((section) => (
+          <a key={section.href} href={section.href} className="chip">
+            {section.label}
+          </a>
+        ))}
+      </nav>
+
+      <SectionCard
+        id="reports-filters"
+        eyebrow="الفلاتر"
+        title="حدد النطاق أولًا"
+        description="أبقِ فترة التقرير واضحة ثم أضف المقارنة أو التجميع أو التصفية حسب المستخدم والحالة والجهاز."
+        tone="accent"
+        className="analytical-card analytical-card--filters"
+      >
+        <p className="analytical-inline-note">
+          الحالي: {filters.fromDate} → {filters.toDate}
+          {filters.compareFromDate && filters.compareToDate
+            ? ` | المقارنة: ${filters.compareFromDate} → ${filters.compareToDate}`
+            : " | لا توجد فترة مقارنة محددة"}
+        </p>
 
         <form className="filters-grid" method="GET">
           <label className="stack-field">
@@ -202,163 +218,181 @@ export function ReportsOverview({ filters, users, terminals, reportBaseline }: R
             </Link>
           </div>
         </form>
-      </section>
+      </SectionCard>
 
-      <section id="reports-compare" className="workspace-panel">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">المقارنة والاتجاهات</p>
-            <h2>ملخص الفترة الحالية مقابل فترة المقارنة</h2>
+      <section id="reports-compare" className="workspace-stack">
+        <SectionCard
+          eyebrow="المقارنة"
+          title="ملخص سريع قبل النزول إلى التفاصيل"
+          description="اعرض الفترة الحالية مقابل فترة المقارنة ثم راقب فرق المبيعات والربح قبل فتح الجداول."
+          className="analytical-card"
+        >
+          <div className="analytical-kpi-grid">
+            <article className="analytical-kpi-card">
+              <span className="analytical-kpi-label">الفترة الحالية</span>
+              <strong className="analytical-kpi-value">{formatCurrency(advancedReport.currentPeriod.sales_total)}</strong>
+              <span className="analytical-kpi-hint">
+                صافي الربح: {formatCurrency(advancedReport.currentPeriod.net_profit)}
+              </span>
+            </article>
+            <article className="analytical-kpi-card">
+              <span className="analytical-kpi-label">فترة المقارنة</span>
+              <strong className="analytical-kpi-value">
+                {formatCurrency(advancedReport.comparePeriod?.sales_total ?? 0)}
+              </strong>
+              <span className="analytical-kpi-hint">
+                صافي الربح: {formatCurrency(advancedReport.comparePeriod?.net_profit ?? 0)}
+              </span>
+            </article>
+            <article className="analytical-kpi-card analytical-kpi-card--accent">
+              <span className="analytical-kpi-label">فرق المبيعات</span>
+              <strong className="analytical-kpi-value">{formatCurrency(advancedReport.delta.sales_total)}</strong>
+              <span className="analytical-kpi-hint">الفارق بين الفترتين بعد نفس الفلاتر</span>
+            </article>
+            <article className="analytical-kpi-card">
+              <span className="analytical-kpi-label">فرق الربح</span>
+              <strong className="analytical-kpi-value">{formatCurrency(advancedReport.delta.net_profit)}</strong>
+              <span className="analytical-kpi-hint">فارق صافي الربح بعد المصروفات والمرتجعات</span>
+            </article>
           </div>
-        </div>
+        </SectionCard>
 
-        <div className="summary-grid">
-          <article className="workspace-panel">
-            <p className="eyebrow">الفترة الحالية</p>
-            <h2>{formatCurrency(advancedReport.currentPeriod.sales_total)}</h2>
-            <p className="workspace-footnote">
-              صافي الربح: {formatCurrency(advancedReport.currentPeriod.net_profit)} | المصروفات:{" "}
-              {formatCurrency(advancedReport.currentPeriod.expense_total)}
-            </p>
-          </article>
+        <SectionCard
+          eyebrow="الاتجاهات"
+          title="اتجاه المبيعات وتفكيك البعد الحالي"
+          description="الرسوم البيانية تأتي قبل الجدول حتى يبدأ التحليل بالصورة العامة ثم ينتقل إلى القراءة الدقيقة."
+          className="analytical-card"
+        >
+          <ReportsAdvancedCharts trend={advancedReport.trend} breakdown={advancedReport.breakdown} />
+        </SectionCard>
 
-          <article className="workspace-panel">
-            <p className="eyebrow">فترة المقارنة</p>
-            <h2>{formatCurrency(advancedReport.comparePeriod?.sales_total ?? 0)}</h2>
-            <p className="workspace-footnote">
-              صافي الربح: {formatCurrency(advancedReport.comparePeriod?.net_profit ?? 0)} | المصروفات:{" "}
-              {formatCurrency(advancedReport.comparePeriod?.expense_total ?? 0)}
-            </p>
-          </article>
-
-          <article className="workspace-panel">
-            <p className="eyebrow">فرق المبيعات</p>
-            <h2>{formatCurrency(advancedReport.delta.sales_total)}</h2>
-            <p className="workspace-footnote">فرق إجمالي المبيعات بين الفترتين.</p>
-          </article>
-
-          <article className="workspace-panel">
-            <p className="eyebrow">فرق الربح</p>
-            <h2>{formatCurrency(advancedReport.delta.net_profit)}</h2>
-            <p className="workspace-footnote">فرق صافي الربح بين الفترتين.</p>
-          </article>
-        </div>
-
-        <ReportsAdvancedCharts trend={advancedReport.trend} breakdown={advancedReport.breakdown} />
-
-        <div className="table-wrap">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>البند</th>
-                <th>القيمة الأساسية</th>
-                <th>القيمة الثانوية</th>
-                <th>عدد العناصر</th>
-              </tr>
-            </thead>
-            <tbody>
-              {advancedReport.breakdown.length > 0 ? (
-                advancedReport.breakdown.map((entry) => (
-                  <tr key={entry.label}>
-                    <td>{entry.label}</td>
-                    <td>{formatCurrency(entry.amount)}</td>
-                    <td>{formatCurrency(entry.secondary_amount)}</td>
-                    <td>{formatCompactNumber(entry.item_count)}</td>
-                  </tr>
-                ))
-              ) : (
+        <SectionCard
+          eyebrow="جدول المقارنة"
+          title="تفصيل القيم بعد التجميع"
+          description="راجع القيم الأساسية والثانوية وعدد العناصر في جدول واحد بعد حسم الفلاتر."
+          className="analytical-card"
+        >
+          <div className="table-wrap">
+            <table className="data-table">
+              <thead>
                 <tr>
-                  <td colSpan={4} className="table-empty">
-                    لا توجد بيانات كافية للمقارنة ضمن الفلاتر الحالية. جرّب توسيع الفترة أو تغيير طريقة التجميع.
-                  </td>
+                  <th>البند</th>
+                  <th>القيمة الأساسية</th>
+                  <th>القيمة الثانوية</th>
+                  <th>عدد العناصر</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {advancedReport.breakdown.length > 0 ? (
+                  advancedReport.breakdown.map((entry) => (
+                    <tr key={entry.label}>
+                      <td>{entry.label}</td>
+                      <td>{formatCurrency(entry.amount)}</td>
+                      <td>{formatCurrency(entry.secondary_amount)}</td>
+                      <td>{formatCompactNumber(entry.item_count)}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={4} className="table-empty">
+                      لا توجد بيانات كافية للمقارنة ضمن الفلاتر الحالية. جرّب توسيع الفترة أو تغيير طريقة التجميع.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </SectionCard>
       </section>
 
       <section id="reports-baseline" className="workspace-stack">
-        <div className="summary-grid">
-          <article className="workspace-panel">
-            <p className="eyebrow">ملخص المبيعات</p>
-            <h2>{formatCurrency(reportBaseline.salesSummary.total_sales)}</h2>
-            <p className="workspace-footnote">
-              {formatCompactNumber(reportBaseline.salesSummary.invoice_count)} فاتورة نشطة
-            </p>
-          </article>
-
-          <article className="workspace-panel">
-            <p className="eyebrow">الديون الحالية</p>
-            <h2>{formatCurrency(reportBaseline.debtReport.total_outstanding)}</h2>
-            <p className="workspace-footnote">
-              {formatCompactNumber(reportBaseline.debtReport.customers.length)} عميلًا بديون حالية
-            </p>
-          </article>
-
-          <article className="workspace-panel">
-            <p className="eyebrow">المخزون المنخفض</p>
-            <h2>{formatCompactNumber(reportBaseline.inventoryReport.low_stock_count)}</h2>
-            <p className="workspace-footnote">منتجات عند حد التنبيه أو أقل.</p>
-          </article>
-
-          <article className="workspace-panel">
-            <p className="eyebrow">الفواتير الملغاة</p>
-            <h2>{formatCompactNumber(reportBaseline.salesSummary.cancelled_count)}</h2>
-            <p className="workspace-footnote">إجمالي الفواتير الملغاة ضمن الفترة الحالية.</p>
-          </article>
-        </div>
-
-        <div className="summary-grid">
-          <article className="workspace-panel">
-            <p className="eyebrow">ربح اللقطات</p>
-            <h2>{formatCurrency(reportBaseline.profitReport.snapshot_net_profit)}</h2>
-            <p className="workspace-footnote">
-              من {formatCompactNumber(reportBaseline.profitReport.snapshot_count)} لقطة يومية داخل الفترة
-            </p>
-          </article>
-
-          <article className="workspace-panel">
-            <p className="eyebrow">ربح الشحن</p>
-            <h2>{formatCurrency(reportBaseline.profitReport.topup_profit)}</h2>
-            <p className="workspace-footnote">
-              إجمالي الشحن: {formatCurrency(reportBaseline.profitReport.topup_amount)}
-            </p>
-          </article>
-
-          <article className="workspace-panel">
-            <p className="eyebrow">إيراد الصيانة</p>
-            <h2>{formatCurrency(reportBaseline.profitReport.maintenance_revenue)}</h2>
-            <p className="workspace-footnote">
-              {formatCompactNumber(reportBaseline.profitReport.maintenance_delivered_count)} أمرًا مسلّمًا
-            </p>
-          </article>
-
-          <article className="workspace-panel">
-            <p className="eyebrow">المصروفات والمرتجعات</p>
-            <h2>{formatCurrency(reportBaseline.profitReport.expense_total)}</h2>
-            <p className="workspace-footnote">
-              المرتجعات: {formatCurrency(reportBaseline.profitReport.return_total)}
-            </p>
-          </article>
-        </div>
+        <SectionCard
+          eyebrow="لوحة المؤشرات"
+          title="مؤشرات سريعة من المتابعة اليومية"
+          description="هذه اللوحة تختصر النشاط المالي والتشغيلي قبل فتح أي جداول تفصيلية."
+          className="analytical-card"
+        >
+          <div className="analytical-kpi-grid">
+            <article className="analytical-kpi-card">
+              <span className="analytical-kpi-label">ملخص المبيعات</span>
+              <strong className="analytical-kpi-value">{formatCurrency(reportBaseline.salesSummary.total_sales)}</strong>
+              <span className="analytical-kpi-hint">
+                {formatCompactNumber(reportBaseline.salesSummary.invoice_count)} فاتورة نشطة
+              </span>
+            </article>
+            <article className="analytical-kpi-card">
+              <span className="analytical-kpi-label">الديون الحالية</span>
+              <strong className="analytical-kpi-value">
+                {formatCurrency(reportBaseline.debtReport.total_outstanding)}
+              </strong>
+              <span className="analytical-kpi-hint">
+                {formatCompactNumber(reportBaseline.debtReport.customers.length)} عميلًا بديون حالية
+              </span>
+            </article>
+            <article className="analytical-kpi-card">
+              <span className="analytical-kpi-label">المخزون المنخفض</span>
+              <strong className="analytical-kpi-value">
+                {formatCompactNumber(reportBaseline.inventoryReport.low_stock_count)}
+              </strong>
+              <span className="analytical-kpi-hint">منتجات عند حد التنبيه أو أقل</span>
+            </article>
+            <article className="analytical-kpi-card">
+              <span className="analytical-kpi-label">الفواتير الملغاة</span>
+              <strong className="analytical-kpi-value">
+                {formatCompactNumber(reportBaseline.salesSummary.cancelled_count)}
+              </strong>
+              <span className="analytical-kpi-hint">ضمن نفس الفترة الحالية</span>
+            </article>
+            <article className="analytical-kpi-card analytical-kpi-card--accent">
+              <span className="analytical-kpi-label">ربح اللقطات</span>
+              <strong className="analytical-kpi-value">
+                {formatCurrency(reportBaseline.profitReport.snapshot_net_profit)}
+              </strong>
+              <span className="analytical-kpi-hint">
+                من {formatCompactNumber(reportBaseline.profitReport.snapshot_count)} لقطة يومية
+              </span>
+            </article>
+            <article className="analytical-kpi-card">
+              <span className="analytical-kpi-label">ربح الشحن</span>
+              <strong className="analytical-kpi-value">{formatCurrency(reportBaseline.profitReport.topup_profit)}</strong>
+              <span className="analytical-kpi-hint">
+                إجمالي الشحن: {formatCurrency(reportBaseline.profitReport.topup_amount)}
+              </span>
+            </article>
+            <article className="analytical-kpi-card">
+              <span className="analytical-kpi-label">إيراد الصيانة</span>
+              <strong className="analytical-kpi-value">
+                {formatCurrency(reportBaseline.profitReport.maintenance_revenue)}
+              </strong>
+              <span className="analytical-kpi-hint">
+                {formatCompactNumber(reportBaseline.profitReport.maintenance_delivered_count)} أمرًا مسلّمًا
+              </span>
+            </article>
+            <article className="analytical-kpi-card">
+              <span className="analytical-kpi-label">المصروفات والمرتجعات</span>
+              <strong className="analytical-kpi-value">
+                {formatCurrency(reportBaseline.profitReport.expense_total)}
+              </strong>
+              <span className="analytical-kpi-hint">
+                المرتجعات: {formatCurrency(reportBaseline.profitReport.return_total)}
+              </span>
+            </article>
+          </div>
+        </SectionCard>
       </section>
 
-      <section id="reports-sales" className="detail-grid">
-        <section className="workspace-panel">
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">سجل المبيعات</p>
-              <h2>الفواتير المطابقة للفلاتر</h2>
-            </div>
+      <section id="reports-sales" className="analytical-shell analytical-shell--split">
+        <SectionCard
+          eyebrow="سجل المبيعات"
+          title="الفواتير المطابقة للفلاتر"
+          description={`العدد الكلي بعد الفلاتر: ${formatCompactNumber(reportBaseline.salesHistory.total_count)}`}
+          className="analytical-card"
+        >
+          <div className="action-row action-row--end">
             <Link href="/invoices" className="secondary-button">
               فتح الفواتير
             </Link>
           </div>
-
-          <p className="workspace-footnote">
-            العدد الكلي بعد الفلاتر: {formatCompactNumber(reportBaseline.salesHistory.total_count)}
-          </p>
 
           <div className="table-wrap">
             <table className="data-table">
@@ -396,11 +430,15 @@ export function ReportsOverview({ filters, users, terminals, reportBaseline }: R
               </tbody>
             </table>
           </div>
-        </section>
+        </SectionCard>
 
-        <section className="workspace-panel">
-          <p className="eyebrow">اللقطات اليومية</p>
-          <h2>آخر اللقطات اليومية</h2>
+        <SectionCard
+          eyebrow="اللقطات اليومية"
+          title="آخر اللقطات اليومية"
+          description="تظهر هنا أحدث اللقطات اليومية المرتبطة بالنشاط الحالي لتسهيل الربط بين الحركة اليومية والأرقام."
+          tone="subtle"
+          className="analytical-card"
+        >
           <div className="stack-list">
             {reportBaseline.snapshots.length > 0 ? (
               reportBaseline.snapshots.map((snapshot) => (
@@ -420,13 +458,11 @@ export function ReportsOverview({ filters, users, terminals, reportBaseline }: R
               </div>
             )}
           </div>
-        </section>
+        </SectionCard>
       </section>
 
-      <section id="reports-movements" className="detail-grid">
-        <section className="workspace-panel">
-          <p className="eyebrow">الحسابات</p>
-          <h2>الحسابات المالية</h2>
+      <section id="reports-movements" className="analytical-shell analytical-shell--triplet">
+        <SectionCard eyebrow="الحسابات" title="الحسابات المالية" tone="subtle" className="analytical-card">
           <div className="stack-list">
             {reportBaseline.accountReport.accounts.map((account) => (
               <article key={account.id} className="list-card">
@@ -439,11 +475,9 @@ export function ReportsOverview({ filters, users, terminals, reportBaseline }: R
               </article>
             ))}
           </div>
-        </section>
+        </SectionCard>
 
-        <section className="workspace-panel">
-          <p className="eyebrow">عملاء الديون</p>
-          <h2>الديون الحالية</h2>
+        <SectionCard eyebrow="عملاء الديون" title="الديون الحالية" tone="subtle" className="analytical-card">
           <div className="stack-list">
             {reportBaseline.debtReport.customers.map((customer) => (
               <article key={customer.id} className="list-card">
@@ -459,11 +493,9 @@ export function ReportsOverview({ filters, users, terminals, reportBaseline }: R
               </article>
             ))}
           </div>
-        </section>
+        </SectionCard>
 
-        <section className="workspace-panel">
-          <p className="eyebrow">متابعة المخزون</p>
-          <h2>المخزون المنخفض</h2>
+        <SectionCard eyebrow="متابعة المخزون" title="المخزون المنخفض" tone="subtle" className="analytical-card">
           <div className="stack-list">
             {reportBaseline.inventoryReport.products.map((product) => (
               <article key={product.id} className="list-card">
@@ -477,164 +509,154 @@ export function ReportsOverview({ filters, users, terminals, reportBaseline }: R
               </article>
             ))}
           </div>
-        </section>
+        </SectionCard>
       </section>
 
-      <section id="reports-returns" className="workspace-panel">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">تحليل المرتجعات</p>
-            <h2>تقرير المرتجعات والأسباب</h2>
+      <SectionCard
+        id="reports-returns"
+        eyebrow="تحليل المرتجعات"
+        title="الأسباب والعمليات المرتبطة بالمرتجعات"
+        description={`${formatCompactNumber(reportBaseline.returnsReport.return_count)} عملية | ${formatCurrency(reportBaseline.returnsReport.total_returns)}`}
+        className="analytical-card"
+      >
+        <div className="analytical-shell analytical-shell--split">
+          <div className="stack-list">
+            {reportBaseline.returnsReport.reasons.length > 0 ? (
+              reportBaseline.returnsReport.reasons.map((reason) => (
+                <article key={reason.reason} className="list-card">
+                  <div className="list-card__header">
+                    <strong>{reason.reason}</strong>
+                    <span>{formatCompactNumber(reason.count)} مرة</span>
+                  </div>
+                  <p>إجمالي المرتجعات: {formatCurrency(reason.total_amount)}</p>
+                </article>
+              ))
+            ) : (
+              <div className="empty-panel">
+                <p>لا توجد مرتجعات ضمن الفترة الحالية. ستظهر الأسباب والعمليات هنا عند تسجيل أول مرتجع.</p>
+              </div>
+            )}
           </div>
-          <p className="workspace-footnote">
-            {formatCompactNumber(reportBaseline.returnsReport.return_count)} عملية |{" "}
-            {formatCurrency(reportBaseline.returnsReport.total_returns)}
-          </p>
-        </div>
 
-        <div className="stack-list">
-          {reportBaseline.returnsReport.reasons.length > 0 ? (
-            reportBaseline.returnsReport.reasons.map((reason) => (
-              <article key={reason.reason} className="list-card">
-                <div className="list-card__header">
-                  <strong>{reason.reason}</strong>
-                  <span>{formatCompactNumber(reason.count)} مرة</span>
-                </div>
-                <p>إجمالي المرتجعات: {formatCurrency(reason.total_amount)}</p>
-              </article>
-            ))
-          ) : (
-            <div className="empty-panel">
-              <p>لا توجد مرتجعات ضمن الفترة الحالية. ستظهر الأسباب والعمليات هنا عند تسجيل أول مرتجع.</p>
-            </div>
-          )}
-        </div>
-
-        <div className="table-wrap">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>رقم المرتجع</th>
-                <th>التاريخ</th>
-                <th>الفاتورة الأصلية</th>
-                <th>النوع</th>
-                <th>السبب</th>
-                <th>الإجمالي</th>
-              </tr>
-            </thead>
-            <tbody>
-              {reportBaseline.returnsReport.entries.length > 0 ? (
-                reportBaseline.returnsReport.entries.map((entry) => (
-                  <tr key={entry.return_id}>
-                    <td>{entry.return_number}</td>
-                    <td>{formatDate(entry.return_date)}</td>
-                    <td>{entry.invoice_number ?? "غير معروف"}</td>
-                    <td>{entry.return_type}</td>
-                    <td>{entry.reason}</td>
-                    <td>{formatCurrency(entry.total_amount)}</td>
-                  </tr>
-                ))
-              ) : (
+          <div className="table-wrap">
+            <table className="data-table">
+              <thead>
                 <tr>
-                  <td colSpan={6} className="table-empty">
-                    لا توجد عمليات مرتجع مطابقة لهذه الفترة.
-                  </td>
+                  <th>رقم المرتجع</th>
+                  <th>التاريخ</th>
+                  <th>الفاتورة الأصلية</th>
+                  <th>النوع</th>
+                  <th>السبب</th>
+                  <th>الإجمالي</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section id="reports-movements-details" className="workspace-panel">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">حركات الحسابات</p>
-            <h2>حركات الحسابات</h2>
-          </div>
-          <p className="workspace-footnote">
-            {formatCompactNumber(reportBaseline.accountMovementReport.total_movements)} حركة داخل الفترة
-          </p>
-        </div>
-
-        <div className="stack-list">
-          {reportBaseline.accountMovementReport.summaries.length > 0 ? (
-            reportBaseline.accountMovementReport.summaries.map((summary) => (
-              <article key={summary.account_id} className="list-card">
-                <div className="list-card__header">
-                  <strong>{summary.account_name}</strong>
-                  <span>{formatCompactNumber(summary.movement_count)} حركة</span>
-                </div>
-                <p>الوارد: {formatCurrency(summary.income_total)}</p>
-                <p>الصادر: {formatCurrency(summary.expense_total)}</p>
-                <p className="workspace-footnote">
-                  زيادة: {formatCurrency(summary.adjustment_increase_total)} | خصم:{" "}
-                  {formatCurrency(summary.adjustment_decrease_total)} | الرصيد الحالي:{" "}
-                  {formatCurrency(summary.current_balance)}
-                </p>
-              </article>
-            ))
-          ) : (
-            <div className="empty-panel">
-              <p>لا توجد حركات حسابات ضمن الفترة الحالية. غيّر الفترة أو راجع نشاط الحسابات.</p>
-            </div>
-          )}
-        </div>
-
-        <div className="table-wrap">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>التاريخ</th>
-                <th>الحساب</th>
-                <th>النوع</th>
-                <th>المرجع</th>
-                <th>القيمة</th>
-                <th>الوصف</th>
-              </tr>
-            </thead>
-            <tbody>
-              {reportBaseline.accountMovementReport.entries.length > 0 ? (
-                reportBaseline.accountMovementReport.entries.map((entry) => (
-                  <tr key={entry.id}>
-                    <td>{formatDate(entry.entry_date)}</td>
-                    <td>{entry.account_name}</td>
-                    <td>{entry.adjustment_direction ? `${entry.entry_type}:${entry.adjustment_direction}` : entry.entry_type}</td>
-                    <td>{entry.reference_type ?? "بدون مرجع"}</td>
-                    <td>{formatCurrency(entry.amount)}</td>
-                    <td>{entry.description}</td>
+              </thead>
+              <tbody>
+                {reportBaseline.returnsReport.entries.length > 0 ? (
+                  reportBaseline.returnsReport.entries.map((entry) => (
+                    <tr key={entry.return_id}>
+                      <td>{entry.return_number}</td>
+                      <td>{formatDate(entry.return_date)}</td>
+                      <td>{entry.invoice_number ?? "غير معروف"}</td>
+                      <td>{entry.return_type}</td>
+                      <td>{entry.reason}</td>
+                      <td>{formatCurrency(entry.total_amount)}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="table-empty">
+                      لا توجد عمليات مرتجع مطابقة لهذه الفترة.
+                    </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={6} className="table-empty">
-                    لا توجد قيود حركة مطابقة لهذه الفترة.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section id="reports-maintenance" className="workspace-panel">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">أداء الصيانة</p>
-            <h2>ملخص الصيانة</h2>
+                )}
+              </tbody>
+            </table>
           </div>
-          <p className="workspace-footnote">
-            المسلم: {formatCompactNumber(reportBaseline.maintenanceReport.delivered_count)} | الجاهز:{" "}
-            {formatCompactNumber(reportBaseline.maintenanceReport.ready_count)} | المفتوح:{" "}
-            {formatCompactNumber(reportBaseline.maintenanceReport.open_count)}
-          </p>
         </div>
+      </SectionCard>
 
-        <div className="summary-grid">
-          <article className="workspace-panel">
-            <p className="eyebrow">الإيراد المسلّم</p>
-            <h2>{formatCurrency(reportBaseline.maintenanceReport.delivered_revenue)}</h2>
-            <p className="workspace-footnote">إجمالي ما تم تسليمه ضمن الفترة الحالية.</p>
+      <SectionCard
+        eyebrow="حركات الحسابات"
+        title="الحركة التفصيلية حسب الحسابات"
+        description={`${formatCompactNumber(reportBaseline.accountMovementReport.total_movements)} حركة داخل الفترة`}
+        className="analytical-card"
+      >
+        <div className="analytical-shell analytical-shell--split">
+          <div className="stack-list">
+            {reportBaseline.accountMovementReport.summaries.length > 0 ? (
+              reportBaseline.accountMovementReport.summaries.map((summary) => (
+                <article key={summary.account_id} className="list-card">
+                  <div className="list-card__header">
+                    <strong>{summary.account_name}</strong>
+                    <span>{formatCompactNumber(summary.movement_count)} حركة</span>
+                  </div>
+                  <p>الوارد: {formatCurrency(summary.income_total)}</p>
+                  <p>الصادر: {formatCurrency(summary.expense_total)}</p>
+                  <p className="workspace-footnote">
+                    زيادة: {formatCurrency(summary.adjustment_increase_total)} | خصم:{" "}
+                    {formatCurrency(summary.adjustment_decrease_total)} | الرصيد الحالي:{" "}
+                    {formatCurrency(summary.current_balance)}
+                  </p>
+                </article>
+              ))
+            ) : (
+              <div className="empty-panel">
+                <p>لا توجد حركات حسابات ضمن الفترة الحالية. غيّر الفترة أو راجع نشاط الحسابات.</p>
+              </div>
+            )}
+          </div>
+
+          <div className="table-wrap">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>التاريخ</th>
+                  <th>الحساب</th>
+                  <th>النوع</th>
+                  <th>المرجع</th>
+                  <th>القيمة</th>
+                  <th>الوصف</th>
+                </tr>
+              </thead>
+              <tbody>
+                {reportBaseline.accountMovementReport.entries.length > 0 ? (
+                  reportBaseline.accountMovementReport.entries.map((entry) => (
+                    <tr key={entry.id}>
+                      <td>{formatDate(entry.entry_date)}</td>
+                      <td>{entry.account_name}</td>
+                      <td>{entry.adjustment_direction ? `${entry.entry_type}:${entry.adjustment_direction}` : entry.entry_type}</td>
+                      <td>{entry.reference_type ?? "بدون مرجع"}</td>
+                      <td>{formatCurrency(entry.amount)}</td>
+                      <td>{entry.description}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="table-empty">
+                      لا توجد قيود حركة مطابقة لهذه الفترة.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </SectionCard>
+
+      <SectionCard
+        id="reports-maintenance"
+        eyebrow="أداء الصيانة"
+        title="ملخص الصيانة والإيراد المسلّم"
+        description={`المسلّم: ${formatCompactNumber(reportBaseline.maintenanceReport.delivered_count)} | الجاهز: ${formatCompactNumber(reportBaseline.maintenanceReport.ready_count)} | المفتوح: ${formatCompactNumber(reportBaseline.maintenanceReport.open_count)}`}
+        className="analytical-card"
+      >
+        <div className="analytical-kpi-grid">
+          <article className="analytical-kpi-card">
+            <span className="analytical-kpi-label">الإيراد المسلّم</span>
+            <strong className="analytical-kpi-value">
+              {formatCurrency(reportBaseline.maintenanceReport.delivered_revenue)}
+            </strong>
+            <span className="analytical-kpi-hint">إجمالي ما تم تسليمه ضمن الفترة الحالية</span>
           </article>
         </div>
 
@@ -674,7 +696,7 @@ export function ReportsOverview({ filters, users, terminals, reportBaseline }: R
             </tbody>
           </table>
         </div>
-      </section>
+      </SectionCard>
     </section>
   );
 }

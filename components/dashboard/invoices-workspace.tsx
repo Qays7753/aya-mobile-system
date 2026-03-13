@@ -15,6 +15,8 @@ import {
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
+import { PageHeader } from "@/components/ui/page-header";
+import { SectionCard } from "@/components/ui/section-card";
 import { StatusBanner } from "@/components/ui/status-banner";
 import type { AccountOption, InvoiceOption } from "@/lib/api/dashboard";
 import type { StandardEnvelope } from "@/lib/pos/types";
@@ -185,7 +187,7 @@ export function InvoicesWorkspace({ role, invoices, accounts }: InvoicesWorkspac
       return;
     }
 
-    setActionErrorMessage(null);
+    clearActionFeedback();
     startTransition(() => {
       void (async () => {
         const response = await fetch("/api/receipts/link", {
@@ -399,19 +401,30 @@ export function InvoicesWorkspace({ role, invoices, accounts }: InvoicesWorkspac
   }
 
   return (
-    <section className="workspace-stack">
-      <div className="workspace-hero">
-        <div>
-          <p className="eyebrow">الفواتير</p>
-          <h1>الفواتير والإيصالات والمرتجعات</h1>
-          <p className="workspace-lead">
-            راجع الفواتير الأخيرة، شارك الإيصال العام، نفذ المرتجع، أو انتقل إلى الإجراء الإداري من نفس المساحة دون
-            ازدحام غير ضروري.
-          </p>
-        </div>
-      </div>
+    <section className="workspace-stack transaction-page">
+      <PageHeader
+        eyebrow="الفواتير"
+        title="الفواتير والإيصالات والمرتجعات"
+        description="تابع الفواتير الحديثة، واصل مشاركة الإيصال، ونفذ المرتجع أو الإجراء الإداري من مساحة أوضح تقلل التكدس وتبقي كل خطوة في سياقها الصحيح."
+        meta={
+          <div className="transaction-page__meta" aria-label="ملخص شاشة الفواتير">
+            <article className="transaction-page__meta-card">
+              <span>الفواتير المعروضة</span>
+              <strong>{formatCompactNumber(filteredInvoices.length)}</strong>
+            </article>
+            <article className="transaction-page__meta-card">
+              <span>الحالة الحالية</span>
+              <strong>{selectedInvoice ? getInvoiceStatusLabel(selectedInvoice.status) : "اختر فاتورة"}</strong>
+            </article>
+            <article className="transaction-page__meta-card transaction-page__meta-card--safe">
+              <span>إجمالي الفاتورة</span>
+              <strong>{selectedInvoice ? formatCurrency(selectedInvoice.total_amount) : "—"}</strong>
+            </article>
+          </div>
+        }
+      />
 
-      <div className="chip-row" aria-label="أقسام شاشة الفواتير">
+      <div className="chip-row transaction-chip-row" aria-label="أقسام شاشة الفواتير">
         <button
           type="button"
           className={activeSection === "overview" ? "chip-button is-selected" : "chip-button"}
@@ -456,10 +469,15 @@ export function InvoicesWorkspace({ role, invoices, accounts }: InvoicesWorkspac
         />
       ) : null}
 
-      <div className="detail-grid">
-        <section className="workspace-panel">
-          <div className="workspace-toolbar">
-            <label className="workspace-search">
+      <div className="transaction-layout transaction-layout--detail">
+        <SectionCard
+          eyebrow="سجل الفواتير"
+          title="قائمة الفواتير"
+          description="ابحث بسرعة برقم الفاتورة أو العميل أو الجهاز، ثم اختر الفاتورة المطلوبة لعرض تفاصيلها وإجراءاتها."
+          className="transaction-card"
+        >
+          <div className="workspace-toolbar transaction-toolbar">
+            <label className="workspace-search transaction-toolbar__search">
               <Search size={18} />
               <input
                 type="search"
@@ -470,12 +488,16 @@ export function InvoicesWorkspace({ role, invoices, accounts }: InvoicesWorkspac
             </label>
           </div>
 
-          <div className="stack-list">
+          <div className="stack-list transaction-list-shell">
             {filteredInvoices.map((invoice) => (
               <button
                 key={invoice.id}
                 type="button"
-                className={invoice.id === selectedInvoiceId ? "list-card list-card--interactive is-selected" : "list-card list-card--interactive"}
+                className={
+                  invoice.id === selectedInvoiceId
+                    ? "list-card list-card--interactive is-selected"
+                    : "list-card list-card--interactive"
+                }
                 onClick={() => setSelectedInvoiceId(invoice.id)}
               >
                 <div className="list-card__header">
@@ -490,127 +512,32 @@ export function InvoicesWorkspace({ role, invoices, accounts }: InvoicesWorkspac
               </button>
             ))}
           </div>
-        </section>
+        </SectionCard>
 
-        <section className="workspace-panel">
-          {selectedInvoice ? (
-            <>
-              <div className="section-heading">
-                <div>
-                  <p className="eyebrow">تفاصيل الفاتورة</p>
-                  <h2>{selectedInvoice.invoice_number}</h2>
+        <div className="transaction-stack">
+          <SectionCard
+            eyebrow="تفاصيل الفاتورة"
+            title={selectedInvoice ? selectedInvoice.invoice_number : "اختر فاتورة"}
+            description="تظهر هنا حالة الفاتورة، قيمتها، بنودها، وكل إجراءات الإيصال أو المرتجع أو الإلغاء بحسب صلاحيتك."
+            className="transaction-card"
+          >
+            {selectedInvoice ? (
+              <>
+                <div className="transaction-summary-grid">
+                  <article className="transaction-page__meta-card">
+                    <span>الإجمالي</span>
+                    <strong>{formatCurrency(selectedInvoice.total_amount)}</strong>
+                  </article>
+                  <article className="transaction-page__meta-card">
+                    <span>الحالة</span>
+                    <strong>{getInvoiceStatusLabel(selectedInvoice.status)}</strong>
+                  </article>
+                  <article className="transaction-page__meta-card">
+                    <span>الدين المرتبط</span>
+                    <strong>{formatCurrency(selectedInvoice.debt_amount)}</strong>
+                  </article>
                 </div>
-                <button type="button" className="secondary-button" onClick={() => window.print()}>
-                  <Printer size={16} />
-                  طباعة
-                </button>
-              </div>
 
-              <div className="summary-grid">
-                <article className="workspace-panel">
-                  <p className="eyebrow">الإجمالي</p>
-                  <h2>{formatCurrency(selectedInvoice.total_amount)}</h2>
-                  <p className="workspace-footnote">إجمالي قيمة الفاتورة الحالية.</p>
-                </article>
-
-                <article className="workspace-panel">
-                  <p className="eyebrow">الحالة</p>
-                  <h2>{getInvoiceStatusLabel(selectedInvoice.status)}</h2>
-                  <p className="workspace-footnote">آخر حالة تشغيلية للفواتير الحالية.</p>
-                </article>
-
-                <article className="workspace-panel">
-                  <p className="eyebrow">الدين</p>
-                  <h2>{formatCurrency(selectedInvoice.debt_amount)}</h2>
-                  <p className="workspace-footnote">الرصيد غير المسدد المرتبط بهذه الفاتورة.</p>
-                </article>
-              </div>
-
-              <div className="action-row">
-                <label className="stack-field stack-field--min-220">
-                  <span>مدة صلاحية الرابط (بالساعات)</span>
-                  <input
-                    type="number"
-                    min={1}
-                    max={720}
-                    step={1}
-                    value={expiresInHours}
-                    onChange={(event) => setExpiresInHours(event.target.value)}
-                  />
-                </label>
-
-                <button
-                  type="button"
-                  className="secondary-button"
-                  disabled={isPending}
-                  onClick={handleCreateReceiptLink}
-                >
-                  {isPending ? <Loader2 className="spin" size={16} /> : <Link2 size={16} />}
-                  إنشاء رابط مشاركة
-                </button>
-
-                {receiptLinkResult ? (
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    disabled={isPending}
-                    onClick={() => setConfirmAction("revoke-link")}
-                  >
-                    إلغاء الرابط
-                  </button>
-                ) : null}
-
-                {receiptLinkResult ? (
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    onClick={() => {
-                      void navigator.clipboard.writeText(receiptLinkResult.receipt_url);
-                      toast.success("تم نسخ رابط الإيصال.");
-                    }}
-                  >
-                    <Copy size={16} />
-                    نسخ الرابط
-                  </button>
-                ) : null}
-
-                {receiptLinkResult ? (
-                  <a href={receiptLinkResult.receipt_url} target="_blank" rel="noreferrer" className="secondary-button">
-                    <ExternalLink size={16} />
-                    فتح الرابط العام
-                  </a>
-                ) : null}
-
-                {role === "admin" && selectedInvoice.customer_phone && receiptLinkResult ? (
-                  <button
-                    type="button"
-                    className="primary-button"
-                    disabled={isPending}
-                    onClick={handleSendWhatsApp}
-                  >
-                    واتساب
-                  </button>
-                ) : null}
-              </div>
-
-              {receiptLinkResult ? (
-                <div className="result-card">
-                  <h3>رابط الإيصال الحالي</h3>
-                  <p>الرابط العام جاهز للمشاركة أو الفتح من الأزرار أعلاه.</p>
-                  <p>ينتهي في: {formatDate(receiptLinkResult.expires_at)}</p>
-                  <p>إعادة إصدار: {receiptLinkResult.is_reissued ? "نعم" : "لا"}</p>
-                </div>
-              ) : null}
-
-              {whatsAppResult ? (
-                <div className="result-card">
-                  <h3>محاولة واتساب</h3>
-                  <p>الحالة: {whatsAppResult.status === "queued" ? "قيد الإرسال" : whatsAppResult.status}</p>
-                  <p>تم تجهيز الرابط المناسب وفتح نافذة المشاركة في المتصفح.</p>
-                </div>
-              ) : null}
-
-              <section className="print-receipt">
                 <div className="info-strip">
                   <span>التاريخ: {formatDate(selectedInvoice.invoice_date)}</span>
                   <span>الجهاز: {selectedInvoice.pos_terminal_code ?? "غير محدد"}</span>
@@ -628,8 +555,8 @@ export function InvoicesWorkspace({ role, invoices, accounts }: InvoicesWorkspac
                           <span>{formatCurrency(item.total_price)}</span>
                         </div>
                         <p>
-                          الكمية: {formatCompactNumber(item.quantity)} | المرتجع: {formatCompactNumber(item.returned_quantity)} |
-                          المتبقي: {formatCompactNumber(remainingQuantity)}
+                          الكمية: {formatCompactNumber(item.quantity)} | المرتجع:{" "}
+                          {formatCompactNumber(item.returned_quantity)} | المتبقي: {formatCompactNumber(remainingQuantity)}
                         </p>
                         <p className="workspace-footnote">
                           سعر الوحدة: {formatCurrency(item.unit_price)} | خصم: {formatCompactNumber(item.discount_percentage)}%
@@ -638,175 +565,248 @@ export function InvoicesWorkspace({ role, invoices, accounts }: InvoicesWorkspac
                     );
                   })}
                 </div>
-              </section>
 
-              {activeSection === "overview" ? (
-                <div className="info-strip">
-                  <span>اختر قسم &quot;المرتجع&quot; لتسجيل الإرجاع عند الحاجة.</span>
-                  {role === "admin" ? <span>اختر &quot;الإجراء الإداري&quot; للإلغاء أو المتابعة الإدارية.</span> : null}
-                </div>
-              ) : null}
-            </>
-          ) : (
-            <div className="empty-panel">
-              <p>اختر فاتورة من القائمة لعرض التفاصيل.</p>
-            </div>
-          )}
-        </section>
-      </div>
+                {activeSection === "overview" ? (
+                  <>
+                    <div className="transaction-action-cluster">
+                      <button type="button" className="secondary-button" onClick={() => window.print()}>
+                        <Printer size={16} />
+                        طباعة الإيصال
+                      </button>
 
-      {selectedInvoice && activeSection === "returns" ? (
-        <div className="detail-grid">
-          <section className="workspace-panel">
-            <p className="eyebrow">المرتجع</p>
-            <h2>إنشاء مرتجع</h2>
+                      <label className="stack-field stack-field--min-220">
+                        <span>مدة صلاحية الرابط (بالساعات)</span>
+                        <input
+                          type="number"
+                          min={1}
+                          max={720}
+                          step={1}
+                          value={expiresInHours}
+                          onChange={(event) => setExpiresInHours(event.target.value)}
+                        />
+                      </label>
 
-            <div className="stack-list">
-              {selectedInvoice.items.map((item) => {
-                const remainingQuantity = item.quantity - item.returned_quantity;
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        disabled={isPending}
+                        onClick={handleCreateReceiptLink}
+                      >
+                        {isPending ? <Loader2 className="spin" size={16} /> : <Link2 size={16} />}
+                        إنشاء رابط مشاركة
+                      </button>
 
-                return (
-                  <article key={item.id} className="list-card">
-                    <div className="list-card__header">
-                      <strong>{item.product_name_at_time}</strong>
-                      <span>{formatCompactNumber(remainingQuantity)} متاح</span>
+                      {receiptLinkResult ? (
+                        <button
+                          type="button"
+                          className="secondary-button"
+                          disabled={isPending}
+                          onClick={() => setConfirmAction("revoke-link")}
+                        >
+                          إلغاء الرابط
+                        </button>
+                      ) : null}
+
+                      {receiptLinkResult ? (
+                        <button
+                          type="button"
+                          className="secondary-button"
+                          onClick={() => {
+                            void navigator.clipboard.writeText(receiptLinkResult.receipt_url);
+                            toast.success("تم نسخ رابط الإيصال.");
+                          }}
+                        >
+                          <Copy size={16} />
+                          نسخ الرابط
+                        </button>
+                      ) : null}
+
+                      {receiptLinkResult ? (
+                        <a href={receiptLinkResult.receipt_url} target="_blank" rel="noreferrer" className="secondary-button">
+                          <ExternalLink size={16} />
+                          فتح الرابط العام
+                        </a>
+                      ) : null}
+
+                      {role === "admin" && selectedInvoice.customer_phone && receiptLinkResult ? (
+                        <button
+                          type="button"
+                          className="primary-button"
+                          disabled={isPending}
+                          onClick={handleSendWhatsApp}
+                        >
+                          واتساب
+                        </button>
+                      ) : null}
                     </div>
-                    <label className="stack-field">
-                      <span>كمية الإرجاع</span>
-                      <input
-                        type="number"
-                        min={0}
-                        max={remainingQuantity}
-                        step={1}
-                        value={returnQuantities[item.id] ?? 0}
-                        onChange={(event) =>
-                          setReturnQuantities((current) => ({
-                            ...current,
-                            [item.id]: Math.min(Math.max(Number(event.target.value), 0), remainingQuantity)
-                          }))
-                        }
-                      />
-                    </label>
-                  </article>
-                );
-              })}
-            </div>
 
-            <div className="stack-form">
-              <label className="stack-field">
-                <span>نوع المرتجع</span>
-                <select value={returnType} onChange={(event) => setReturnType(event.target.value as "full" | "partial")}>
-                  <option value="partial">جزئي</option>
-                  <option value="full">كامل</option>
-                </select>
-              </label>
+                    {receiptLinkResult ? (
+                      <div className="result-card">
+                        <h3>رابط الإيصال الحالي</h3>
+                        <p>الرابط العام جاهز للمشاركة أو الفتح من الأزرار أعلاه.</p>
+                        <p>ينتهي في: {formatDate(receiptLinkResult.expires_at)}</p>
+                        <p>إعادة إصدار: {receiptLinkResult.is_reissued ? "نعم" : "لا"}</p>
+                      </div>
+                    ) : null}
 
-              <label className="stack-field">
-                <span>حساب الإرجاع</span>
-                <select value={refundAccountId} onChange={(event) => setRefundAccountId(event.target.value)}>
-                  {accounts.map((account) => (
-                    <option key={account.id} value={account.id}>
-                      {account.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                    {whatsAppResult ? (
+                      <div className="result-card">
+                        <h3>محاولة واتساب</h3>
+                        <p>الحالة: {whatsAppResult.status === "queued" ? "قيد الإرسال" : whatsAppResult.status}</p>
+                        <p>تم تجهيز نافذة المشاركة المناسبة وتسجيل العملية إداريًا.</p>
+                      </div>
+                    ) : null}
+                  </>
+                ) : null}
 
-              <label className="stack-field">
-                <span>سبب الإرجاع</span>
-                <textarea
-                  rows={3}
-                  maxLength={500}
-                  value={returnReason}
-                  onChange={(event) => setReturnReason(event.target.value)}
-                  placeholder="سبب الإرجاع"
-                />
-              </label>
+                {activeSection === "returns" ? (
+                  <div className="transaction-stack">
+                    <div className="stack-list">
+                      {selectedInvoice.items.map((item) => {
+                        const remainingQuantity = item.quantity - item.returned_quantity;
 
-              <div className="info-strip">
-                <span>يتم حماية طلب الإرجاع من التكرار بشكل تلقائي.</span>
+                        return (
+                          <article key={item.id} className="list-card">
+                            <div className="list-card__header">
+                              <strong>{item.product_name_at_time}</strong>
+                              <span>{formatCompactNumber(remainingQuantity)} متاح</span>
+                            </div>
+                            <label className="stack-field">
+                              <span>كمية الإرجاع</span>
+                              <input
+                                type="number"
+                                min={0}
+                                max={remainingQuantity}
+                                step={1}
+                                value={returnQuantities[item.id] ?? 0}
+                                onChange={(event) =>
+                                  setReturnQuantities((current) => ({
+                                    ...current,
+                                    [item.id]: Math.min(Math.max(Number(event.target.value), 0), remainingQuantity)
+                                  }))
+                                }
+                              />
+                            </label>
+                          </article>
+                        );
+                      })}
+                    </div>
+
+                    <div className="stack-form">
+                      <label className="stack-field">
+                        <span>نوع المرتجع</span>
+                        <select value={returnType} onChange={(event) => setReturnType(event.target.value as "full" | "partial")}>
+                          <option value="partial">جزئي</option>
+                          <option value="full">كامل</option>
+                        </select>
+                      </label>
+
+                      <label className="stack-field">
+                        <span>حساب الإرجاع</span>
+                        <select value={refundAccountId} onChange={(event) => setRefundAccountId(event.target.value)}>
+                          {accounts.map((account) => (
+                            <option key={account.id} value={account.id}>
+                              {account.name}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+
+                      <label className="stack-field">
+                        <span>سبب الإرجاع</span>
+                        <textarea
+                          rows={3}
+                          maxLength={500}
+                          value={returnReason}
+                          onChange={(event) => setReturnReason(event.target.value)}
+                          placeholder="سبب الإرجاع"
+                        />
+                      </label>
+
+                      <div className="info-strip">
+                        <span>يحمي النظام طلب المرتجع من الإرسال المكرر ويحدث الفاتورة والمخزون والحساب المرتبط تلقائيًا.</span>
+                      </div>
+
+                      <button
+                        type="button"
+                        className="primary-button"
+                        disabled={isPending || !returnReason.trim() || !returnKey}
+                        onClick={() => setConfirmAction("create-return")}
+                      >
+                        {isPending ? <Loader2 className="spin" size={16} /> : <RotateCcw size={16} />}
+                        تنفيذ المرتجع
+                      </button>
+                    </div>
+
+                    {returnResult ? (
+                      <div className="result-card">
+                        <h3>{returnResult.return_number}</h3>
+                        <p>الإجمالي: {formatCurrency(returnResult.total_amount)}</p>
+                        <p>المسترد نقدًا: {formatCurrency(returnResult.refunded_amount)}</p>
+                        <p>تخفيض الدين: {formatCurrency(returnResult.debt_reduction)}</p>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                {activeSection === "admin" ? (
+                  role === "admin" ? (
+                    <div className="transaction-stack">
+                      <div className="info-strip">
+                        <span>استخدم الإلغاء الإداري فقط بعد التحقق من السبب والرجوع إلى سياسة المتجر.</span>
+                      </div>
+
+                      <div className="stack-form">
+                        <label className="stack-field">
+                          <span>سبب الإلغاء</span>
+                          <textarea
+                            rows={3}
+                            maxLength={500}
+                            value={cancelReason}
+                            onChange={(event) => setCancelReason(event.target.value)}
+                            placeholder="سبب الإلغاء"
+                          />
+                        </label>
+
+                        <button
+                          type="button"
+                          className="secondary-button"
+                          disabled={isPending || !cancelReason.trim()}
+                          onClick={() => setConfirmAction("cancel-invoice")}
+                        >
+                          {isPending ? <Loader2 className="spin" size={16} /> : <ShieldAlert size={16} />}
+                          تنفيذ الإلغاء الإداري
+                        </button>
+                      </div>
+
+                      {cancelResult ? (
+                        <div className="result-card">
+                          <h3>تم الإلغاء بنجاح</h3>
+                          <p>عدد القيود المعكوسة: {formatCompactNumber(cancelResult.reversed_entries_count)}</p>
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <div className="empty-panel transaction-empty-panel">
+                      <FileText size={18} />
+                      <p>الإلغاء والتعديل الإداريان يبقيان محصورين بالحساب الإداري فقط.</p>
+                    </div>
+                  )
+                ) : null}
+              </>
+            ) : (
+              <div className="empty-panel transaction-empty-panel">
+                <p>اختر فاتورة من القائمة لعرض التفاصيل.</p>
               </div>
-
-              <button
-                type="button"
-                className="primary-button"
-                disabled={isPending || !returnReason.trim() || !returnKey}
-                onClick={() => setConfirmAction("create-return")}
-              >
-                {isPending ? <Loader2 className="spin" size={16} /> : <RotateCcw size={16} />}
-                تأكيد المرتجع
-              </button>
-            </div>
-
-            {returnResult ? (
-              <div className="result-card">
-                <h3>{returnResult.return_number}</h3>
-                <p>الإجمالي: {formatCurrency(returnResult.total_amount)}</p>
-                <p>المسترد نقدًا: {formatCurrency(returnResult.refunded_amount)}</p>
-                <p>تخفيض الدين: {formatCurrency(returnResult.debt_reduction)}</p>
-              </div>
-            ) : null}
-          </section>
+            )}
+          </SectionCard>
         </div>
-      ) : null}
-
-      {selectedInvoice && activeSection === "admin" ? (
-        <div className="detail-grid">
-          {role === "admin" ? (
-            <section className="workspace-panel">
-              <p className="eyebrow">الإلغاء الإداري</p>
-              <h2>إلغاء فاتورة</h2>
-
-              <div className="stack-form">
-                <label className="stack-field">
-                  <span>سبب الإلغاء</span>
-                  <textarea
-                    rows={3}
-                    maxLength={500}
-                    value={cancelReason}
-                    onChange={(event) => setCancelReason(event.target.value)}
-                    placeholder="سبب الإلغاء"
-                  />
-                </label>
-
-                <button
-                  type="button"
-                  className="secondary-button"
-                  disabled={isPending || !cancelReason.trim()}
-                  onClick={() => setConfirmAction("cancel-invoice")}
-                >
-                  {isPending ? <Loader2 className="spin" size={16} /> : <ShieldAlert size={16} />}
-                  تنفيذ الإلغاء الإداري
-                </button>
-              </div>
-
-              {cancelResult ? (
-                <div className="result-card">
-                  <h3>تم الإلغاء بنجاح</h3>
-                  <p>عدد القيود المعكوسة: {formatCompactNumber(cancelResult.reversed_entries_count)}</p>
-                </div>
-              ) : null}
-
-              <div className="info-strip">
-                <span>يمكن طباعة الإيصال من قسم الملخص والإيصال عند الحاجة.</span>
-                <span>التعديل والإلغاء الإداريان يبقيان محصورين بالحساب الإداري فقط.</span>
-              </div>
-            </section>
-          ) : (
-            <section className="workspace-panel">
-              <div className="empty-panel">
-                <FileText size={18} />
-                <p>الإلغاء والتعديل الإداريان يبقيان محصورين بالحساب الإداري فقط.</p>
-              </div>
-            </section>
-          )}
-        </div>
-      ) : null}
+      </div>
 
       <ConfirmationDialog
         open={confirmAction === "revoke-link"}
         title="إلغاء رابط الإيصال"
-        description="سيُبطل هذا الإجراء رابط الإيصال العام الحالي. يمكنك إنشاء رابط جديد لاحقًا عند الحاجة."
+        description="سيبطل هذا الإجراء رابط الإيصال العام الحالي. يمكنك إنشاء رابط جديد لاحقًا عند الحاجة."
         confirmLabel="إلغاء الرابط"
         onConfirm={handleRevokeReceiptLink}
         onCancel={() => setConfirmAction(null)}
@@ -827,7 +827,7 @@ export function InvoicesWorkspace({ role, invoices, accounts }: InvoicesWorkspac
       <ConfirmationDialog
         open={confirmAction === "cancel-invoice"}
         title="تأكيد الإلغاء الإداري"
-        description="سيُلغي هذا الإجراء الفاتورة ويعكس القيود المرتبطة بها. استخدمه فقط بعد التحقق من السبب الإداري."
+        description="سيلغي هذا الإجراء الفاتورة ويعكس القيود المرتبطة بها. استخدمه فقط بعد التحقق من السبب الإداري."
         confirmLabel="تنفيذ الإلغاء"
         onConfirm={handleCancelInvoice}
         onCancel={() => setConfirmAction(null)}

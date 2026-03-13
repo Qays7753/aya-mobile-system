@@ -72,7 +72,7 @@
 | `VB-32` | Security Hardening | security headers + rate limiting + internal error sanitization | `13`, `17`, `27` | UAT-64 + manual header review | لا hardening gap حرجة في responses والlimits | Blocker | Pass |
 | `VB-33` | Deployment Policy | env/deployment/cron/runtime compatibility policy محكمة | `13`, `17`, `24`, `31` | UAT-65 + deployment checklist | production env واضحة ولا تفشل بصمت | Critical | Pass |
 | `VB-34` | Runtime Integrity | client/cart/runtime hardening مغلقة | `13`, `17`, `25`, `31` | UAT-66 + runtime proofs | stale stock/bootstrap/route strictness/test gaps مغلقة | High | Pass |
-| `VB-35` | Productization Gate | قرار الجاهزية لما بعد V2 مدعوم بأدلة UX/a11y/security/deployment | `17`, `24`, `31` | UAT-67 + phase review | لا يوجد `P0/P1` مفتوح والقرار موثق | Blocker | Planned |
+| `VB-35` | Productization Gate | قرار الجاهزية لما بعد V2 مدعوم بأدلة UX/a11y/security/deployment | `17`, `24`, `31` | UAT-67 + phase review | لا يوجد `P0/P1` مفتوح والقرار موثق | Blocker | Pass |
 
 ---
 
@@ -116,6 +116,34 @@
 
 ---
 
+## امتدادات Frontend Redesign / ما بعد PX-20 (Planned Gates)
+
+| Gate ID | الاسم | ماذا يثبت | المصدر | Evidence Minimum | Success Condition | Severity | Status |
+|--------|------|-----------|--------|------------------|-------------------|----------|--------|
+| `VB-36` | Shell / Foundation Gate | أن shell/navigation/page headers/design tokens أصبحت ثابتة وواضحة | `03`, `09`, `24`, `31` | UAT-68, UAT-69, UAT-70 | لا role confusion، وhome/login/shell = product-facing | Blocker | Pass |
+| `VB-37` | Transactional UX Gate | أن POS/invoices/debts أصبحت أسرع وأوضح وأكثر ملاءمة للمس | `03`, `17`, `24`, `31` | UAT-71, UAT-72, UAT-73 | transactional surfaces high-frequency = Pass | Blocker | Pass |
+| `VB-38` | Operational Workspace Gate | أن notifications/products/inventory/suppliers/expenses/maintenance/operations أقل ازدحامًا وأكثر بنية | `03`, `17`, `24`, `31` | UAT-74, UAT-75, UAT-76 | operational IA structured وmaster-detail friendly | High | Pass |
+| `VB-39` | Analytical Readability Gate | أن reports تقدم narrative أوضح وfilter-first readability | `03`, `17`, `24`, `31` | UAT-77 | لا analytical clutter حاجب | High | Pass |
+| `VB-40` | Configuration Safety Gate | أن settings/permissions/portability grouped, understandable, and risk-aware | `03`, `17`, `24`, `31` | UAT-78, UAT-79 | configuration surfaces لا تبدو raw أو مربكة أو unsafe | Blocker | Pass |
+| `VB-41` | RTL Native Behavior Gate | أن RTL behavior أصلية لا مجرد mirrored UI | `03`, `17`, `29`, `31` | UAT-70, UAT-80 | drawers/breadcrumbs/forms/tables/icons = RTL-native | Blocker | Pass |
+| `VB-42` | Device / Installable Ergonomics Gate | أن desktop/tablet/mobile/installable usage عملية ومقصودة | `17`, `24`, `29`, `31` | UAT-68, UAT-71, UAT-76, UAT-80 | لا device ergonomics fail على store contexts | Blocker | Pass |
+| `VB-43` | Frontend Design System Consistency Gate | أن patterns المشتركة موحدة عبر shell/workspaces/states | `03`, `24`, `31` | review evidence عبر `PX-21 .. PX-24` | cards/headers/filters/tables/forms/states متسقة | High | Pass |
+| `VB-44` | Frontend UX Gate | قرار جاهزية موجة Frontend Redesign كاملة | `17`, `24`, `31` | UAT-80 + phase reviews | لا `P0/P1` مفتوح والقرار موثق | Blocker | Pass |
+
+### Go لما بعد Frontend Redesign
+1. `VB-36`, `VB-37`, `VB-40`, `VB-41`, `VB-42`, `VB-44` = `Pass`.
+2. `VB-38`, `VB-39`, `VB-43` لا يجوز أن تبقى `Fail`.
+3. لا يوجد `P0/P1` مفتوح في UX/device/RTL/accessibility/non-regression audit.
+4. UAT-80 = `Pass` مع قرار `Go` موثق.
+
+### No-Go لما بعد Frontend Redesign
+1. أي `Fail` في `VB-36`, `VB-37`, `VB-40`, `VB-41`, `VB-42`, أو `VB-44`.
+2. بقاء POS/cart/checkout غير واضحة أو بطيئة بصريًا على tablet/mobile.
+3. بقاء RTL behavior غير أصلية في shell أو forms أو tables أو breadcrumbs.
+4. بقاء configuration surfaces مربكة أو unsafe بصريًا.
+
+---
+
 ## ترتيب التنفيذ العملي قبل أول Sprint
 
 1. راجع `31_Execution_Live_Tracker.md`.
@@ -152,6 +180,6 @@
 
 ---
 
-**الإصدار:** 1.3
-**تاريخ التحديث:** 10 مارس 2026
-**الحالة:** Active Pre-Build Gate + Device Gate + Planned Post-V1 Gates
+**الإصدار:** 1.4
+**تاريخ التحديث:** 13 مارس 2026
+**الحالة:** Active Pre-Build Gate + Device Gate + Planned Post-V1 and Post-PX-20 Gates

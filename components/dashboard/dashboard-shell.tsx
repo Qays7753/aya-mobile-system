@@ -28,6 +28,8 @@ import {
   X
 } from "lucide-react";
 import { LogoutButton } from "@/components/auth/logout-button";
+import { PageHeader } from "@/components/ui/page-header";
+import { SectionCard } from "@/components/ui/section-card";
 
 type DashboardNavGroup = "daily" | "operations" | "management";
 
@@ -101,6 +103,7 @@ function getPageContext(pathname: string, navigation: DashboardNavItem[]) {
     return {
       title: "مساحات التشغيل",
       description: "اختر المسار الذي تريد العمل عليه من الشريط الجانبي.",
+      groupLabel: "لوحة العمل",
       breadcrumbs: [{ label: "مساحات التشغيل", href: null }]
     };
   }
@@ -108,6 +111,7 @@ function getPageContext(pathname: string, navigation: DashboardNavItem[]) {
   return {
     title: item.label,
     description: item.description,
+    groupLabel: GROUP_LABELS[item.group],
     breadcrumbs: [
       { label: "مساحات التشغيل", href: null },
       { label: GROUP_LABELS[item.group], href: null },
@@ -183,7 +187,7 @@ export function DashboardShell({
             <span className="dashboard-brandmark__logo">Aya</span>
             <span className="dashboard-brandmark__copy">
               <strong>Aya Mobile</strong>
-              <small>تشغيل يومي واضح وسريع</small>
+              <small>تشغيل يومي سريع وواضح للتجزئة</small>
             </span>
           </Link>
 
@@ -192,35 +196,59 @@ export function DashboardShell({
           </button>
         </div>
 
-        <section className="dashboard-role-card">
-          <p className="eyebrow">الحساب الحالي</p>
-          <h2>{roleLabel}</h2>
-          <p>{accountLabel}</p>
-          <p className="workspace-footnote">{getRoleMessage(roleLabel)}</p>
-
-          <div className="dashboard-shortcuts">
-            <span className="dashboard-shortcuts__label">اختصارات سريعة</span>
-            <div className="chip-row">
-              {quickLinks.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="chip"
-                  aria-current={pathname === item.href ? "page" : undefined}
-                  onClick={closeMenu}
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </div>
+        <SectionCard
+          className="dashboard-role-card"
+          eyebrow="الحساب الحالي"
+          title={roleLabel}
+          description={getRoleMessage(roleLabel)}
+          tone="accent"
+        >
+          <div className="dashboard-role-card__meta">
+            <strong>{accountLabel}</strong>
+            <span className="status-pill status-pill--soft">
+              <Bell size={14} />
+              {unreadNotifications > 0 ? `${unreadNotifications} تنبيهًا غير مقروء` : "صندوق الإشعارات هادئ الآن"}
+            </span>
           </div>
-        </section>
+
+          {quickLinks.length > 0 ? (
+            <div className="dashboard-shortcuts">
+              <span className="dashboard-shortcuts__label">اختصارات اليوم</span>
+              <div className="dashboard-shortcuts__grid">
+                {quickLinks.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className="dashboard-shortcut-tile"
+                    aria-current={pathname === item.href ? "page" : undefined}
+                    onClick={closeMenu}
+                  >
+                    <strong>{item.label}</strong>
+                    <small>{item.description}</small>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </SectionCard>
 
         <nav className="dashboard-sidebar__nav" aria-label="التنقل داخل مساحات التشغيل">
           {(Object.keys(groupedNavigation) as DashboardNavGroup[]).map((groupKey) =>
             groupedNavigation[groupKey].length > 0 ? (
-              <section key={groupKey} className="dashboard-nav-group">
-                <p className="dashboard-nav-group__title">{GROUP_LABELS[groupKey]}</p>
+              <section key={groupKey} className="dashboard-nav-group section-card section-card--subtle">
+                <div className="dashboard-nav-group__header">
+                  <div>
+                    <p className="dashboard-nav-group__title">{GROUP_LABELS[groupKey]}</p>
+                    <p className="dashboard-nav-group__count">{groupedNavigation[groupKey].length} مسارات جاهزة</p>
+                  </div>
+                  <span className="status-pill status-pill--neutral">
+                    {groupKey === "daily"
+                      ? "تشغيلي"
+                      : groupKey === "operations"
+                        ? "تشغيلي متقدم"
+                        : "إداري"}
+                  </span>
+                </div>
 
                 <div className="dashboard-nav-group__items">
                   {groupedNavigation[groupKey].map((item) => {
@@ -285,28 +313,45 @@ export function DashboardShell({
               <Menu size={18} />
             </button>
 
-            <div>
-              <p className="eyebrow">مساحات التشغيل</p>
-              <h1>{pageContext.title}</h1>
-              <p className="workspace-footnote">{pageContext.description}</p>
-            </div>
+            <PageHeader
+              eyebrow="مساحات التشغيل"
+              title={pageContext.title}
+              description={pageContext.description}
+              meta={
+                <>
+                  <span className="status-pill status-pill--brand">
+                    <Sparkles size={14} />
+                    {pageContext.groupLabel}
+                  </span>
+                  <span className="status-pill status-pill--soft">
+                    <LayoutDashboard size={14} />
+                    {roleLabel}
+                  </span>
+                </>
+              }
+            />
           </div>
 
           <form className="dashboard-quick-search" onSubmit={handleSearchSubmit}>
-            <label className="workspace-search">
-              <Search size={18} />
-              <input
-                type="search"
-                placeholder="ابحث سريعًا عن فاتورة أو منتج أو عميل"
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-              />
-            </label>
+            <div className="dashboard-search-card">
+              <label className="workspace-search">
+                <Search size={18} />
+                <input
+                  type="search"
+                  placeholder="ابحث سريعًا عن فاتورة أو منتج أو عميل"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                />
+              </label>
 
-            <button type="submit" className="primary-button">
-              <Sparkles size={16} />
-              البحث الشامل
-            </button>
+              <button type="submit" className="primary-button">
+                <Sparkles size={16} />
+                البحث الشامل
+              </button>
+            </div>
+            <p className="workspace-footnote dashboard-quick-search__hint">
+              ابحث في الفواتير والمنتجات والعملاء والإشعارات من نفس نقطة الوصول.
+            </p>
           </form>
         </header>
 

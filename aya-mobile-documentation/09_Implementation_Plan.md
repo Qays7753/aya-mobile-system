@@ -779,3 +779,131 @@ Day 1:          المرحلة 0 — البيئة والأمان
    - test coverage ارتفعت في طبقة الـ UI/runtime
    - `PX-20` = `Go`
 ```
+
+---
+
+## 🧭 المرحلة 5: Frontend Redesign / Experience Consolidation
+
+**المدة التقديرية:** `4-6 أسابيع`
+
+هذه المرحلة لا تضيف features business جديدة، بل تعيد تنظيم تجربة الواجهة بالكامل على مستوى:
+- shell/navigation
+- transactional UX
+- operational IA
+- analytical/configuration readability
+- device/RTL/accessibility polish
+
+**المبدأ الحاكم:** Frontend-only.
+ممنوع تعديل:
+- backend logic
+- APIs
+- authentication flow
+- database structure
+- business logic
+- permissions model
+- operational rules
+
+**الهدف:** تحويل النظام من واجهة وظيفية ناجحة إلى تجربة منتج متماسكة، سريعة، عربية RTL أصلية، وقابلة للاستخدام التجاري اليومي على الهاتف والتابلت واللابتوب.
+
+### توزيع المراحل
+
+| Phase | الاسم | التركيز | Outcome |
+|------|------|---------|---------|
+| `PX-21` | UI Foundation + Shell + Auth Entry | visual direction + shell + login/home + shared patterns | قاعدة تصميمية موحدة ونقطة دخول احترافية |
+| `PX-22` | Transactional UX | POS + cart + checkout + invoice/debt transactional clarity | سرعة ووضوح الأسطح البيعية عالية التكرار |
+| `PX-23` | Operational Workspaces | notifications + products + inventory + suppliers + expenses + operations + maintenance | أسطح تشغيلية structured وmaster-detail friendly |
+| `PX-24` | Analytical + Configuration Surfaces | reports + settings + permissions + portability | أسطح تحليل/إعدادات calmer وأوضح وأكثر أمانًا |
+| `PX-25` | Frontend UX Release Gate | device/RTL/a11y/consistency/non-regression | قرار جاهزية الواجهة للإغلاق النهائي |
+
+**ملاحظة تنفيذية رسمية**
+- ابتداءً من `PX-22` وحتى `PX-25` تعتمد هذه الموجة `Lean Execution Mode` لأنها Frontend-only.
+- هذا لا يلغي:
+  - `Phase Contract`
+  - independent review
+  - `Phase Execution/Review/Close`
+  - full verification قبل الإغلاق
+- لكنه يقلل التكرار الإداري في تغليف كل task فرعية ما دامت لا تمس backend/auth/business/security-sensitive logic.
+
+### PX-21 — UI Foundation + Shell + Auth Entry
+
+| المهمة | التفاصيل | معيار "تم" |
+|--------|----------|------------|
+| `PX-21-T01` | visual direction + brand tokens + typography hierarchy | design tokens ثابتة + palette مقيدة + hierarchy موحدة |
+| `PX-21-T02` | dashboard shell + grouped navigation + breadcrumbs | shell RTL أصلية + sidebar/drawer واضحة role-aware |
+| `PX-21-T03` | reusable page header + section card + KPI/stat primitives | patterns قابلة لإعادة الاستخدام عبر الأسطح |
+| `PX-21-T04` | homepage + login refresh | نقطة دخول product-facing بدون technical clutter |
+| `PX-21-T05` | RTL interaction rules + responsive shell proof | shell تعمل بوضوح على desktop/tablet/mobile |
+
+### PX-22 — Transactional UX
+
+| المهمة | التفاصيل | معيار "تم" |
+|--------|----------|------------|
+| `PX-22-T01` | POS browsing speed + category rail + search prominence | إضافة المنتجات وتعديلها والبحث عنها أسرع وأوضح |
+| `PX-22-T02` | cart panel + totals hierarchy + checkout emphasis | cart sticky/persistent وcheckout CTA مهيمنة |
+| `PX-22-T03` | invoice detail/action grouping | receipt/return/cancel actions أوضح وأقل ازدحامًا |
+| `PX-22-T04` | debts payment clarity + customer summary | debt payment flow واضح وآمن وسهل المسح بصريًا |
+| `PX-22-T05` | transactional device ergonomics | touch targets وstate visibility مناسبة لبيئة POS |
+
+### PX-23 — Operational Workspaces
+
+| المهمة | التفاصيل | معيار "تم" |
+|--------|----------|------------|
+| `PX-23-T01` | notifications inbox + alerts + search structure | الإشعارات والنتائج والتنبيهات مفصولة وواضحة |
+| `PX-23-T02` | products catalog/admin usability | catalog قابلة للتصفح والإدارة بدون فوضى |
+| `PX-23-T03` | inventory + suppliers + purchases master-detail patterns | الأسطح التشغيلية أقل تكدسًا وأكثر عملية |
+| `PX-23-T04` | expenses + operations + maintenance restructuring | workflows التشغيلية grouped وسريعة القراءة |
+| `PX-23-T05` | operational list/table system | tables/lists scannable وتتحول جيدًا على mobile |
+
+### PX-24 — Analytical + Configuration Surfaces
+
+| المهمة | التفاصيل | معيار "تم" |
+|--------|----------|------------|
+| `PX-24-T01` | reports filter-first redesign | KPIs/charts/comparisons أوضح وأقل ضوضاء |
+| `PX-24-T02` | advanced charts/table storytelling | الأسطح التحليلية insight-driven بدل flat density |
+| `PX-24-T03` | settings grouping + risk-aware layout | الإعدادات أوضح وأقل رهبة وأكثر أمانًا |
+| `PX-24-T04` | permissions + portability clarity | configuration surfaces understandable مع progressive disclosure |
+| `PX-24-T05` | analytical/configuration responsive proof | surfaces التحليلية والإعدادية تعمل جيدًا عبر الأجهزة |
+
+### PX-25 — Frontend UX Release Gate
+
+| المهمة | التفاصيل | معيار "تم" |
+|--------|----------|------------|
+| `PX-25-T01` | UX/content/navigation/device walkthrough | walkthrough كامل Pass بدون technical leakage |
+| `PX-25-T02` | RTL/accessibility/visual consistency audit | RTL/a11y/visual rhythm = Pass |
+| `PX-25-T03` | frontend performance/non-regression audit | لا regressions UX أو device blockers مفتوحة |
+| `PX-25-T04` | final `Go/No-Go` decision | قرار موثق لإغلاق موجة Frontend Redesign |
+
+### إضافات لازمة اكتُشفت أثناء التطبيع
+
+1. **فصل Frontend Redesign عن Productization Gate القديمة**
+   - لأن `PX-15 .. PX-20` عالجت productization baseline، بينما هذه الموجة تعالج redesign أوسع وأكثر توجيهًا بصريًا.
+
+2. **تعريف فئات surfaces صراحة**
+   - `Transactional`
+   - `Operational`
+   - `Analytical`
+   - `Configuration`
+   - حتى لا تُعامل جميع الشاشات بنفس منطق الكثافة والـ CTA hierarchy.
+
+3. **الاعتراف بالسياق التشغيلي الحقيقي**
+   - tablet في بيئة متجر
+   - mobile للوصول السريع
+   - desktop للمهام الإدارية والتحليلية
+   - installable/PWA كسياق استخدام فعلي
+
+4. **اعتبار design system مخرجًا مرحليًا بحد ذاته**
+   - لا مجرد polish لاحق.
+
+### معيار اكتمال Frontend Redesign
+
+```
+✅ كل ما في `PX-21 .. PX-25` +
+   - shell RTL واضحة ومقسمة حسب workflow والدور
+   - POS أسرع وأكثر وضوحًا وأفضل لمسًا
+   - الأسطح التشغيلية أقل تكدسًا وأكثر تنظيمًا
+   - التقارير والإعدادات calmer وأكثر قابلية للفهم
+   - patterns المشتركة موحدة: headers / cards / tables / forms / states
+   - device ergonomics + installable behavior + a11y = Pass
+   - لا regression في workflows الحالية
+   - `PX-25` = `Go`
+```

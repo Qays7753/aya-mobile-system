@@ -32,6 +32,10 @@ vi.mock("sonner", () => ({
 
 describe("LoginForm", () => {
   beforeEach(() => {
+    Object.defineProperty(window.navigator, "onLine", {
+      configurable: true,
+      value: true
+    });
     mockReplace.mockReset();
     mockRefresh.mockReset();
     mockSignInWithPassword.mockReset();
@@ -81,5 +85,38 @@ describe("LoginForm", () => {
     expect(await screen.findByText("تعذر تسجيل الدخول")).toBeInTheDocument();
     expect(screen.getByText("Bad credentials")).toBeInTheDocument();
     expect(mockReplace).not.toHaveBeenCalled();
+  }, 15000);
+
+  it("keeps the submit action available when the browser reports offline", async () => {
+    Object.defineProperty(window.navigator, "onLine", {
+      configurable: true,
+      value: false
+    });
+
+    mockSignInWithPassword.mockResolvedValue({ error: null });
+    mockGetSession.mockResolvedValue({ data: { session: { user: { id: "admin-1" } } } });
+
+    render(<LoginForm />);
+
+    expect(screen.getByText("الاتصال غير متاح")).toBeInTheDocument();
+
+    const submitButton = screen.getByRole("button", { name: /الدخول إلى بيئة التشغيل/i });
+    expect(submitButton).not.toBeDisabled();
+
+    fireEvent.change(screen.getByRole("textbox"), {
+      target: { value: "admin@aya.local" }
+    });
+    fireEvent.change(document.querySelector('input[type="password"]') as HTMLInputElement, {
+      target: { value: "password123" }
+    });
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(mockSignInWithPassword).toHaveBeenCalledWith({
+        email: "admin@aya.local",
+        password: "password123"
+      });
+      expect(mockReplace).toHaveBeenCalledWith("/pos");
+    });
   }, 15000);
 });

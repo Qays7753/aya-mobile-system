@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { PermissionsPanel } from "@/components/dashboard/permissions-panel";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
+import { PageHeader } from "@/components/ui/page-header";
+import { SectionCard } from "@/components/ui/section-card";
 import { StatusBanner } from "@/components/ui/status-banner";
 import type {
   InventoryCountOption,
@@ -278,19 +280,35 @@ export function SettingsOps({
   }
 
   return (
-    <section className="workspace-stack">
-      <div className="workspace-hero">
-        <div>
-          <p className="eyebrow">الإعدادات</p>
-          <h1>الإعدادات التشغيلية والإغلاق اليومي</h1>
-          <p className="workspace-lead">
-            قسم واحد يوضح الصلاحيات، اللقطة اليومية، فحص الأرصدة، التسويات، وسياسات التشغيل بدل عرض جميع الأدوات دفعة
-            واحدة.
-          </p>
-        </div>
-      </div>
+    <section className="workspace-stack configuration-page">
+      <PageHeader
+        eyebrow="الإعدادات"
+        title="الإعدادات التشغيلية والإغلاق اليومي"
+        description="قسّم العمل بين الصلاحيات، اللقطة اليومية، سلامة الأرصدة، والتسويات بدل عرض جميع الأدوات دفعة واحدة."
+        meta={
+          <div className="configuration-page__meta-grid" aria-label="ملخص شاشة الإعدادات">
+            <article className="configuration-page__meta-card">
+              <span className="configuration-page__meta-label">الحِزم النشطة</span>
+              <strong className="configuration-page__meta-value">{formatCompactNumber(activeAssignments.length)}</strong>
+              <span className="configuration-page__meta-hint">تعيينات تشغيلية جارية على الحسابات الحالية</span>
+            </article>
+            <article className="configuration-page__meta-card">
+              <span className="configuration-page__meta-label">اللقطات المحفوظة</span>
+              <strong className="configuration-page__meta-value">{formatCompactNumber(snapshots.length)}</strong>
+              <span className="configuration-page__meta-hint">أحدث الإغلاقات اليومية الجاهزة للمراجعة</span>
+            </article>
+            <article className="configuration-page__meta-card">
+              <span className="configuration-page__meta-label">الجرد المفتوح</span>
+              <strong className="configuration-page__meta-value">
+                {formatCompactNumber(inventoryCounts.filter((count) => count.status !== "completed").length)}
+              </strong>
+              <span className="configuration-page__meta-hint">عدادات تحتاج إكمالًا أو متابعة من الإدارة</span>
+            </article>
+          </div>
+        }
+      />
 
-      <div className="chip-row" aria-label="أقسام شاشة الإعدادات">
+      <div className="configuration-section-nav" aria-label="أقسام شاشة الإعدادات">
         <button
           type="button"
           className={activeSection === "permissions" ? "chip-button is-selected" : "chip-button"}
@@ -363,7 +381,7 @@ export function SettingsOps({
       ) : null}
 
       {activeSection === "snapshot" ? (
-        <div className="detail-grid">
+        <div className="configuration-shell configuration-shell--split">
           <section className="workspace-panel">
             <div className="section-heading">
               <div>
@@ -430,7 +448,7 @@ export function SettingsOps({
       ) : null}
 
       {activeSection === "integrity" ? (
-        <div className="detail-grid">
+        <div className="configuration-shell">
           <section className="workspace-panel">
             <div className="section-heading">
               <div>
@@ -479,7 +497,7 @@ export function SettingsOps({
       ) : null}
 
       {activeSection === "reconciliation" ? (
-        <div className="detail-grid">
+        <div className="configuration-shell configuration-shell--split">
           <section className="workspace-panel">
             <p className="eyebrow">التسوية</p>
             <h2>تسوية الحسابات</h2>
@@ -541,7 +559,7 @@ export function SettingsOps({
       ) : null}
 
       {activeSection === "inventory" ? (
-        <div className="detail-grid">
+        <div className="configuration-shell configuration-shell--split">
           <section className="workspace-panel">
             <p className="eyebrow">إكمال الجرد</p>
             <h2>عمليات الجرد المفتوحة</h2>
@@ -644,35 +662,32 @@ export function SettingsOps({
       ) : null}
 
       {activeSection === "policies" ? (
-        <div className="detail-grid detail-grid--thirds">
-          <section className="workspace-panel">
-            <p className="eyebrow">الطباعة</p>
-            <h2>قرار الطباعة في MVP</h2>
-            <p className="workspace-footnote">
-              يمكن طباعة الفاتورة مباشرة من المتصفح مع إخفاء عناصر التنقل والإبقاء على محتوى الإيصال فقط.
-            </p>
-          </section>
+        <div className="configuration-summary-grid">
+          <SectionCard
+            eyebrow="الطباعة"
+            title="قرار الطباعة في MVP"
+            description="يمكن طباعة الفاتورة مباشرة من المتصفح مع إخفاء عناصر التنقل والإبقاء على محتوى الإيصال فقط."
+            className="configuration-card"
+          />
 
-          <section className="workspace-panel">
-            <p className="eyebrow">الوصول من الأجهزة</p>
-            <h2>قرار المستخدم/الجهاز</h2>
-            <p className="workspace-footnote">
-              إدارة كلمات المرور والأجهزة المفقودة وإنهاء الجلسات تتم ضمن إجراءات التشغيل المعتمدة دون شاشة داخلية مخصصة
-              لهذه التفاصيل.
-            </p>
+          <SectionCard
+            eyebrow="الوصول من الأجهزة"
+            title="قرار المستخدم/الجهاز"
+            description="إدارة كلمات المرور والأجهزة المفقودة وإنهاء الجلسات تتم ضمن إجراءات التشغيل المعتمدة دون شاشة داخلية مخصصة لهذه التفاصيل."
+            className="configuration-card configuration-card--danger"
+          >
             <p className="warning-inline">
               <AlertTriangle size={14} />
               هذا قرار نطاق MVP موثق، وليس ادعاء بوجود إدارة أجهزة داخلية كاملة.
             </p>
-          </section>
+          </SectionCard>
 
-          <section className="workspace-panel">
-            <p className="eyebrow">التشغيل اليومي</p>
-            <h2>متى تستخدم كل أداة؟</h2>
-            <p className="workspace-footnote">
-              استخدم اللقطة اليومية عند إغلاق اليوم، وفحص الأرصدة قبل التسوية، وإكمال الجرد عند انتهاء العد الفعلي.
-            </p>
-          </section>
+          <SectionCard
+            eyebrow="التشغيل اليومي"
+            title="متى تستخدم كل أداة؟"
+            description="استخدم اللقطة اليومية عند إغلاق اليوم، وفحص الأرصدة قبل التسوية، وإكمال الجرد عند انتهاء العد الفعلي."
+            className="configuration-card"
+          />
         </div>
       ) : null}
 

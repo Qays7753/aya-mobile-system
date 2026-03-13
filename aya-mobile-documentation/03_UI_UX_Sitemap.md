@@ -1494,6 +1494,150 @@
 
 ---
 
-**الإصدار:** 2.0
-**تاريخ التحديث:** 12 مارس 2026
-**التغييرات:** v2.0 — إضافة Post-PX-14 Productization Addendum لتغطية shell/navigation الجديدة, role-aware landing, page context/metadata, shared screen states, إعادة تنظيم الأسطح الحالية, visual system, accessibility, وقواعد cleanup للمحتوى المرئي. v1.9 — مواءمة شاشة portability مع تنفيذ `PX-12`: packages قابلة للتنزيل/الإبطال، restore drill تعرض drift/RTO، وحزم العملاء تُظهر masking بدل البيانات الخام. v1.8 — إضافة أسطح V2 المخططة: `public receipt view`, `roles/permissions center`, `advanced analytics`, `portability center`, و`global search + alert aggregation`. v1.7 — إضافة بطاقة سلامة الأرصدة (Balance Integrity Card) في Dashboard + توثيق `POST /api/health/balance-check`. v1.6 — توضيح رؤية POS لشاشة الحسابات (Blind POS).
+**الإصدار:** 2.1
+**تاريخ التحديث:** 13 مارس 2026
+**التغييرات:** v2.1 — إضافة Post-PX-20 Frontend Redesign Addendum لتغطية surface taxonomy, shell RTL foundation, POS/product/notifications redesign direction, analytical/configuration restructuring, shared patterns, وقواعد device/installable behavior. v2.0 — إضافة Post-PX-14 Productization Addendum لتغطية shell/navigation الجديدة, role-aware landing, page context/metadata, shared screen states, إعادة تنظيم الأسطح الحالية, visual system, accessibility, وقواعد cleanup للمحتوى المرئي. v1.9 — مواءمة شاشة portability مع تنفيذ `PX-12`: packages قابلة للتنزيل/الإبطال، restore drill تعرض drift/RTO، وحزم العملاء تُظهر masking بدل البيانات الخام. v1.8 — إضافة أسطح V2 المخططة: `public receipt view`, `roles/permissions center`, `advanced analytics`, `portability center`, و`global search + alert aggregation`. v1.7 — إضافة بطاقة سلامة الأرصدة (Balance Integrity Card) في Dashboard + توثيق `POST /api/health/balance-check`. v1.6 — توضيح رؤية POS لشاشة الحسابات (Blind POS).
+
+---
+
+## ✨ إضافات Frontend Redesign المخططة (Post-PX-20 Addendum)
+
+هذا الملحق لا يغيّر الوظائف أو الـ flows، بل يعيد تنظيم الواجهة بعد اكتمال Productization baseline.
+
+### Surface Taxonomy
+
+- **Transactional Surfaces**
+  - POS
+  - cart / checkout
+  - invoice actions
+  - debt payment
+- **Operational Surfaces**
+  - notifications
+  - products catalog/admin
+  - inventory
+  - suppliers/purchases
+  - expenses
+  - operations
+  - maintenance
+- **Analytical Surfaces**
+  - reports
+  - KPI dashboards
+  - trends / comparisons
+- **Configuration Surfaces**
+  - settings
+  - permissions
+  - portability
+  - admin controls
+
+### App Shell Addendum
+
+- shell RTL أصلية، لا مجرد mirrored chrome
+- sidebar desktop + drawer tablet/mobile
+- grouped navigation حسب workflow:
+  - التشغيل اليومي
+  - المخزون والخدمات
+  - المتابعة والإدارة
+- page header موحد:
+  - title
+  - description
+  - breadcrumbs
+  - quick search / command surface
+- role-aware shortcuts تختلف بين `admin` و`pos_staff`
+
+### Home / Login Addendum
+
+- الصفحة الرئيسية تصبح product-facing:
+  - قيمة النظام
+  - الفئات الرئيسية
+  - روابط دخول واضحة
+- login تصبح calm / trusted / non-technical
+- لا technical scaffolding أو planning language في أي surface مرئية
+
+### POS Addendum
+
+- category rail كبيرة وواضحة
+- search ظاهرة دائمًا
+- product grid عالية المسح البصري
+- cart panel sticky/persistent
+- totals hierarchy واضحة
+- account/payment zone دائمًا مرئية
+- checkout CTA مهيمنة
+- mobile/tablet adaptation:
+  - drawer أو bottom sheet للcart
+  - touch targets كبيرة
+  - state visibility واضحة
+
+### Notifications Addendum
+
+- inbox واضحة كقائمة تشغيلية
+- alerts summary منفصلة بصريًا
+- global search تعرض grouped results
+- linked-record navigation أوضح وأقصر
+
+### Products Addendum
+
+- products browsing surface:
+  - grid/list قابلة للمسح
+  - stock status واضح
+  - category filtering
+- products admin surface:
+  - management actions grouped
+  - bulk/import/export أوضح
+- cashier/admin views تبقى مختلفة بصريًا لكن دون تغيير authority
+
+### Invoices / Debts Addendum
+
+- invoices:
+  - master-detail أو split layout
+  - grouped action areas
+  - sticky invoice summary
+- debts:
+  - customer list + detail + payment panel
+  - debt summary أقوى
+  - clear transactional emphasis
+
+### Reports Addendum
+
+- filter-first layout
+- KPI summary row
+- charts قبل الجداول التفصيلية
+- comparison surfaces أوضح
+- export ثانوية لكن discoverable
+
+### Settings / Permissions / Portability Addendum
+
+- grouped sections حسب:
+  - risk
+  - purpose
+  - frequency
+- permissions أقل رهبة وأكثر فهمًا
+- portability/configuration مع progressive disclosure
+- dangerous actions styling أكثر وعيًا بالمخاطر
+
+### Shared Patterns Addendum
+
+- reusable page header
+- section card
+- KPI/stat card
+- filter bar
+- search surface
+- list/table pattern
+- master-detail pattern
+- action bar
+- detail drawer
+- status/empty/loading/error patterns
+
+### RTL Rules Addendum
+
+- breadcrumbs, drawers, icon placement, and alignment تتبع RTL منطقًا وليس فقط visual mirroring
+- text blocks, badges, tabs, filters, and summary cards تُوزن بصريًا للعربية
+- dense admin screens تبقى قابلة للقراءة في RTL
+
+### Installable / Device Addendum
+
+- experience يجب أن تبقى عملية على:
+  - desktop
+  - tablet
+  - mobile
+  - installable/PWA context
+- breakpoints يجب أن تعكس سلوكًا تشغيليًا مقصودًا لا مجرد scaling

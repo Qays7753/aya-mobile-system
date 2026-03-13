@@ -1,9 +1,11 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { Loader2, ReceiptText, Search, Wallet } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/ui/page-header";
+import { SectionCard } from "@/components/ui/section-card";
 import { StatusBanner } from "@/components/ui/status-banner";
 import type { AccountOption, DebtCustomerOption, DebtEntryOption } from "@/lib/api/dashboard";
 import type { StandardEnvelope } from "@/lib/pos/types";
@@ -119,7 +121,7 @@ export function DebtsWorkspace({ role, customers, entries, accounts }: DebtsWork
 
         const envelope = (await response.json()) as StandardEnvelope<ManualDebtResponse>;
         if (!response.ok || !envelope.success || !envelope.data) {
-          failAction(envelope.error?.message ?? "ØªØ¹Ø°Ø± ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø¯ÙŠÙ† Ø§Ù„ÙŠØ¯ÙˆÙŠ.", "manual-debt");
+          failAction(envelope.error?.message ?? "تعذر تسجيل الدين اليدوي.", "manual-debt");
           return;
         }
 
@@ -128,7 +130,7 @@ export function DebtsWorkspace({ role, customers, entries, accounts }: DebtsWork
         setManualDescription("");
         setManualKey(createUuid());
         clearActionFeedback();
-        toast.success("ØªÙ… Ø¥Ù†Ø´Ø§Ø¡ Ø§Ù„Ø¯ÙŠÙ† Ø§Ù„ÙŠØ¯ÙˆÙŠ.");
+        toast.success("تم إنشاء الدين اليدوي.");
         router.refresh();
       })();
     });
@@ -153,7 +155,7 @@ export function DebtsWorkspace({ role, customers, entries, accounts }: DebtsWork
 
         const envelope = (await response.json()) as StandardEnvelope<DebtPaymentResponse>;
         if (!response.ok || !envelope.success || !envelope.data) {
-          failAction(envelope.error?.message ?? "ØªØ¹Ø°Ø± ØªØ³Ø¬ÙŠÙ„ ØªØ³Ø¯ÙŠØ¯ Ø§Ù„Ø¯ÙŠÙ†.", "debt-payment");
+          failAction(envelope.error?.message ?? "تعذر تسجيل تسديد الدين.", "debt-payment");
           return;
         }
 
@@ -163,7 +165,7 @@ export function DebtsWorkspace({ role, customers, entries, accounts }: DebtsWork
         setPaymentEntryId("");
         setPaymentKey(createUuid());
         clearActionFeedback();
-        toast.success(`ØªÙ… ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø¥ÙŠØµØ§Ù„ ${envelope.data.receipt_number}.`);
+        toast.success(`تم تسجيل الإيصال ${envelope.data.receipt_number}.`);
         router.refresh();
       })();
     });
@@ -183,24 +185,36 @@ export function DebtsWorkspace({ role, customers, entries, accounts }: DebtsWork
   }
 
   return (
-    <section className="workspace-stack">
-      <div className="workspace-hero">
-        <div>
-          <p className="eyebrow">Ø§Ù„Ø¯ÙŠÙˆÙ†</p>
-          <h1>Ø§Ù„Ø¯ÙŠÙˆÙ† ÙˆØ§Ù„ØªØ³Ø¯ÙŠØ¯</h1>
-          <p className="workspace-lead">
-            ØªØ§Ø¨Ø¹ Ø£Ø±ØµØ¯Ø© Ø§Ù„Ø¹Ù…Ù„Ø§Ø¡ØŒ Ø±Ø§Ø¬Ø¹ Ø§Ù„Ù‚ÙŠÙˆØ¯ Ø§Ù„Ù…ÙØªÙˆØ­Ø©ØŒ ÙˆØ³Ø¬Ù„ Ø§Ù„Ø¯ÙŠÙ† Ø§Ù„ÙŠØ¯ÙˆÙŠ Ø£Ùˆ Ø§Ù„ØªØ³Ø¯ÙŠØ¯ Ù…Ù† Ù…Ø³Ø§Ø±Ø§Øª Ø£ÙˆØ¶Ø­ ØªÙ†Ø§Ø³Ø¨ Ø§Ù„Ø¯ÙˆØ± Ø§Ù„Ø­Ø§Ù„ÙŠ.
-          </p>
-        </div>
-      </div>
+    <section className="workspace-stack transaction-page">
+      <PageHeader
+        eyebrow="الديون"
+        title="الديون والتسديد"
+        description="راجع أرصدة العملاء، افتح القيود المعلقة، وسجل التسديدات أو الديون اليدوية من مساحة تقلل التشتيت وتبقي الإجراءات الحرجة في متناولك."
+        meta={
+          <div className="transaction-page__meta" aria-label="ملخص شاشة الديون">
+            <article className="transaction-page__meta-card">
+              <span>العملاء الظاهرون</span>
+              <strong>{formatCompactNumber(filteredCustomers.length)}</strong>
+            </article>
+            <article className="transaction-page__meta-card">
+              <span>العميل الحالي</span>
+              <strong>{selectedCustomer?.name ?? "اختر عميلًا"}</strong>
+            </article>
+            <article className="transaction-page__meta-card transaction-page__meta-card--safe">
+              <span>الرصيد المفتوح</span>
+              <strong>{selectedCustomer ? formatCurrency(totalOutstanding) : "—"}</strong>
+            </article>
+          </div>
+        }
+      />
 
-      <div className="chip-row" aria-label="Ø£Ù‚Ø³Ø§Ù… Ø´Ø§Ø´Ø© Ø§Ù„Ø¯ÙŠÙˆÙ†">
+      <div className="chip-row transaction-chip-row" aria-label="أقسام شاشة الديون">
         <button
           type="button"
           className={activeSection === "ledger" ? "chip-button is-selected" : "chip-button"}
           onClick={() => setActiveSection("ledger")}
         >
-          Ø§Ù„Ø¹Ù…Ù„Ø§Ø¡ ÙˆØ§Ù„Ù‚ÙŠÙˆØ¯
+          العملاء والقيود
         </button>
         {role === "admin" ? (
           <button
@@ -208,7 +222,7 @@ export function DebtsWorkspace({ role, customers, entries, accounts }: DebtsWork
             className={activeSection === "manual" ? "chip-button is-selected" : "chip-button"}
             onClick={() => setActiveSection("manual")}
           >
-            Ø¯ÙŠÙ† ÙŠØ¯ÙˆÙŠ
+            دين يدوي
           </button>
         ) : null}
         <button
@@ -216,44 +230,49 @@ export function DebtsWorkspace({ role, customers, entries, accounts }: DebtsWork
           className={activeSection === "payment" ? "chip-button is-selected" : "chip-button"}
           onClick={() => setActiveSection("payment")}
         >
-          Ø§Ù„ØªØ³Ø¯ÙŠØ¯
+          التسديد
         </button>
       </div>
 
       {isPending ? (
         <StatusBanner
           variant="info"
-          title="Ø¬Ø§Ø±ÙŠ ØªÙ†ÙÙŠØ° Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡"
-          message="Ø§Ù†ØªØ¸Ø± Ø­ØªÙ‰ ÙŠÙƒØªÙ…Ù„ ØªØ­Ø¯ÙŠØ« Ø³Ø¬Ù„ Ø§Ù„Ø¯ÙŠÙˆÙ† Ø§Ù„Ø­Ø§Ù„ÙŠ Ù‚Ø¨Ù„ Ø¨Ø¯Ø¡ Ø¥Ø¬Ø±Ø§Ø¡ Ø¬Ø¯ÙŠØ¯."
+          title="جارٍ تنفيذ الإجراء"
+          message="انتظر حتى يكتمل تحديث سجل الديون الحالي قبل بدء إجراء جديد."
         />
       ) : null}
 
       {actionErrorMessage ? (
         <StatusBanner
           variant="danger"
-          title="ØªØ¹Ø°Ø± Ø¥ÙƒÙ…Ø§Ù„ Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡"
+          title="تعذر إكمال الإجراء"
           message={actionErrorMessage}
-          actionLabel={retryAction ? "Ø¥Ø¹Ø§Ø¯Ø© Ø§Ù„Ù…Ø­Ø§ÙˆÙ„Ø©" : undefined}
+          actionLabel={retryAction ? "إعادة المحاولة" : undefined}
           onAction={retryAction ? retryLastAction : undefined}
           onDismiss={clearActionFeedback}
         />
       ) : null}
 
-      <div className="detail-grid">
-        <section className="workspace-panel">
-          <div className="workspace-toolbar">
-            <label className="workspace-search">
+      <div className="transaction-layout transaction-layout--detail">
+        <SectionCard
+          eyebrow="سجل العملاء"
+          title="العملاء والرصيد المفتوح"
+          description="ابحث باسم العميل أو هاتفه ثم انتقل بسرعة إلى القيود المفتوحة أو لوحة التسديد."
+          className="transaction-card"
+        >
+          <div className="workspace-toolbar transaction-toolbar">
+            <label className="workspace-search transaction-toolbar__search">
               <Search size={18} />
               <input
                 type="search"
-                placeholder="Ø§Ø¨Ø­Ø« Ø¨Ø§Ø³Ù… Ø§Ù„Ø¹Ù…ÙŠÙ„ Ø£Ùˆ Ø§Ù„Ù‡Ø§ØªÙ"
+                placeholder="ابحث باسم العميل أو الهاتف"
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
               />
             </label>
           </div>
 
-          <div className="stack-list">
+          <div className="stack-list transaction-list-shell">
             {filteredCustomers.map((customer) => {
               const isSelected = customer.id === selectedCustomerId;
 
@@ -268,231 +287,219 @@ export function DebtsWorkspace({ role, customers, entries, accounts }: DebtsWork
                     <strong>{customer.name}</strong>
                     <span>{formatCurrency(customer.current_balance)}</span>
                   </div>
-                  <p>{customer.phone ?? "Ø¨Ø¯ÙˆÙ† Ù‡Ø§ØªÙ"}</p>
+                  <p>{customer.phone ?? "بدون هاتف"}</p>
                   {role === "admin" && customer.credit_limit !== undefined ? (
-                    <p className="workspace-footnote">Ø§Ù„Ø­Ø¯: {formatCurrency(customer.credit_limit ?? 0)}</p>
+                    <p className="workspace-footnote">الحد الائتماني: {formatCurrency(customer.credit_limit ?? 0)}</p>
                   ) : customer.due_date_days ? (
-                    <p className="workspace-footnote">Ø§Ù„Ø§Ø³ØªØ­Ù‚Ø§Ù‚ Ø§Ù„Ø§ÙØªØ±Ø§Ø¶ÙŠ: {customer.due_date_days} ÙŠÙˆÙ…</p>
+                    <p className="workspace-footnote">الاستحقاق الافتراضي: {customer.due_date_days} يوم</p>
                   ) : null}
                 </button>
               );
             })}
           </div>
-        </section>
+        </SectionCard>
 
-        <section className="workspace-panel">
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">Ù…Ù„Ø®Øµ Ø§Ù„Ø¹Ù…ÙŠÙ„</p>
-              <h2>{selectedCustomer?.name ?? "Ø§Ø®ØªØ± Ø¹Ù…ÙŠÙ„Ù‹Ø§"}</h2>
-            </div>
-          </div>
+        <div className="transaction-stack">
+          <SectionCard
+            eyebrow="ملف العميل"
+            title={selectedCustomer?.name ?? "اختر عميلًا"}
+            description="الملخص الثابت يعرض الرصيد الحالي وعدد القيود المفتوحة، ثم يترك لك مساحة أوضح لقراءة التاريخ أو تسجيل التسديد."
+            className="transaction-card"
+          >
+            {selectedCustomer ? (
+              <>
+                <div className="transaction-summary-grid">
+                  <article className="transaction-page__meta-card">
+                    <span>الرصيد الحالي</span>
+                    <strong>{formatCurrency(selectedCustomer.current_balance)}</strong>
+                  </article>
+                  <article className="transaction-page__meta-card">
+                    <span>القيود المفتوحة</span>
+                    <strong>{formatCompactNumber(customerEntries.length)}</strong>
+                  </article>
+                  <article className="transaction-page__meta-card transaction-page__meta-card--safe">
+                    <span>الرصيد المتبقي</span>
+                    <strong>{formatCurrency(totalOutstanding)}</strong>
+                  </article>
+                </div>
 
-          {selectedCustomer ? (
-            <>
-              <div className="summary-grid">
-                <article className="workspace-panel">
-                  <p className="eyebrow">Ø§Ù„Ø±ØµÙŠØ¯ Ø§Ù„Ø­Ø§Ù„ÙŠ</p>
-                  <h2>{formatCurrency(selectedCustomer.current_balance)}</h2>
-                  <p className="workspace-footnote">Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„Ø±ØµÙŠØ¯ Ø§Ù„Ù…ÙØªÙˆØ­ Ù„Ù‡Ø°Ø§ Ø§Ù„Ø¹Ù…ÙŠÙ„.</p>
-                </article>
+                <div className="info-strip">
+                  <span>الهاتف: {selectedCustomer.phone ?? "غير متوفر"}</span>
+                  {selectedCustomer.due_date_days ? (
+                    <span>الاستحقاق الافتراضي: {selectedCustomer.due_date_days} يوم</span>
+                  ) : null}
+                </div>
 
-                <article className="workspace-panel">
-                  <p className="eyebrow">Ø§Ù„Ù‚ÙŠÙˆØ¯ Ø§Ù„Ù…ÙØªÙˆØ­Ø©</p>
-                  <h2>{formatCompactNumber(customerEntries.length)}</h2>
-                  <p className="workspace-footnote">Ø¹Ø¯Ø¯ Ø§Ù„ÙÙˆØ§ØªÙŠØ± ÙˆØ§Ù„Ù‚ÙŠÙˆØ¯ ØºÙŠØ± Ø§Ù„Ù…Ø³Ø¯Ø¯Ø©.</p>
-                </article>
+                {activeSection === "ledger" ? (
+                  <div className="stack-list">
+                    {customerEntries.length > 0 ? (
+                      customerEntries.map((entry) => (
+                        <article key={entry.id} className="list-card">
+                          <div className="list-card__header">
+                            <strong>{entry.entry_type === "manual" ? "دين يدوي" : "فاتورة دين"}</strong>
+                            <span>{formatCurrency(entry.remaining_amount)}</span>
+                          </div>
+                          <p>الاستحقاق: {formatDate(entry.due_date)}</p>
+                          <p className="workspace-footnote">{entry.description ?? "بدون وصف إضافي"}</p>
+                        </article>
+                      ))
+                    ) : (
+                      <div className="empty-panel transaction-empty-panel">
+                        <p>لا توجد قيود مفتوحة لهذا العميل. انتقل إلى التسديد أو أنشئ دينًا يدويًا عند الحاجة.</p>
+                      </div>
+                    )}
+                  </div>
+                ) : null}
 
-                <article className="workspace-panel">
-                  <p className="eyebrow">Ø§Ù„Ø±ØµÙŠØ¯ Ø§Ù„Ù…ÙØªÙˆØ­</p>
-                  <h2>{formatCurrency(totalOutstanding)}</h2>
-                  <p className="workspace-footnote">Ø§Ù„Ø±ØµÙŠØ¯ Ø§Ù„Ù…ØªØ¨Ù‚ÙŠ Ø¯Ø§Ø®Ù„ Ø§Ù„Ù‚ÙŠÙˆØ¯ Ø§Ù„Ø­Ø§Ù„ÙŠØ©.</p>
-                </article>
-              </div>
-
-              <div className="info-strip">
-                <span>Ø§Ù„Ù‡Ø§ØªÙ: {selectedCustomer.phone ?? "ØºÙŠØ± Ù…ØªÙˆÙØ±"}</span>
-                {selectedCustomer.due_date_days ? <span>Ø§Ù„Ø§Ø³ØªØ­Ù‚Ø§Ù‚ Ø§Ù„Ø§ÙØªØ±Ø§Ø¶ÙŠ: {selectedCustomer.due_date_days} ÙŠÙˆÙ…</span> : null}
-              </div>
-
-              {activeSection === "ledger" ? (
-                <div className="stack-list">
-                  {customerEntries.length > 0 ? (
-                    customerEntries.map((entry) => (
-                      <article key={entry.id} className="list-card">
-                        <div className="list-card__header">
-                          <strong>{entry.entry_type === "manual" ? "Ø¯ÙŠÙ† ÙŠØ¯ÙˆÙŠ" : "ÙØ§ØªÙˆØ±Ø© Ø¯ÙŠÙ†"}</strong>
-                          <span>{formatCurrency(entry.remaining_amount)}</span>
-                        </div>
-                        <p>Ø§Ù„Ø§Ø³ØªØ­Ù‚Ø§Ù‚: {formatDate(entry.due_date)}</p>
-                        <p className="workspace-footnote">{entry.description ?? "Ø¨Ø¯ÙˆÙ† ÙˆØµÙ Ø¥Ø¶Ø§ÙÙŠ"}</p>
-                      </article>
-                    ))
-                  ) : (
-                    <div className="empty-panel">
-                      <p>Ù„Ø§ ØªÙˆØ¬Ø¯ Ù‚ÙŠÙˆØ¯ Ø¯ÙŠÙ† Ù…ÙØªÙˆØ­Ø© Ù„Ù‡Ø°Ø§ Ø§Ù„Ø¹Ù…ÙŠÙ„. ÙŠÙ…ÙƒÙ†Ùƒ Ø§Ù„Ø§Ù†ØªÙ‚Ø§Ù„ Ø¥Ù„Ù‰ Ù‚Ø³Ù… Ø§Ù„ØªØ³Ø¯ÙŠØ¯ Ø£Ùˆ Ø¥Ù†Ø´Ø§Ø¡ Ø¯ÙŠÙ† ÙŠØ¯ÙˆÙŠ Ø¹Ù†Ø¯ Ø§Ù„Ø­Ø§Ø¬Ø©.</p>
+                {activeSection === "manual" && role === "admin" ? (
+                  <div className="transaction-stack">
+                    <div className="info-strip">
+                      <span>استخدم هذا المسار فقط عند الحاجة إلى تسجيل دين خارج مسار البيع المعتاد.</span>
                     </div>
-                  )}
-                </div>
-              ) : (
-                <div className="info-strip">
-                  <span>
-                    {activeSection === "manual"
-                      ? "Ø§Ù†ØªÙ‚Ù„ Ù‡Ù†Ø§ ÙÙ‚Ø· Ø¹Ù†Ø¯ Ø§Ù„Ø­Ø§Ø¬Ø© Ø¥Ù„Ù‰ ØªØ³Ø¬ÙŠÙ„ Ø¯ÙŠÙ† ÙŠØ¯ÙˆÙŠ Ø®Ø§Ø±Ø¬ Ù…Ø³Ø§Ø± Ø§Ù„Ø¨ÙŠØ¹ Ø§Ù„Ù…Ø¹ØªØ§Ø¯."
-                      : "ÙŠÙ…ÙƒÙ†Ùƒ ØªØ­Ø¯ÙŠØ¯ Ù‚ÙŠØ¯ Ø¨Ø¹ÙŠÙ†Ù‡ Ø£Ùˆ ØªØ±Ùƒ Ø§Ù„Ù†Ø¸Ø§Ù… ÙŠÙˆØ²Ø¹ Ø§Ù„Ù…Ø¨Ù„Øº ØªÙ„Ù‚Ø§Ø¦ÙŠÙ‹Ø§ Ø¹Ù„Ù‰ Ø£Ù‚Ø¯Ù… Ø¯ÙŠÙ† Ù…ØªØ§Ø­."}
-                  </span>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="empty-panel">
-              <p>Ø§Ø®ØªØ± Ø¹Ù…ÙŠÙ„Ù‹Ø§ Ù…Ù† Ø§Ù„Ù‚Ø§Ø¦Ù…Ø© Ù„Ø¹Ø±Ø¶ Ø§Ù„ØªÙØ§ØµÙŠÙ„.</p>
-            </div>
-          )}
-        </section>
+
+                    <div className="stack-form">
+                      <label className="stack-field">
+                        <span>المبلغ</span>
+                        <input
+                          type="number"
+                          min={0.001}
+                          step="0.001"
+                          value={manualAmount}
+                          onChange={(event) => setManualAmount(event.target.value)}
+                          placeholder="0.000"
+                        />
+                      </label>
+
+                      <label className="stack-field">
+                        <span>الوصف</span>
+                        <textarea
+                          rows={3}
+                          maxLength={255}
+                          value={manualDescription}
+                          onChange={(event) => setManualDescription(event.target.value)}
+                          placeholder="سبب الدين اليدوي"
+                        />
+                      </label>
+
+                      <div className="info-strip">
+                        <span>يحمي النظام تسجيل الدين اليدوي من التكرار تلقائيًا.</span>
+                      </div>
+
+                      <button
+                        type="button"
+                        className="primary-button"
+                        disabled={isPending || !selectedCustomerId || !manualAmount || !manualKey}
+                        onClick={submitManualDebt}
+                      >
+                        {isPending ? <Loader2 className="spin" size={16} /> : <Wallet size={16} />}
+                        حفظ الدين اليدوي
+                      </button>
+                    </div>
+
+                    {manualResult ? (
+                      <div className="result-card">
+                        <h3>تم حفظ الدين اليدوي</h3>
+                        <p>أصبح القيد جاهزًا ضمن سجل الديون المفتوحة للعميل الحالي.</p>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                {activeSection === "payment" ? (
+                  <div className="transaction-stack">
+                    <div className="stack-form">
+                      <label className="stack-field">
+                        <span>المبلغ</span>
+                        <input
+                          type="number"
+                          min={0.001}
+                          step="0.001"
+                          value={paymentAmount}
+                          onChange={(event) => setPaymentAmount(event.target.value)}
+                          placeholder="0.000"
+                        />
+                      </label>
+
+                      <label className="stack-field">
+                        <span>حساب الدفع</span>
+                        <select value={paymentAccountId} onChange={(event) => setPaymentAccountId(event.target.value)}>
+                          {accounts.map((account) => (
+                            <option key={account.id} value={account.id}>
+                              {account.name}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+
+                      {customerEntries.length > 0 ? (
+                        <label className="stack-field">
+                          <span>قيد محدد (اختياري)</span>
+                          <select value={paymentEntryId} onChange={(event) => setPaymentEntryId(event.target.value)}>
+                            <option value="">اتركه فارغًا لتفعيل FIFO</option>
+                            {customerEntries.map((entry) => (
+                              <option key={entry.id} value={entry.id}>
+                                {entry.entry_type} - {formatDate(entry.due_date)} - {formatCurrency(entry.remaining_amount)}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      ) : (
+                        <div className="info-strip">
+                          <span>لا توجد قيود مفتوحة حاليًا لهذا العميل، لذلك لن يظهر اختيار قيد محدد.</span>
+                        </div>
+                      )}
+
+                      <label className="stack-field">
+                        <span>ملاحظات</span>
+                        <textarea
+                          rows={3}
+                          maxLength={255}
+                          value={paymentNotes}
+                          onChange={(event) => setPaymentNotes(event.target.value)}
+                          placeholder="ملاحظات اختيارية"
+                        />
+                      </label>
+
+                      <div className="info-strip">
+                        <span>يمكنك ترك اختيار القيد فارغًا ليقوم النظام بتوزيع المبلغ على أقدم دين متاح.</span>
+                      </div>
+
+                      <button
+                        type="button"
+                        className="primary-button"
+                        disabled={
+                          isPending ||
+                          !selectedCustomerId ||
+                          !paymentAmount ||
+                          !paymentAccountId ||
+                          !paymentKey ||
+                          customerEntries.length === 0
+                        }
+                        onClick={submitDebtPayment}
+                      >
+                        {isPending ? <Loader2 className="spin" size={16} /> : <ReceiptText size={16} />}
+                        تأكيد التسديد
+                      </button>
+                    </div>
+
+                    {paymentResult ? (
+                      <div className="result-card">
+                        <h3>{paymentResult.receipt_number}</h3>
+                        <p>الرصيد المتبقي: {formatCurrency(paymentResult.remaining_balance)}</p>
+                        <p>التوزيعات: {paymentResult.allocations.map((entry) => formatCurrency(entry.allocated_amount)).join(" / ")}</p>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+              </>
+            ) : (
+              <div className="empty-panel transaction-empty-panel">
+                <p>اختر عميلًا من القائمة لعرض التفاصيل.</p>
+              </div>
+            )}
+          </SectionCard>
+        </div>
       </div>
-
-      {role === "admin" && activeSection === "manual" ? (
-        <div className="detail-grid">
-          <section className="workspace-panel">
-            <p className="eyebrow">Ø¯ÙŠÙ† ÙŠØ¯ÙˆÙŠ</p>
-            <h2>ØªØ³Ø¬ÙŠÙ„ Ø¯ÙŠÙ† ÙŠØ¯ÙˆÙŠ</h2>
-
-            <div className="stack-form">
-              <label className="stack-field">
-                <span>Ø§Ù„Ù…Ø¨Ù„Øº</span>
-                <input
-                  type="number"
-                  min={0.001}
-                  step="0.001"
-                  value={manualAmount}
-                  onChange={(event) => setManualAmount(event.target.value)}
-                  placeholder="0.000"
-                />
-              </label>
-
-              <label className="stack-field">
-                <span>Ø§Ù„ÙˆØµÙ</span>
-                <textarea
-                  rows={3}
-                  maxLength={255}
-                  value={manualDescription}
-                  onChange={(event) => setManualDescription(event.target.value)}
-                  placeholder="Ø³Ø¨Ø¨ Ø§Ù„Ø¯ÙŠÙ† Ø§Ù„ÙŠØ¯ÙˆÙŠ"
-                />
-              </label>
-
-              <div className="info-strip">
-                <span>ÙŠØªÙ… Ø­Ù…Ø§ÙŠØ© Ø¥Ù†Ø´Ø§Ø¡ Ø§Ù„Ø¯ÙŠÙ† Ø§Ù„ÙŠØ¯ÙˆÙŠ Ù…Ù† Ø§Ù„ØªÙƒØ±Ø§Ø± ØªÙ„Ù‚Ø§Ø¦ÙŠÙ‹Ø§.</span>
-              </div>
-
-              <button
-                type="button"
-                className="primary-button"
-                disabled={isPending || !selectedCustomerId || !manualAmount || !manualKey}
-                onClick={submitManualDebt}
-              >
-                {isPending ? <Loader2 className="spin" size={16} /> : <Wallet size={16} />}
-                Ø­ÙØ¸ Ø§Ù„Ø¯ÙŠÙ† Ø§Ù„ÙŠØ¯ÙˆÙŠ
-              </button>
-            </div>
-
-            {manualResult ? (
-              <div className="result-card">
-                <h3>ØªÙ… Ø­ÙØ¸ Ø§Ù„Ø¯ÙŠÙ† Ø§Ù„ÙŠØ¯ÙˆÙŠ</h3>
-                <p>Ø£ØµØ¨Ø­ Ø§Ù„Ù‚ÙŠØ¯ Ø¬Ø§Ù‡Ø²Ù‹Ø§ Ø¶Ù…Ù† Ø³Ø¬Ù„ Ø§Ù„Ø¯ÙŠÙˆÙ† Ø§Ù„Ù…ÙØªÙˆØ­Ø© Ù„Ù„Ø¹Ù…ÙŠÙ„ Ø§Ù„Ø­Ø§Ù„ÙŠ.</p>
-              </div>
-            ) : null}
-          </section>
-        </div>
-      ) : null}
-
-      {selectedCustomer && activeSection === "payment" ? (
-        <div className="detail-grid">
-          <section className="workspace-panel">
-            <p className="eyebrow">ØªØ³Ø¯ÙŠØ¯ Ø§Ù„Ø¯ÙŠÙ†</p>
-            <h2>ØªØ³Ø¬ÙŠÙ„ Ø¯ÙØ¹Ø©</h2>
-
-            <div className="stack-form">
-              <label className="stack-field">
-                <span>Ø§Ù„Ù…Ø¨Ù„Øº</span>
-                <input
-                  type="number"
-                  min={0.001}
-                  step="0.001"
-                  value={paymentAmount}
-                  onChange={(event) => setPaymentAmount(event.target.value)}
-                  placeholder="0.000"
-                />
-              </label>
-
-              <label className="stack-field">
-                <span>Ø­Ø³Ø§Ø¨ Ø§Ù„Ø¯ÙØ¹</span>
-                <select value={paymentAccountId} onChange={(event) => setPaymentAccountId(event.target.value)}>
-                  {accounts.map((account) => (
-                    <option key={account.id} value={account.id}>
-                      {account.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              {customerEntries.length > 0 ? (
-                <label className="stack-field">
-                  <span>Ù‚ÙŠØ¯ Ù…Ø­Ø¯Ø¯ (Ø§Ø®ØªÙŠØ§Ø±ÙŠ)</span>
-                  <select value={paymentEntryId} onChange={(event) => setPaymentEntryId(event.target.value)}>
-                    <option value="">Ø§ØªØ±ÙƒÙ‡ ÙØ§Ø±ØºÙ‹Ø§ Ù„ØªÙØ¹ÙŠÙ„ FIFO</option>
-                    {customerEntries.map((entry) => (
-                      <option key={entry.id} value={entry.id}>
-                        {entry.entry_type} - {formatDate(entry.due_date)} - {formatCurrency(entry.remaining_amount)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              ) : (
-                <div className="info-strip">
-                  <span>Ù„Ø§ ØªÙˆØ¬Ø¯ Ù‚ÙŠÙˆØ¯ Ù…ÙØªÙˆØ­Ø© Ø­Ø§Ù„ÙŠÙ‹Ø§ Ù„Ù‡Ø°Ø§ Ø§Ù„Ø¹Ù…ÙŠÙ„ØŒ Ù„Ø°Ù„Ùƒ Ù„Ù† ÙŠØ¸Ù‡Ø± Ø§Ø®ØªÙŠØ§Ø± Ù‚ÙŠØ¯ Ù…Ø­Ø¯Ø¯.</span>
-                </div>
-              )}
-
-              <label className="stack-field">
-                <span>Ù…Ù„Ø§Ø­Ø¸Ø§Øª</span>
-                <textarea
-                  rows={3}
-                  maxLength={255}
-                  value={paymentNotes}
-                  onChange={(event) => setPaymentNotes(event.target.value)}
-                  placeholder="Ù…Ù„Ø§Ø­Ø¸Ø§Øª Ø§Ø®ØªÙŠØ§Ø±ÙŠØ©"
-                />
-              </label>
-
-              <div className="info-strip">
-                <span>ÙŠØªÙ… Ø­Ù…Ø§ÙŠØ© ØªØ³Ø¬ÙŠÙ„ Ø§Ù„ØªØ³Ø¯ÙŠØ¯ Ù…Ù† Ø§Ù„ØªÙƒØ±Ø§Ø± ØªÙ„Ù‚Ø§Ø¦ÙŠÙ‹Ø§.</span>
-              </div>
-
-              <button
-                type="button"
-                className="primary-button"
-                disabled={
-                  isPending || !selectedCustomerId || !paymentAmount || !paymentAccountId || !paymentKey || customerEntries.length === 0
-                }
-                onClick={submitDebtPayment}
-              >
-                {isPending ? <Loader2 className="spin" size={16} /> : <ReceiptText size={16} />}
-                ØªØ£ÙƒÙŠØ¯ Ø§Ù„ØªØ³Ø¯ÙŠØ¯
-              </button>
-            </div>
-
-            {paymentResult ? (
-              <div className="result-card">
-                <h3>{paymentResult.receipt_number}</h3>
-                <p>Ø§Ù„Ø±ØµÙŠØ¯ Ø§Ù„Ù…ØªØ¨Ù‚ÙŠ: {formatCurrency(paymentResult.remaining_balance)}</p>
-                <p>Ø§Ù„ØªÙˆØ²ÙŠØ¹Ø§Øª: {paymentResult.allocations.map((entry) => formatCurrency(entry.allocated_amount)).join(" / ")}</p>
-              </div>
-            ) : null}
-          </section>
-        </div>
-      ) : null}
     </section>
   );
 }

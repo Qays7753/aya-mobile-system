@@ -920,9 +920,172 @@
 
 ---
 
-**الإصدار:** 1.8
-**تاريخ التحديث:** 12 مارس 2026
-**التغييرات:** v1.8 — إضافة UAT-52..67 لتغطية حزمة `Post-PX-14 Productization` (`PX-15 .. PX-20`) بما يشمل copy cleanup, navigation/IA, async feedback, accessibility/visual system, security/runtime/deployment hardening, وrelease gate النهائي. v1.7 — إضافة UAT-36..51 لتغطية `PX-08 .. PX-14` (المصروفات، الإشعارات، receipt links, WhatsApp, permissions, advanced reports, portability, restore drill, search, alert aggregation). v1.6 — إضافة UAT-33/34/35 لتغطية توافق الأجهزة (هاتف/تابلت/لابتوب) + اختبار تثبيت Web App.
+## المجموعة 24: UI Foundation + Shell + Auth Entry
+
+### UAT-68: shell navigation and grouped workflows walkthrough
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | اكتمال `PX-21-T01/T02/T03` |
+| **Steps** | 1. فتح shell على `desktop/tablet/mobile` 2. التحقق من grouped navigation 3. التحقق من breadcrumbs + page header + role-aware shortcuts |
+| **Expected Results** | shell RTL واضحة، التنقل grouped حسب workflow، ولا يوجد role confusion |
+| **Data Created** | screenshots/e2e proof فقط |
+| **Rollback** | N/A |
+| **Validates** | `PX-21-T02/T03/T05` |
+
+### UAT-69: home and login product-facing clarity
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | اكتمال `PX-21-T04` |
+| **Steps** | 1. فتح `/` و`/login` 2. مراجعة content hierarchy 3. التأكد من غياب اللغة التقنية 4. التحقق من CTA clarity |
+| **Expected Results** | الصفحة الرئيسية وتسجيل الدخول تبدوان product-facing وواضحتين وغير تقنيتين |
+| **Data Created** | screenshots/review notes |
+| **Rollback** | N/A |
+| **Validates** | `PX-21-T04` |
+
+### UAT-70: RTL page context and metadata integrity
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | اكتمال `PX-21` |
+| **Steps** | 1. مراجعة shell, breadcrumbs, page titles, and directional actions 2. التحقق من native RTL behavior |
+| **Expected Results** | اتجاه الصفحة والعناوين والـ breadcrumbs والـ icons يشعر بأنه RTL أصيل |
+| **Data Created** | screenshots + metadata checks |
+| **Rollback** | N/A |
+| **Validates** | `PX-21-T01/T02/T05` |
+
+---
+
+## المجموعة 25: Transactional UX
+
+### UAT-71: POS speed and cart clarity walkthrough
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | اكتمال `PX-22-T01/T02/T05` |
+| **Steps** | 1. البحث عن منتج 2. إضافته للسلة 3. تعديل الكمية/الخصم 4. اختيار الحساب 5. مراجعة checkout hierarchy |
+| **Expected Results** | flow قصير وواضح، cart مرئية، totals مفهومة، والـ CTA الرئيسية واضحة |
+| **Data Created** | e2e/runtime screenshots |
+| **Rollback** | reset محلي |
+| **Validates** | `PX-22-T01/T02/T05` |
+
+### UAT-72: invoices readability and safe action grouping
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | اكتمال `PX-22-T03` |
+| **Steps** | 1. فتح invoice list/detail 2. مراجعة receipt actions 3. مراجعة return/cancel grouping 4. التحقق من risk styling |
+| **Expected Results** | invoice detail أوضح، actions grouped، وadmin actions آمنة بصريًا |
+| **Data Created** | screenshots/review notes |
+| **Rollback** | N/A |
+| **Validates** | `PX-22-T03` |
+
+### UAT-73: debts summary and payment flow clarity
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | اكتمال `PX-22-T04` |
+| **Steps** | 1. فتح debts 2. اختيار عميل 3. مراجعة summary 4. تنفيذ/محاكاة payment action |
+| **Expected Results** | debt summary واضحة، payment panel بارزة، وflow أقل ارتباكًا |
+| **Data Created** | screenshots/e2e proof |
+| **Rollback** | reset محلي |
+| **Validates** | `PX-22-T04` |
+
+---
+
+## المجموعة 26: Operational Workspaces
+
+### UAT-74: notifications inbox / alerts / search clarity
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | اكتمال `PX-23-T01` |
+| **Steps** | 1. فتح notifications 2. مراجعة inbox 3. مراجعة alerts summary 4. مراجعة search grouping |
+| **Expected Results** | الأقسام الثلاثة واضحة ومفصولة، والتنقل إلى linked records سهل |
+| **Data Created** | screenshots/review notes |
+| **Rollback** | N/A |
+| **Validates** | `PX-23-T01` |
+
+### UAT-75: products catalog and admin usability
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | اكتمال `PX-23-T02` |
+| **Steps** | 1. التصفح بالـ grid/list 2. الفلترة حسب الفئة 3. مراجعة stock visibility 4. مراجعة admin controls |
+| **Expected Results** | catalog قابلة للتصفح بصريًا، والـ admin controls grouped وواضحة |
+| **Data Created** | screenshots/e2e proof |
+| **Rollback** | N/A |
+| **Validates** | `PX-23-T02` |
+
+### UAT-76: operational master-detail ergonomics
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | اكتمال `PX-23-T03/T04/T05` |
+| **Steps** | 1. مراجعة inventory/suppliers/expenses/maintenance/operations 2. قياس سهولة الانتقال بين list/detail/action areas |
+| **Expected Results** | الأسطح التشغيلية structured، أقل ازدحامًا، وأسهل قراءة على desktop/tablet/mobile |
+| **Data Created** | screenshots/device notes |
+| **Rollback** | N/A |
+| **Validates** | `PX-23-T03/T04/T05` |
+
+---
+
+## المجموعة 27: Analytical + Configuration Surfaces
+
+### UAT-77: reports filter-first analytical readability
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | اكتمال `PX-24-T01/T02` |
+| **Steps** | 1. فتح reports 2. تعديل filters 3. مراجعة KPI row 4. مراجعة charts/comparisons/tables |
+| **Expected Results** | reports calmer، filter-first، وinsight-driven بدل flat data dump |
+| **Data Created** | screenshots/review notes |
+| **Rollback** | N/A |
+| **Validates** | `PX-24-T01/T02` |
+
+### UAT-78: settings and permissions safe hierarchy
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | اكتمال `PX-24-T03` |
+| **Steps** | 1. فتح settings/permissions 2. مراجعة groupings 3. مراجعة risk-aware sections 4. مراجعة confirmation hierarchy |
+| **Expected Results** | الإعدادات أوضح، الصلاحيات أقل رهبة، والأفعال الحساسة بارزة كخطر |
+| **Data Created** | screenshots/review notes |
+| **Rollback** | N/A |
+| **Validates** | `PX-24-T03` |
+
+### UAT-79: portability and configuration progressive disclosure
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | اكتمال `PX-24-T04/T05` |
+| **Steps** | 1. فتح portability/configuration sections 2. مراجعة cards والوصف 3. مراجعة advanced detail reveal |
+| **Expected Results** | configuration surfaces مفهومة مع progressive disclosure وبدون intimidation زائدة |
+| **Data Created** | screenshots/device notes |
+| **Rollback** | N/A |
+| **Validates** | `PX-24-T04/T05` |
+
+---
+
+## المجموعة 28: Frontend UX Release Gate
+
+### UAT-80: frontend redesign end-to-end walkthrough
+
+| البند | التفاصيل |
+|-------|----------|
+| **Pre-conditions** | اكتمال `PX-21 .. PX-24` |
+| **Steps** | 1. walkthrough كامل على `home → login → POS → notifications → products → invoices/debts → reports → settings` 2. مراجعة device/RTL/a11y/non-regression evidence 3. إصدار Go/No-Go |
+| **Expected Results** | redesign cohesive، workflows سليمة، ولا يوجد technical leakage أو UX/device blockers |
+| **Data Created** | report نهائي فقط |
+| **Rollback** | N/A |
+| **Validates** | `PX-25-T01/T02/T03/T04` |
+
+---
+
+**الإصدار:** 1.9
+**تاريخ التحديث:** 13 مارس 2026
+**التغييرات:** v1.9 — إضافة UAT-68..80 لتغطية حزمة Post-PX-20 Frontend Redesign (`PX-21 .. PX-25`) بما يشمل shell foundation, transactional UX, operational IA, analytical/configuration readability, وfrontend UX gate النهائي. v1.8 — إضافة UAT-52..67 لتغطية حزمة `Post-PX-14 Productization` (`PX-15 .. PX-20`) بما يشمل copy cleanup, navigation/IA, async feedback, accessibility/visual system, security/runtime/deployment hardening, وrelease gate النهائي. v1.7 — إضافة UAT-36..51 لتغطية `PX-08 .. PX-14` (المصروفات، الإشعارات، receipt links, WhatsApp, permissions, advanced reports, portability, restore drill, search, alert aggregation). v1.6 — إضافة UAT-33/34/35 لتغطية توافق الأجهزة (هاتف/تابلت/لابتوب) + اختبار تثبيت Web App.
 
 
 

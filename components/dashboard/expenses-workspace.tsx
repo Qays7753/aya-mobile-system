@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { BellRing, Loader2, Wallet } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/ui/page-header";
 import { StatusBanner } from "@/components/ui/status-banner";
 import type {
   ExpenseAccountOption,
@@ -41,6 +42,7 @@ type CategoryDraftState = Record<
   }
 >;
 type ExpensesRetryAction = "create-expense" | "create-category" | "update-category";
+type ExpensesSection = "create" | "recent" | "categories";
 
 function getApiErrorMessage<T>(envelope: StandardEnvelope<T>) {
   return envelope.error?.message ?? "تعذر إتمام العملية.";
@@ -82,6 +84,7 @@ export function ExpensesWorkspace({
   const [actionErrorMessage, setActionErrorMessage] = useState<string | null>(null);
   const [retryAction, setRetryAction] = useState<ExpensesRetryAction | null>(null);
   const [retryCategoryId, setRetryCategoryId] = useState<string | null>(null);
+  const [activeSection, setActiveSection] = useState<ExpensesSection>("create");
   const [categoryDrafts, setCategoryDrafts] = useState<CategoryDraftState>(() =>
     Object.fromEntries(
       categories.map((category) => [
@@ -233,36 +236,56 @@ export function ExpensesWorkspace({
   }
 
   return (
-    <section className="workspace-stack">
-      <div className="workspace-hero">
-        <div>
-          <p className="eyebrow">المصروفات</p>
-          <h1>المصروفات ومركز الإشعارات</h1>
-          <p className="workspace-lead">
-            سجّل المصروفات اليومية، نظّم فئاتها، وراجع أثرها على التشغيل من شاشة واحدة.
-          </p>
-        </div>
+    <section className="operational-page">
+      <PageHeader
+        eyebrow="المصروفات"
+        title="المصروفات ومركز الفئات"
+        description="سجّل المصروفات اليومية، راقب أثرها سريعًا، ونظّم الفئات التشغيلية من مساحة واحدة أوضح."
+      />
+
+      <div className="operational-page__meta-grid">
+        <article className="operational-page__meta-card">
+          <span className="operational-page__meta-label">إجمالي الشهر</span>
+          <strong className="operational-page__meta-value">{formatCurrency(summary.total_expenses)}</strong>
+          <p className="operational-page__meta-hint">إجمالي المصروفات في الشهر الحالي.</p>
+        </article>
+        <article className="operational-page__meta-card">
+          <span className="operational-page__meta-label">عدد القيود</span>
+          <strong className="operational-page__meta-value">{formatCompactNumber(summary.expense_count)}</strong>
+          <p className="operational-page__meta-hint">عدد المصروفات المسجلة خلال الفترة الحالية.</p>
+        </article>
+        <article className="operational-page__meta-card">
+          <span className="operational-page__meta-label">الفئات النشطة</span>
+          <strong className="operational-page__meta-value">{formatCompactNumber(summary.active_category_count)}</strong>
+          <p className="operational-page__meta-hint">فئات المصروف المتاحة للفريق حاليًا.</p>
+        </article>
       </div>
 
-      <section className="summary-grid">
-        <article className="workspace-panel">
-          <p className="eyebrow">ملخص المصروفات</p>
-          <h2>{formatCurrency(summary.total_expenses)}</h2>
-          <p className="workspace-footnote">إجمالي المصروفات في الشهر الحالي.</p>
-        </article>
-
-        <article className="workspace-panel">
-          <p className="eyebrow">القيود</p>
-          <h2>{formatCompactNumber(summary.expense_count)}</h2>
-          <p className="workspace-footnote">عدد المصروفات المسجلة خلال الشهر الحالي.</p>
-        </article>
-
-        <article className="workspace-panel">
-          <p className="eyebrow">الفئات النشطة</p>
-          <h2>{formatCompactNumber(summary.active_category_count)}</h2>
-          <p className="workspace-footnote">فئات المصروف النشطة المتاحة الآن للتشغيل.</p>
-        </article>
-      </section>
+      <div className="operational-section-nav" aria-label="أقسام شاشة المصروفات">
+        <button
+          type="button"
+          className={activeSection === "create" ? "chip-button is-selected" : "chip-button"}
+          onClick={() => setActiveSection("create")}
+        >
+          تسجيل المصروف
+        </button>
+        <button
+          type="button"
+          className={activeSection === "recent" ? "chip-button is-selected" : "chip-button"}
+          onClick={() => setActiveSection("recent")}
+        >
+          آخر القيود
+        </button>
+        {role === "admin" ? (
+          <button
+            type="button"
+            className={activeSection === "categories" ? "chip-button is-selected" : "chip-button"}
+            onClick={() => setActiveSection("categories")}
+          >
+            إدارة الفئات
+          </button>
+        ) : null}
+      </div>
 
       {isPending ? (
         <StatusBanner
@@ -283,7 +306,7 @@ export function ExpensesWorkspace({
         />
       ) : null}
 
-      <div className="detail-grid">
+      {activeSection === "create" ? <div className="operational-layout operational-layout--split">
         <section className="workspace-panel">
           <div className="section-heading">
             <div>
@@ -356,7 +379,7 @@ export function ExpensesWorkspace({
           ) : null}
         </section>
 
-        <section className="workspace-panel">
+        <section className="workspace-panel operational-sidebar operational-sidebar--sticky">
           <div className="section-heading">
             <div>
               <p className="eyebrow">آخر المصروفات</p>
@@ -389,9 +412,47 @@ export function ExpensesWorkspace({
             )}
           </div>
         </section>
-      </div>
+      </div> : null}
 
-      {role === "admin" ? (
+      {activeSection === "recent" ? (
+        <div className="operational-layout operational-layout--wide">
+          <section className="workspace-panel operational-content">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">آخر المصروفات</p>
+                <h2>القيود المسجلة مؤخرًا</h2>
+              </div>
+              <BellRing size={18} />
+            </div>
+
+            <div className="stack-list">
+              {recentExpenses.length > 0 ? (
+                recentExpenses.map((expense) => (
+                  <article key={expense.id} className="list-card">
+                    <div className="list-card__header">
+                      <strong>{expense.expense_number}</strong>
+                      <span>{formatCurrency(expense.amount)}</span>
+                    </div>
+                    <p>{expense.description}</p>
+                    <p className="workspace-footnote">
+                      {expense.category_name} — {expense.account_name}
+                    </p>
+                    <p className="workspace-footnote">
+                      {expense.created_by_name ?? "غير معروف"} — {formatDateTime(expense.created_at)}
+                    </p>
+                  </article>
+                ))
+              ) : (
+                <div className="empty-panel">
+                  <p>لا توجد مصروفات مسجلة حتى الآن. سجّل أول مصروف ليظهر هنا.</p>
+                </div>
+              )}
+            </div>
+          </section>
+        </div>
+      ) : null}
+
+      {role === "admin" && activeSection === "categories" ? (
         <section className="workspace-panel">
           <div className="section-heading">
             <div>

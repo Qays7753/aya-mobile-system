@@ -5,6 +5,7 @@ import { Boxes, ClipboardCheck, Loader2, Scale } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
+import { PageHeader } from "@/components/ui/page-header";
 import { StatusBanner } from "@/components/ui/status-banner";
 import type {
   InventoryCountOption,
@@ -277,16 +278,12 @@ export function InventoryWorkspace({
   }
 
   return (
-    <section className="workspace-stack">
-      <div className="workspace-hero">
-        <div>
-          <p className="eyebrow">الجرد</p>
-          <h1>الجرد والتسوية المحسنة</h1>
-          <p className="workspace-lead">
-            ابدأ جردًا جديدًا، أكمل العمليات المفتوحة، أو راجع آخر النتائج من مسارات أوضح ومناسبة للأجهزة الصغيرة.
-          </p>
-        </div>
-      </div>
+    <section className="operational-page">
+      <PageHeader
+        eyebrow="الجرد"
+        title="الجرد والتسوية المحسنة"
+        description="ابدأ الجرد، أكمل العمليات المفتوحة، وراجع التسويات من مسار أوضح وأسهل على الأجهزة الصغيرة."
+      />
 
       {isPending ? (
         <StatusBanner
@@ -307,7 +304,7 @@ export function InventoryWorkspace({
         />
       ) : null}
 
-      <div className="chip-row" aria-label="أقسام شاشة الجرد">
+      <div className="operational-section-nav" aria-label="أقسام شاشة الجرد">
         <button
           type="button"
           className={activeSection === "create" ? "chip-button is-selected" : "chip-button"}
@@ -340,28 +337,26 @@ export function InventoryWorkspace({
         </button>
       </div>
 
-      <div className="summary-grid">
-        <article className="workspace-panel">
-          <p className="eyebrow">عمليات مفتوحة</p>
-          <h2>{formatCompactNumber(inProgressCounts.length)}</h2>
-          <p className="workspace-footnote">عمليات الجرد التي ما زالت بانتظار الإكمال.</p>
+      <div className="operational-page__meta-grid">
+        <article className="operational-page__meta-card">
+          <span className="operational-page__meta-label">عمليات مفتوحة</span>
+          <strong className="operational-page__meta-value">{formatCompactNumber(inProgressCounts.length)}</strong>
+          <p className="operational-page__meta-hint">عمليات الجرد التي ما زالت بانتظار الإكمال.</p>
         </article>
-
-        <article className="workspace-panel">
-          <p className="eyebrow">آخر نتائج مكتملة</p>
-          <h2>{formatCompactNumber(recentCompletedCounts.length)}</h2>
-          <p className="workspace-footnote">عدد النتائج المتاحة للمراجعة السريعة.</p>
+        <article className="operational-page__meta-card">
+          <span className="operational-page__meta-label">نتائج مكتملة</span>
+          <strong className="operational-page__meta-value">{formatCompactNumber(recentCompletedCounts.length)}</strong>
+          <p className="operational-page__meta-hint">النتائج المتاحة للمراجعة السريعة.</p>
         </article>
-
-        <article className="workspace-panel">
-          <p className="eyebrow">التسويات الأخيرة</p>
-          <h2>{formatCompactNumber(recentReconciliations.length)}</h2>
-          <p className="workspace-footnote">قيود التسوية المسجلة مؤخرًا.</p>
+        <article className="operational-page__meta-card">
+          <span className="operational-page__meta-label">التسويات الأخيرة</span>
+          <strong className="operational-page__meta-value">{formatCompactNumber(recentReconciliations.length)}</strong>
+          <p className="operational-page__meta-hint">قيود التسوية المسجلة مؤخرًا.</p>
         </article>
       </div>
 
       {activeSection === "create" ? (
-        <div className="detail-grid">
+        <div className="operational-layout operational-layout--wide">
           <section className="workspace-panel">
             <div className="section-heading">
               <div>
@@ -451,8 +446,8 @@ export function InventoryWorkspace({
       ) : null}
 
       {activeSection === "active" ? (
-        <div className="detail-grid">
-          <section className="workspace-panel">
+        <div className="operational-layout operational-layout--split">
+          <section className="workspace-panel operational-sidebar operational-sidebar--sticky">
             <div className="section-heading">
               <div>
                 <p className="eyebrow">الجرد المفتوح</p>
@@ -559,7 +554,7 @@ export function InventoryWorkspace({
       ) : null}
 
       {activeSection === "reconcile" ? (
-        <div className="detail-grid">
+        <div className="operational-layout operational-layout--wide">
           <section className="workspace-panel">
             <p className="eyebrow">التسوية</p>
             <h2>تسوية الحسابات</h2>
@@ -628,7 +623,7 @@ export function InventoryWorkspace({
       ) : null}
 
       {activeSection === "history" ? (
-        <div className="detail-grid">
+        <div className="operational-layout operational-layout--split">
           <section className="workspace-panel">
             <p className="eyebrow">الجرد المكتمل</p>
             <h2>آخر النتائج</h2>

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { Loader2, Plus, Save, Search, ShoppingCart, Wallet } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/ui/page-header";
 import { StatusBanner } from "@/components/ui/status-banner";
 import type {
   AccountOption,
@@ -60,6 +61,7 @@ type SuppliersWorkspaceProps = {
 
 type SupplierBalanceFilter = "all" | "with_balance" | "zero_balance";
 type SuppliersRetryAction = "supplier" | "purchase" | "payment";
+type SuppliersSection = "directory" | "purchase" | "payment" | "history";
 
 const emptySupplierDraft: SupplierDraft = {
   name: "",
@@ -106,6 +108,7 @@ export function SuppliersWorkspace({
   const [paymentResult, setPaymentResult] = useState<SupplierPaymentResponse | null>(null);
   const [actionErrorMessage, setActionErrorMessage] = useState<string | null>(null);
   const [retryAction, setRetryAction] = useState<SuppliersRetryAction | null>(null);
+  const [activeSection, setActiveSection] = useState<SuppliersSection>("directory");
   const [isPending, startTransition] = useTransition();
 
   const filteredSuppliers = useMemo(() => {
@@ -344,16 +347,37 @@ export function SuppliersWorkspace({
   }
 
   return (
-    <section className="workspace-stack">
-      <div className="workspace-hero">
-        <div>
-          <p className="eyebrow">الموردون</p>
-          <h1>الموردون والمشتريات</h1>
-          <p className="workspace-lead">
-            أدر الموردين، سجّل أوامر الشراء، وتابع التسديدات من شاشة إدارية واحدة وواضحة.
-          </p>
-        </div>
-      </div>
+    <section className="operational-page">
+      <PageHeader
+        eyebrow="الموردون"
+        title="الموردون والمشتريات"
+        description="نظّم دليل الموردين، أنشئ أوامر الشراء، وتابع التسديدات وسجل الحركة من مساحة تشغيلية أكثر هدوءًا."
+        meta={
+          <>
+            <span className="status-pill status-pill--brand">الموردون: {formatCompactNumber(suppliers.length)}</span>
+            <span className="status-pill">أوامر الشراء: {formatCompactNumber(purchaseOrders.length)}</span>
+            <span className="status-pill">التسديدات: {formatCompactNumber(supplierPayments.length)}</span>
+          </>
+        }
+      />
+
+      <section className="operational-page__meta-grid" aria-label="ملخص الموردين">
+        <article className="operational-page__meta-card">
+          <span className="operational-page__meta-label">الدليل النشط</span>
+          <strong className="operational-page__meta-value">{formatCompactNumber(suppliers.filter((supplier) => supplier.is_active).length)}</strong>
+          <span className="operational-page__meta-hint">راجع الموردين بحسب الرصيد، النشاط، أو آخر تحديث.</span>
+        </article>
+        <article className="operational-page__meta-card">
+          <span className="operational-page__meta-label">موردون برصيد مستحق</span>
+          <strong className="operational-page__meta-value">{formatCompactNumber(payableSuppliers.length)}</strong>
+          <span className="operational-page__meta-hint">استخدم هذا المؤشر لتحديد أولويات السداد قبل فتح قسم التسديدات.</span>
+        </article>
+        <article className="operational-page__meta-card">
+          <span className="operational-page__meta-label">إجمالي المشتريات المعروضة</span>
+          <strong className="operational-page__meta-value">{formatCompactNumber(purchaseOrders.length)}</strong>
+          <span className="operational-page__meta-hint">تعرض القائمة أحدث أوامر الشراء وتفاصيل الأصناف المرتبطة بها.</span>
+        </article>
+      </section>
 
       {isPending ? (
         <StatusBanner
@@ -374,7 +398,39 @@ export function SuppliersWorkspace({
         />
       ) : null}
 
-      <div className="detail-grid">
+      <div className="operational-section-nav" aria-label="أقسام الموردين والمشتريات">
+        <span className="operational-section-nav__hint">انتقل بين الدليل وأوامر الشراء والتسديدات وسجل الحركة دون ازدحام.</span>
+        <button
+          type="button"
+          className={activeSection === "directory" ? "chip-button is-selected" : "chip-button"}
+          onClick={() => setActiveSection("directory")}
+        >
+          الدليل والتفاصيل
+        </button>
+        <button
+          type="button"
+          className={activeSection === "purchase" ? "chip-button is-selected" : "chip-button"}
+          onClick={() => setActiveSection("purchase")}
+        >
+          أوامر الشراء
+        </button>
+        <button
+          type="button"
+          className={activeSection === "payment" ? "chip-button is-selected" : "chip-button"}
+          onClick={() => setActiveSection("payment")}
+        >
+          التسديدات
+        </button>
+        <button
+          type="button"
+          className={activeSection === "history" ? "chip-button is-selected" : "chip-button"}
+          onClick={() => setActiveSection("history")}
+        >
+          السجل الأخير
+        </button>
+      </div>
+
+      {activeSection === "directory" ? <div className="detail-grid">
         <section className="workspace-panel">
           <div className="workspace-toolbar">
             <label className="workspace-search">
@@ -465,7 +521,7 @@ export function SuppliersWorkspace({
         <section className="workspace-panel">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">{isCreateMode ? "Create Supplier" : "Supplier Detail"}</p>
+              <p className="eyebrow">{isCreateMode ? "إضافة مورد" : "تفاصيل المورد"}</p>
               <h2>{isCreateMode ? "إضافة مورد جديد" : selectedSupplier?.name ?? "اختر موردًا"}</h2>
             </div>
           </div>
@@ -561,9 +617,9 @@ export function SuppliersWorkspace({
             </div>
           ) : null}
         </section>
-      </div>
+      </div> : null}
 
-      <div className="detail-grid">
+      {activeSection === "purchase" ? <div className="detail-grid">
         <section className="workspace-panel">
           <div className="section-heading">
             <div>
@@ -767,103 +823,9 @@ export function SuppliersWorkspace({
           ) : null}
         </section>
 
-        <section className="workspace-panel">
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">تسديد المورد</p>
-              <h2>تسديد مورد</h2>
-            </div>
-          </div>
+      </div> : null}
 
-          <div className="stack-form">
-            <label className="stack-field">
-              <span>المورد</span>
-              <select value={paymentSupplierId} onChange={(event) => setPaymentSupplierId(event.target.value)}>
-                {payableSuppliers.map((supplier) => (
-                  <option key={supplier.id} value={supplier.id}>
-                    {supplier.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            {paymentSupplier ? (
-              <div className="info-strip">
-                <span>الرصيد المستحق: {formatCurrency(paymentSupplier.current_balance)}</span>
-                {projectedSupplierBalance !== null ? (
-                  <span>بعد التسديد: {formatCurrency(projectedSupplierBalance)}</span>
-                ) : null}
-              </div>
-            ) : (
-              <div className="empty-panel">
-                <p>لا يوجد موردون عليهم رصيد مستحق حاليًا. ستظهر هنا الحسابات التي تحتاج إلى تسديد.</p>
-              </div>
-            )}
-
-            <label className="stack-field">
-              <span>مبلغ التسديد</span>
-              <input
-                type="number"
-                min={0.001}
-                step={0.001}
-                value={paymentAmount}
-                onChange={(event) => setPaymentAmount(event.target.value)}
-                placeholder="0.000"
-              />
-            </label>
-
-            <label className="stack-field">
-              <span>حساب الدفع</span>
-              <select value={paymentAccountId} onChange={(event) => setPaymentAccountId(event.target.value)}>
-                {accounts.map((account) => (
-                  <option key={account.id} value={account.id}>
-                    {account.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="stack-field">
-              <span>ملاحظات</span>
-              <textarea
-                rows={3}
-                maxLength={255}
-                value={paymentNotes}
-                onChange={(event) => setPaymentNotes(event.target.value)}
-                placeholder="ملاحظة التسديد"
-              />
-            </label>
-
-            <div className="info-strip">
-              <span>يتم حماية تسجيل التسديد من التكرار تلقائيًا.</span>
-            </div>
-
-            <button
-              type="button"
-              className="primary-button"
-              disabled={isPending || !paymentSupplier || !paymentAmount || !paymentAccountId}
-              onClick={() => {
-                startTransition(() => {
-                  void handleSupplierPaymentSubmit();
-                });
-              }}
-            >
-              {isPending ? <Loader2 className="spin" size={16} /> : <Wallet size={16} />}
-              تأكيد التسديد
-            </button>
-          </div>
-
-          {paymentResult ? (
-            <div className="result-card">
-              <h3>تم تسجيل التسديد</h3>
-              <p>رقم التسديد: {paymentResult.payment_number}</p>
-              <p>الرصيد المتبقي: {formatCurrency(paymentResult.remaining_balance)}</p>
-            </div>
-          ) : null}
-        </section>
-      </div>
-
-      <div className="detail-grid">
+      {activeSection === "history" ? <div className="detail-grid">
         <section className="workspace-panel">
           <div className="section-heading">
             <div>
@@ -938,7 +900,104 @@ export function SuppliersWorkspace({
             )}
           </div>
         </section>
-      </div>
+      </div> : null}
+
+      {activeSection === "payment" ? (
+        <div className="detail-grid">
+          <section className="workspace-panel">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">تسديد المورد</p>
+                <h2>تسديد مورد</h2>
+              </div>
+            </div>
+
+            <div className="stack-form">
+              <label className="stack-field">
+                <span>المورد</span>
+                <select value={paymentSupplierId} onChange={(event) => setPaymentSupplierId(event.target.value)}>
+                  {payableSuppliers.map((supplier) => (
+                    <option key={supplier.id} value={supplier.id}>
+                      {supplier.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              {paymentSupplier ? (
+                <div className="info-strip">
+                  <span>الرصيد المستحق: {formatCurrency(paymentSupplier.current_balance)}</span>
+                  {projectedSupplierBalance !== null ? <span>بعد التسديد: {formatCurrency(projectedSupplierBalance)}</span> : null}
+                </div>
+              ) : (
+                <div className="empty-panel">
+                  <p>لا يوجد موردون عليهم رصيد مستحق حاليًا. ستظهر هنا الحسابات التي تحتاج إلى تسديد.</p>
+                </div>
+              )}
+
+              <label className="stack-field">
+                <span>مبلغ التسديد</span>
+                <input
+                  type="number"
+                  min={0.001}
+                  step={0.001}
+                  value={paymentAmount}
+                  onChange={(event) => setPaymentAmount(event.target.value)}
+                  placeholder="0.000"
+                />
+              </label>
+
+              <label className="stack-field">
+                <span>حساب الدفع</span>
+                <select value={paymentAccountId} onChange={(event) => setPaymentAccountId(event.target.value)}>
+                  {accounts.map((account) => (
+                    <option key={account.id} value={account.id}>
+                      {account.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="stack-field">
+                <span>ملاحظات</span>
+                <textarea
+                  rows={3}
+                  maxLength={255}
+                  value={paymentNotes}
+                  onChange={(event) => setPaymentNotes(event.target.value)}
+                  placeholder="ملاحظة التسديد"
+                />
+              </label>
+
+              <div className="info-strip">
+                <span>يتم حماية تسجيل التسديد من التكرار تلقائيًا.</span>
+              </div>
+
+              <button
+                type="button"
+                className="primary-button"
+                disabled={isPending || !paymentSupplier || !paymentAmount || !paymentAccountId}
+                onClick={() => {
+                  startTransition(() => {
+                    void handleSupplierPaymentSubmit();
+                  });
+                }}
+              >
+                {isPending ? <Loader2 className="spin" size={16} /> : <Wallet size={16} />}
+                تأكيد التسديد
+              </button>
+            </div>
+
+            {paymentResult ? (
+              <div className="result-card">
+                <h3>تم تسجيل التسديد</h3>
+                <p>رقم التسديد: {paymentResult.payment_number}</p>
+                <p>الرصيد المتبقي: {formatCurrency(paymentResult.remaining_balance)}</p>
+              </div>
+            ) : null}
+          </section>
+        </div>
+      ) : null}
     </section>
   );
 }

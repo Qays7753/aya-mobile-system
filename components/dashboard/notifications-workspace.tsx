@@ -5,6 +5,8 @@ import { useEffect, useState, useTransition } from "react";
 import { BellRing, Loader2, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/ui/page-header";
+import { SectionCard } from "@/components/ui/section-card";
 import { StatusBanner } from "@/components/ui/status-banner";
 import type { NotificationFilters, NotificationItem } from "@/lib/api/notifications";
 import type { AlertsSummary, GlobalSearchBaseline, GlobalSearchItem } from "@/lib/api/search";
@@ -116,6 +118,16 @@ function getNotificationTypeLabel(type: string) {
   return labels[type] ?? type.replace(/_/g, " ");
 }
 
+function getNotificationStatusLabel(notification: NotificationItem) {
+  return notification.is_read ? "مقروء" : "غير مقروء";
+}
+
+function getRoleHint(role: "admin" | "pos_staff") {
+  return role === "admin"
+    ? "يعرض الحساب الإداري التنبيهات العامة والملخصات التشغيلية القابلة للمتابعة."
+    : "يعرض حساب نقطة البيع الإشعارات المرتبطة بالمستخدم الحالي فقط.";
+}
+
 export function NotificationsWorkspace({
   role,
   alertsSummary,
@@ -187,7 +199,7 @@ export function NotificationsWorkspace({
 
   function handleWhatsAppSend(notification: NotificationItem) {
     if (!notification.contact_phone || !notification.whatsapp_template_key || !notification.reference_type || !notification.reference_id) {
-      failAction("تعذر تجهيز محاولة الإرسال لهذه الإشعارة.", "whatsapp", notification.id);
+      failAction("تعذر تجهيز محاولة الإرسال لهذا الإشعار.", "whatsapp", notification.id);
       return;
     }
 
@@ -247,32 +259,50 @@ export function NotificationsWorkspace({
     : [];
 
   return (
-    <section className="workspace-stack">
-      <div className="workspace-hero">
-        <div>
-          <p className="eyebrow">الإشعارات</p>
-          <h1>مركز التنبيهات والمتابعة</h1>
-          <p className="workspace-lead">
-            افتح صندوق الإشعارات، راجع التنبيهات المجمعة، وانتقل سريعًا إلى نتائج البحث الشامل من نفس المساحة.
-          </p>
-        </div>
+    <section className="operational-page">
+      <PageHeader
+        eyebrow="الإشعارات"
+        title="مركز التنبيهات والمتابعة"
+        description="تابع صندوق الإشعارات، افتح التنبيهات المجمعة، وانتقل سريعًا إلى نتائج البحث المرتبطة بكل مساحة تشغيلية."
+        meta={
+          <>
+            <span className="status-pill status-pill--brand">الدور: {getRoleLabel(role)}</span>
+            <span className="status-pill">غير المقروء: {formatCompactNumber(unreadCount)}</span>
+            <span className="status-pill">الإجمالي: {formatCompactNumber(totalCount)}</span>
+          </>
+        }
+        actions={
+          <>
+            <Link href="/notifications" className="secondary-button">
+              إعادة ضبط المركز
+            </Link>
+            <button type="button" className="primary-button" disabled={isPending || unreadCount === 0} onClick={() => void handleMarkAll()}>
+              {isPending ? <Loader2 className="spin" size={16} /> : "تعليم الكل كمقروء"}
+            </button>
+          </>
+        }
+      />
 
-        <div className="action-row">
-          <Link href="/notifications" className="secondary-button">
-            إعادة ضبط المركز
-          </Link>
-          <button
-            type="button"
-            className="primary-button"
-            disabled={isPending || unreadCount === 0}
-            onClick={() => void handleMarkAll()}
-          >
-            {isPending ? <Loader2 className="spin" size={16} /> : "تعليم الكل كمقروء"}
-          </button>
-        </div>
-      </div>
+      <section className="operational-page__meta-grid" aria-label="ملخص مركز الإشعارات">
+        <article className="operational-page__meta-card">
+          <span className="operational-page__meta-label">نطاق الحساب</span>
+          <strong className="operational-page__meta-value">{getRoleLabel(role)}</strong>
+          <span className="operational-page__meta-hint">{getRoleHint(role)}</span>
+        </article>
+        <article className="operational-page__meta-card">
+          <span className="operational-page__meta-label">الإشعارات الظاهرة</span>
+          <strong className="operational-page__meta-value">{formatCompactNumber(totalCount)}</strong>
+          <span className="operational-page__meta-hint">يشمل هذا الرقم الفلاتر الحالية والنتائج الملائمة للدور الحالي.</span>
+        </article>
+        <article className="operational-page__meta-card">
+          <span className="operational-page__meta-label">الرسائل غير المقروءة</span>
+          <strong className="operational-page__meta-value">{formatCompactNumber(unreadCount)}</strong>
+          <span className="operational-page__meta-hint">يمكنك تعليمها دفعة واحدة أو مراجعة كل إشعار من قائمة المتابعة.</span>
+        </article>
+      </section>
 
-      <div className="chip-row workspace-section-nav">
+      <div className="operational-section-nav" aria-label="أقسام مركز الإشعارات">
+        <span className="operational-section-nav__hint">انتقل بين المتابعة اليومية والملخصات ونتائج البحث.</span>
         <button
           type="button"
           className={activeSection === "inbox" ? "chip-button is-selected" : "chip-button"}
@@ -286,7 +316,7 @@ export function NotificationsWorkspace({
             className={activeSection === "alerts" ? "chip-button is-selected" : "chip-button"}
             onClick={() => setActiveSection("alerts")}
           >
-            التنبيهات المجمعة
+            الملخصات والتنبيهات
           </button>
         ) : null}
         <button
@@ -301,7 +331,7 @@ export function NotificationsWorkspace({
       {isPending ? (
         <StatusBanner
           variant="info"
-          title="جاري تنفيذ الإجراء"
+          title="جارٍ تنفيذ الإجراء"
           message="انتظر حتى يكتمل تحديث مركز الإشعارات الحالي قبل بدء إجراء جديد."
         />
       ) : null}
@@ -318,166 +348,162 @@ export function NotificationsWorkspace({
       ) : null}
 
       {activeSection === "alerts" && alertsSummary ? (
-        <section className="summary-grid">
+        <section className="operational-page__meta-grid" aria-label="ملخصات التنبيهات">
           {alertKeys.map((key) => (
-            <article key={key} className="workspace-panel">
-              <p className="eyebrow">{getAlertLabel(key)}</p>
-              <h2>{formatCompactNumber(alertsSummary[key])}</h2>
-              <p className="workspace-footnote">يعرض هذا الرقم مرة واحدة لكل مجموعة تشغيلية بدل الضوضاء المتكررة.</p>
-              <div className="action-row">
-                <Link href={getAlertHref(key)} className="secondary-button">
-                  فتح المسار
-                </Link>
+            <SectionCard
+              key={key}
+              eyebrow="تنبيه مجمع"
+              title={getAlertLabel(key)}
+              description="يعرض هذا الرقم أحدث حالة تشغيلية دون تكرار الرسائل المتشابهة داخل الصندوق."
+              tone="accent"
+            >
+              <div className="operational-page__meta-card">
+                <span className="operational-page__meta-label">العدد الحالي</span>
+                <strong className="operational-page__meta-value">{formatCompactNumber(alertsSummary[key])}</strong>
+                <div className="action-row">
+                  <Link href={getAlertHref(key)} className="secondary-button">
+                    فتح المسار
+                  </Link>
+                </div>
               </div>
-            </article>
+            </SectionCard>
           ))}
         </section>
       ) : null}
 
       {activeSection === "search" ? (
-        <section className="workspace-panel">
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">البحث الشامل</p>
-              <h2>نتائج البحث الحالية</h2>
-            </div>
-            <Search size={18} />
-          </div>
+        <section className="operational-layout operational-layout--wide">
+          <SectionCard
+            eyebrow="بحث تشغيلي"
+            title="نتائج البحث الحالية"
+            description="نفّذ البحث من الشريط العلوي أو عدّل الاستعلام هنا للوصول السريع إلى المنتجات والفواتير والديون والصيانة."
+            tone="accent"
+            className="operational-sidebar operational-sidebar--sticky"
+          >
+            <form className="workspace-stack" method="GET">
+              <input type="hidden" name="status" value={filters.status} />
+              <input type="hidden" name="type" value={filters.type ?? ""} />
+              <input type="hidden" name="page" value={String(filters.page)} />
+              <input type="hidden" name="page_size" value={String(filters.pageSize)} />
 
-          <p className="workspace-footnote">
-            يمكنك بدء البحث من الشريط العلوي في أي شاشة، أو تعديل نفس الاستعلام من هذه اللوحة عند الحاجة.
-          </p>
+              <label className="stack-field">
+                <span>الاستعلام</span>
+                <input
+                  name="q"
+                  defaultValue={searchBaseline.filters.q}
+                  placeholder="اسم منتج، رقم فاتورة، عميل أو رقم صيانة"
+                />
+              </label>
 
-          <form className="filters-grid" method="GET">
-            <input type="hidden" name="status" value={filters.status} />
-            <input type="hidden" name="type" value={filters.type ?? ""} />
-            <input type="hidden" name="page" value={String(filters.page)} />
-            <input type="hidden" name="page_size" value={String(filters.pageSize)} />
+              <label className="stack-field">
+                <span>الكيان</span>
+                <select name="entity" defaultValue={searchBaseline.filters.entity}>
+                  <option value="all">الكل</option>
+                  {searchBaseline.allowedEntities.includes("product") ? <option value="product">المنتجات</option> : null}
+                  {searchBaseline.allowedEntities.includes("invoice") ? <option value="invoice">الفواتير</option> : null}
+                  {searchBaseline.allowedEntities.includes("debt_customer") ? <option value="debt_customer">الديون</option> : null}
+                  {searchBaseline.allowedEntities.includes("maintenance_job") ? (
+                    <option value="maintenance_job">الصيانة</option>
+                  ) : null}
+                </select>
+              </label>
 
-            <label className="stack-field">
-              <span>الاستعلام</span>
-              <input
-                name="q"
-                defaultValue={searchBaseline.filters.q}
-                placeholder="اسم منتج، رقم فاتورة، عميل أو رقم صيانة"
-              />
-            </label>
+              <label className="stack-field">
+                <span>حد النتائج</span>
+                <input type="number" name="limit" min={1} max={20} defaultValue={String(searchBaseline.filters.limit)} />
+              </label>
 
-            <label className="stack-field">
-              <span>الكيان</span>
-              <select name="entity" defaultValue={searchBaseline.filters.entity}>
-                <option value="all">الكل</option>
-                {searchBaseline.allowedEntities.includes("product") ? <option value="product">المنتجات</option> : null}
-                {searchBaseline.allowedEntities.includes("invoice") ? <option value="invoice">الفواتير</option> : null}
-                {searchBaseline.allowedEntities.includes("debt_customer") ? <option value="debt_customer">الديون</option> : null}
-                {searchBaseline.allowedEntities.includes("maintenance_job") ? (
-                  <option value="maintenance_job">الصيانة</option>
-                ) : null}
-              </select>
-            </label>
-
-            <label className="stack-field">
-              <span>حد النتائج</span>
-              <input type="number" name="limit" min={1} max={20} defaultValue={String(searchBaseline.filters.limit)} />
-            </label>
-
-            <div className="action-row action-row--end">
-              <button type="submit" className="primary-button">
-                تنفيذ البحث
-              </button>
-            </div>
-          </form>
-
-          {searchBaseline.errorMessage ? (
-            <div className="empty-panel">
-              <p>{searchBaseline.errorMessage}</p>
-            </div>
-          ) : searchBaseline.filters.q ? (
-            <>
-              <p className="workspace-footnote">
-                النتائج الحالية: {formatCompactNumber(searchBaseline.totalCount)} ضمن الحدود المسموح بها للدور الحالي.
-              </p>
-
-              <div className="detail-grid">
-                {searchBaseline.groups.length > 0 ? (
-                  searchBaseline.groups.map((group) => (
-                    <section key={group.entity} className="workspace-panel">
-                      <div className="section-heading">
-                        <div>
-                          <p className="eyebrow">{group.title}</p>
-                          <h2>{group.title}</h2>
-                        </div>
-                      </div>
-
-                      <div className="stack-list">
-                        {group.items.map((item) => (
-                          <article key={item.id} className="list-card">
-                            <div className="list-card__header">
-                              <strong>{item.label}</strong>
-                              <span>{group.title}</span>
-                            </div>
-                            <p>{item.secondary}</p>
-                            <div className="action-row">
-                              <Link href={getSearchResultHref(item)} className="secondary-button">
-                                فتح المسار
-                              </Link>
-                            </div>
-                          </article>
-                        ))}
-                      </div>
-                    </section>
-                  ))
-                ) : (
-                  <div className="empty-panel">
-                    <p>لا توجد نتائج مطابقة ضمن حدود الدور الحالي. جرّب عبارة أخرى أو افتح الشاشة المرتبطة مباشرة.</p>
-                  </div>
-                )}
+              <div className="action-row action-row--end">
+                <button type="submit" className="primary-button">
+                  تنفيذ البحث
+                </button>
               </div>
-            </>
-          ) : (
-            <div className="empty-panel">
-              <p>ابدأ بحثًا جديدًا من الشريط العلوي أو أدخل استعلامًا من حرفين على الأقل لعرض النتائج هنا.</p>
-            </div>
-          )}
+            </form>
+          </SectionCard>
+
+          <div className="operational-content">
+            {searchBaseline.errorMessage ? (
+              <StatusBanner variant="danger" title="تعذر إتمام البحث" message={searchBaseline.errorMessage} />
+            ) : searchBaseline.filters.q ? (
+              <>
+                <SectionCard
+                  eyebrow="ملخص النتائج"
+                  title="نتائج البحث الحالية"
+                  description={`النتائج الحالية: ${formatCompactNumber(searchBaseline.totalCount)} ضمن الحدود المتاحة للدور الحالي.`}
+                  tone="subtle"
+                >
+                  <div className="operational-inline-summary">
+                    <span className="status-pill">
+                      <Search size={16} />
+                      الاستعلام الحالي: {searchBaseline.filters.q}
+                    </span>
+                    <span className="status-pill">حد النتائج: {searchBaseline.filters.limit}</span>
+                  </div>
+                </SectionCard>
+
+                {searchBaseline.groups.length > 0 ? (
+                  <div className="operational-list">
+                    {searchBaseline.groups.map((group) => (
+                      <SectionCard
+                        key={group.entity}
+                        eyebrow="نتائج حسب الكيان"
+                        title={group.title}
+                        description="افتح المسار المرتبط للوصول إلى السجل الكامل داخل مساحة التشغيل المناسبة."
+                      >
+                        <div className="operational-list">
+                          {group.items.map((item) => (
+                            <article key={item.id} className="operational-list-card">
+                              <div className="operational-list-card__header">
+                                <div>
+                                  <h3 className="operational-list-card__title">{item.label}</h3>
+                                  <p className="operational-list-card__description">{item.secondary}</p>
+                                </div>
+                                <div className="operational-list-card__meta">
+                                  <span className="status-pill">{group.title}</span>
+                                </div>
+                              </div>
+
+                              <div className="action-row">
+                                <Link href={getSearchResultHref(item)} className="secondary-button">
+                                  فتح المسار
+                                </Link>
+                              </div>
+                            </article>
+                          ))}
+                        </div>
+                      </SectionCard>
+                    ))}
+                  </div>
+                ) : (
+                  <SectionCard
+                    eyebrow="لا توجد نتائج"
+                    title="لم نعثر على سجلات مطابقة"
+                    description="جرّب عبارة أخرى أو افتح مساحة التشغيل المرتبطة مباشرةً لمتابعة البحث من المصدر."
+                    tone="subtle"
+                  />
+                )}
+              </>
+            ) : (
+              <SectionCard
+                eyebrow="ابدأ من الأعلى"
+                title="لا يوجد استعلام نشط الآن"
+                description="استخدم شريط البحث العلوي أو اكتب استعلامًا من حرفين على الأقل لعرض النتائج هنا."
+                tone="subtle"
+              />
+            )}
+          </div>
         </section>
       ) : null}
 
       {activeSection === "inbox" ? (
-        <>
-          <section className="summary-grid">
-            <article className="workspace-panel">
-              <p className="eyebrow">غير المقروء</p>
-              <h2>{formatCompactNumber(unreadCount)}</h2>
-              <p className="workspace-footnote">الإشعارات التي ما زالت تحتاج متابعة من الحساب الحالي.</p>
-            </article>
-
-            <article className="workspace-panel">
-              <p className="eyebrow">الإجمالي الظاهر</p>
-              <h2>{formatCompactNumber(totalCount)}</h2>
-              <p className="workspace-footnote">إجمالي السجل المعروض بعد تطبيق الفلاتر الحالية.</p>
-            </article>
-
-            <article className="workspace-panel">
-              <p className="eyebrow">نطاق الحساب</p>
-              <h2>{getRoleLabel(role)}</h2>
-              <p className="workspace-footnote">
-                {role === "admin"
-                  ? "يعرض الحساب الإداري التنبيهات العامة والملخصات المجمعة."
-                  : "يعرض الحساب التشغيلي التنبيهات الخاصة بالمستخدم الحالي فقط."}
-              </p>
-            </article>
-          </section>
-
-          <section className="workspace-panel">
-            <div className="section-heading">
-              <div>
-                <p className="eyebrow">صندوق الإشعارات</p>
-                <h2>الإشعارات الحالية</h2>
-              </div>
-              <BellRing size={18} />
-            </div>
-
-            <form className="filters-grid" method="GET">
+        <section className="operational-layout operational-layout--split">
+          <SectionCard
+            eyebrow="إعدادات الصندوق"
+            title="فلاتر المتابعة"
+            description="اضبط حالة الرسائل ونوعها وعدد السجلات المعروضة قبل مراجعة الصندوق."
+            className="operational-sidebar operational-sidebar--sticky"
+          >
+            <form className="workspace-stack" method="GET">
               <input type="hidden" name="q" value={searchBaseline.filters.q} />
               <input type="hidden" name="entity" value={searchBaseline.filters.entity} />
               <input type="hidden" name="limit" value={String(searchBaseline.filters.limit)} />
@@ -512,65 +538,86 @@ export function NotificationsWorkspace({
                 </button>
               </div>
             </form>
+          </SectionCard>
 
-            <div className="stack-list">
-              {notifications.length > 0 ? (
-                notifications.map((notification) => {
-                  const referenceHref = getReferenceHref(notification);
+          <div className="operational-content">
+            <SectionCard
+              eyebrow="صندوق الإشعارات"
+              title="الإشعارات الحالية"
+              description="راجع الرسائل المرتبطة بالعمليات اليومية وافتح المرجع المطلوب أو علّم الرسالة كمقروءة بعد المتابعة."
+              tone="accent"
+            >
+              <div className="operational-list">
+                {notifications.length > 0 ? (
+                  notifications.map((notification) => {
+                    const referenceHref = getReferenceHref(notification);
 
-                  return (
-                    <article key={notification.id} className="list-card">
-                      <div className="list-card__header">
-                        <strong>{notification.title}</strong>
-                        <span>{notification.is_read ? "مقروء" : "غير مقروء"}</span>
-                      </div>
-                      <p>{notification.body}</p>
-                      <p className="workspace-footnote">
-                        النوع: {getNotificationTypeLabel(notification.type)} — {formatDateTime(notification.created_at)}
-                      </p>
-                      {role === "admin" ? (
-                        <p className="workspace-footnote">المستخدم: {notification.user_name ?? "غير معروف"}</p>
-                      ) : null}
-                      <div className="action-row">
-                        {!notification.is_read ? (
-                          <button
-                            type="button"
-                            className="secondary-button"
-                            disabled={isPending}
-                            onClick={() => void handleMarkSingle(notification.id)}
-                          >
-                            تعليم كمقروء
-                          </button>
-                        ) : null}
+                    return (
+                      <article key={notification.id} className="operational-list-card">
+                        <div className="operational-list-card__header">
+                          <div>
+                            <h3 className="operational-list-card__title">{notification.title}</h3>
+                            <p className="operational-list-card__description">{notification.body}</p>
+                          </div>
+                          <div className="operational-list-card__meta">
+                            <span className={notification.is_read ? "status-pill" : "status-pill status-pill--brand"}>
+                              {getNotificationStatusLabel(notification)}
+                            </span>
+                            <span className="status-pill">{getNotificationTypeLabel(notification.type)}</span>
+                          </div>
+                        </div>
 
-                        {role === "admin" && notification.contact_phone && notification.whatsapp_template_key ? (
-                          <button
-                            type="button"
-                            className="secondary-button"
-                            disabled={isPending}
-                            onClick={() => handleWhatsAppSend(notification)}
-                          >
-                            إرسال واتساب
-                          </button>
-                        ) : null}
+                        <div className="operational-inline-summary">
+                          <span className="status-pill">{formatDateTime(notification.created_at)}</span>
+                          {role === "admin" ? (
+                            <span className="status-pill">المستخدم: {notification.user_name ?? "غير معروف"}</span>
+                          ) : null}
+                        </div>
 
-                        {referenceHref ? (
-                          <Link href={referenceHref} className="secondary-button">
-                            فتح المرجع
-                          </Link>
-                        ) : null}
-                      </div>
-                    </article>
-                  );
-                })
-              ) : (
-                <div className="empty-panel">
-                  <p>لا توجد إشعارات مطابقة للفلاتر الحالية. جرّب فلاتر أخرى أو افتح التنبيهات المجمعة بدلًا من ذلك.</p>
-                </div>
-              )}
-            </div>
-          </section>
-        </>
+                        <div className="action-row">
+                          {!notification.is_read ? (
+                            <button
+                              type="button"
+                              className="secondary-button"
+                              disabled={isPending}
+                              onClick={() => void handleMarkSingle(notification.id)}
+                            >
+                              تعليم كمقروء
+                            </button>
+                          ) : null}
+
+                          {role === "admin" && notification.contact_phone && notification.whatsapp_template_key ? (
+                            <button
+                              type="button"
+                              className="secondary-button"
+                              disabled={isPending}
+                              onClick={() => handleWhatsAppSend(notification)}
+                            >
+                              إرسال واتساب
+                            </button>
+                          ) : null}
+
+                          {referenceHref ? (
+                            <Link href={referenceHref} className="secondary-button">
+                              فتح المرجع
+                            </Link>
+                          ) : null}
+                        </div>
+                      </article>
+                    );
+                  })
+                ) : (
+                  <SectionCard
+                    eyebrow="صندوق فارغ"
+                    title="لا توجد إشعارات مطابقة الآن"
+                    description="جرّب فلترًا آخر أو افتح الملخصات المجمعة لمراجعة أهم التنبيهات الحالية."
+                    tone="subtle"
+                  />
+                )}
+              </div>
+            </SectionCard>
+          </div>
+        </section>
       ) : null}
     </section>
   );
