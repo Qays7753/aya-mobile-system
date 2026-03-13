@@ -2,11 +2,10 @@
 
 import React from "react";
 import { useEffect, useState, useTransition } from "react";
-import { ChartColumnIncreasing, Loader2, LogIn, ShieldCheck, ShoppingCart, Smartphone } from "lucide-react";
+import { ChartColumnIncreasing, Loader2, LogIn, ShieldCheck, ShoppingCart, Store } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { StatusBanner } from "@/components/ui/status-banner";
-import { SectionCard } from "@/components/ui/section-card";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export function LoginForm() {
@@ -46,8 +45,7 @@ export function LoginForm() {
             <p className="eyebrow">الدخول الآمن</p>
             <h1>تسجيل الدخول إلى مساحة العمل</h1>
             <p className="workspace-lead">
-              سجّل الدخول بالحساب المخصص لك للوصول إلى نقطة البيع أو المساحات الإدارية ومتابعة
-              العمل اليومي من شاشة واحدة.
+              سجّل الدخول بالحساب المخصص لك للوصول إلى نقطة البيع أو المساحات الإدارية ومتابعة العمل اليومي من شاشة واحدة.
             </p>
           </div>
 
@@ -176,53 +174,44 @@ export function LoginForm() {
       </section>
 
       <aside className="workspace-panel login-panel login-panel--accent">
-        <SectionCard
-          tone="accent"
-          eyebrow="جاهزية التشغيل"
-          title="بعد الدخول ستصل مباشرة إلى مساحة العمل المناسبة"
-          description="واجهة واحدة مرتبة تمنح كل مستخدم المسارات المناسبة له بدون ازدحام بصري أو خطوات مربكة."
-        >
-          <div className="landing-highlight-list">
-            <span>
-              <ShoppingCart size={16} />
-              نقطة البيع تبقى قريبة من الموظف
-            </span>
-            <span>
-              <ChartColumnIncreasing size={16} />
-              التقارير والإشعارات أقرب للمديرين
-            </span>
+        <div className="login-visual-stack">
+          <div className="login-brand-mark">
+            <Store size={36} />
+            <div>
+              <strong>Aya Mobile</strong>
+              <span>نظام تشغيل المتجر</span>
+            </div>
           </div>
-        </SectionCard>
 
-        <div className="workspace-stack">
-          <SectionCard
-            eyebrow="الأجهزة"
-            title="الهاتف والتابلت والكمبيوتر"
-            description="التجربة نفسها تبقى واضحة على الأجهزة الثلاثة مع مسارات مناسبة للمساحة المتاحة."
-            tone="subtle"
-          >
-            <div className="hero-stat-card hero-stat-card--safe">
-              <ShieldCheck size={18} />
-              <strong>جاهز للاستخدام اليومي على أجهزة المتجر</strong>
+          <div className="login-feature-list">
+            <div className="login-feature-row">
+              <div className="lp-feature-icon lp-feature-icon--blue">
+                <ShoppingCart size={18} />
+              </div>
+              <div>
+                <strong>نقطة البيع</strong>
+                <span>مسار سريع ومباشر للموظف</span>
+              </div>
             </div>
-          </SectionCard>
-
-          <SectionCard
-            eyebrow="طريقة العمل"
-            title="المسارات تظهر حسب الصلاحية"
-            description="البيع، الفواتير، الديون، الإشعارات، والتقارير تظهر وفق الدور الممنوح لك بعد تسجيل الدخول."
-          >
-            <div className="landing-feature-meta">
-              <span>
-                <Smartphone size={16} />
-                تنقل واضح على الشاشات الصغيرة
-              </span>
-              <span>
-                <LogIn size={16} />
-                دخول مباشر ثم انتقال فوري إلى نقطة البيع
-              </span>
+            <div className="login-feature-row">
+              <div className="lp-feature-icon lp-feature-icon--green">
+                <ChartColumnIncreasing size={18} />
+              </div>
+              <div>
+                <strong>التقارير والمتابعة</strong>
+                <span>مؤشرات ومقارنات للمدير</span>
+              </div>
             </div>
-          </SectionCard>
+            <div className="login-feature-row">
+              <div className="lp-feature-icon lp-feature-icon--amber">
+                <ShieldCheck size={18} />
+              </div>
+              <div>
+                <strong>صلاحيات مضبوطة</strong>
+                <span>كل دور يرى ما يحتاجه فقط</span>
+              </div>
+            </div>
+          </div>
         </div>
       </aside>
     </div>
