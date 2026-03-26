@@ -37,5 +37,11 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Start Supabase
+        run: npx supabase start
+
+      - name: Export Supabase Env
+        run: npx supabase status -o env >> .env
+
       - name: End-to-end tests
         run: npm run test:e2e
