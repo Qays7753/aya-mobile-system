@@ -12,19 +12,33 @@ describe("rate limiting", () => {
   });
 
   it("matches mutating API routes", () => {
-    expect(resolveRateLimitRule("/api/sales", "POST")).toEqual({
-      scope: "api-mutation",
-      limit: 30,
-      windowMs: 60000
-    });
+    const originalEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = "production";
+
+    try {
+      expect(resolveRateLimitRule("/api/sales", "POST")).toEqual({
+        scope: "api-mutation",
+        limit: 30,
+        windowMs: 60000
+      });
+    } finally {
+      process.env.NODE_ENV = originalEnv;
+    }
   });
 
   it("matches public receipt reads", () => {
-    expect(resolveRateLimitRule("/r/token-1", "GET")).toEqual({
-      scope: "public-receipt",
-      limit: 60,
-      windowMs: 60000
-    });
+    const originalEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = "production";
+
+    try {
+      expect(resolveRateLimitRule("/r/token-1", "GET")).toEqual({
+        scope: "public-receipt",
+        limit: 60,
+        windowMs: 60000
+      });
+    } finally {
+      process.env.NODE_ENV = originalEnv;
+    }
   });
 
   it("resolves the client address from forwarding headers", () => {
