@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { z } from "zod";
 import { hasPermission, resolvePermissionContext, type WorkspaceRole } from "@/lib/permissions";
 import type { StandardEnvelope } from "@/lib/pos/types";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -141,6 +142,51 @@ export async function getAuthenticatedUser(serverClient: ReturnType<typeof creat
     user: null,
     error: new Error("ERR_API_SESSION_INVALID")
   };
+}
+
+export async function parseAndValidate<T>(
+  request: Request,
+  schema: z.Schema<T>,
+  getErrorMeta: (code: string) => { status: number; message: string }
+): Promise<{ success: true; data: T } | { success: false; response: NextResponse<StandardEnvelope> }> {
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    const meta = getErrorMeta("ERR_API_VALIDATION_FAILED");
+    return {
+      success: false,
+      response: errorResponse("ERR_API_VALIDATION_FAILED", meta.message, meta.status, {
+        body: ["تعذرت قراءة JSON من الطلب."]
+      })
+    };
+  }
+
+  const parsed = schema.safeParse(body);
+  if (!parsed.success) {
+    const meta = getErrorMeta("ERR_API_VALIDATION_FAILED");
+    return {
+      success: false,
+      response: errorResponse("ERR_API_VALIDATION_FAILED", meta.message, meta.status, {
+        field_errors: parsed.error.flatten().fieldErrors
+      })
+    };
+  }
+
+  return { success: true, data: parsed.data };
+}
+
+export function handleRouteError(
+  error: unknown,
+  getErrorMeta: (code: string) => { status: number; message: string }
+): NextResponse<StandardEnvelope> {
+  const message = (error as Error).message;
+  const code = extractErrorCode(message);
+  const meta = getErrorMeta(code);
+
+  return errorResponse(code, meta.message, meta.status, {
+    reason: message
+  });
 }
 
 export async function authorizeRequest(

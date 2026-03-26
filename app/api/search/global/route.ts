@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { authorizeRequest, errorResponse, getApiErrorMeta } from "@/lib/api/common";
+import { authorizeRequest, errorResponse, getApiErrorMeta, handleRouteError } from "@/lib/api/common";
 import { searchGlobal } from "@/lib/api/search";
 import { globalSearchQuerySchema } from "@/lib/validations/search";
 
@@ -68,9 +68,6 @@ export async function GET(request: Request) {
       }
     );
   } catch (error) {
-    const meta = getApiErrorMeta("ERR_API_INTERNAL");
-    return errorResponse("ERR_API_INTERNAL", meta.message, meta.status, {
-      reason: (error as Error).message
-    });
+    return handleRouteError(error, getApiErrorMeta);
   }
 }

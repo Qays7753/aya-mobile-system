@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { authorizeRequest, errorResponse, extractErrorCode, getApiErrorMeta } from "@/lib/api/common";
+import { authorizeRequest, getApiErrorMeta, handleRouteError, parseAndValidate } from "@/lib/api/common";
 import { getReconciliationErrorMeta } from "@/lib/api/reconciliation";
 import type { StandardEnvelope } from "@/lib/pos/types";
 import { reconcileAccountSchema } from "@/lib/validations/reconciliation";
@@ -18,36 +18,20 @@ export async function POST(request: Request) {
       return authorization.response;
     }
 
-    let body: unknown;
-    try {
-      body = await request.json();
-    } catch {
-      const meta = getApiErrorMeta("ERR_API_VALIDATION_FAILED");
-      return errorResponse("ERR_API_VALIDATION_FAILED", meta.message, meta.status, {
-        body: ["تعذر قراءة JSON من الطلب."]
-      });
+    const validation = await parseAndValidate(request, reconcileAccountSchema, getApiErrorMeta);
+    if (!validation.success) {
+      return validation.response;
     }
 
-    const parsedBody = reconcileAccountSchema.safeParse(body);
-    if (!parsedBody.success) {
-      const meta = getApiErrorMeta("ERR_API_VALIDATION_FAILED");
-      return errorResponse("ERR_API_VALIDATION_FAILED", meta.message, meta.status, {
-        field_errors: parsedBody.error.flatten().fieldErrors
-      });
-    }
-
-    const payload = parsedBody.data;
     const { data, error: rpcError } = await authorization.supabase.rpc("reconcile_account", {
-      p_account_id: payload.account_id,
-      p_actual_balance: payload.actual_balance,
-      p_notes: payload.notes,
+      p_account_id: validation.data.account_id,
+      p_actual_balance: validation.data.actual_balance,
+      p_notes: validation.data.notes,
       p_created_by: authorization.userId
     });
 
     if (rpcError) {
-      const code = extractErrorCode(rpcError.message);
-      const meta = getReconciliationErrorMeta(code);
-      return errorResponse(code, meta.message, meta.status);
+      throw rpcError;
     }
 
     return NextResponse.json<StandardEnvelope<ReconciliationResponseData>>(
@@ -63,9 +47,6 @@ export async function POST(request: Request) {
       { status: 200 }
     );
   } catch (error) {
-    const meta = getApiErrorMeta("ERR_API_INTERNAL");
-    return errorResponse("ERR_API_INTERNAL", meta.message, meta.status, {
-      reason: (error as Error).message
-    });
+    return handleRouteError(error, getReconciliationErrorMeta);
   }
 }

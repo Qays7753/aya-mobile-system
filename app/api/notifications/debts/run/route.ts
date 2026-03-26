@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { authorizeRequest, errorResponse, extractErrorCode, getApiErrorMeta, internalErrorResponse } from "@/lib/api/common";
+import {
+  authorizeRequest,
+  errorResponse,
+  extractErrorCode,
+  getApiErrorMeta,
+  handleRouteError,
+  parseAndValidate
+} from "@/lib/api/common";
 import { getDebtReminderErrorMeta } from "@/lib/api/communication";
 import { resolveFirstAdminActorId } from "@/lib/api/reports";
 import { getCronAuthorizationHeader } from "@/lib/env";
@@ -47,25 +54,12 @@ export async function POST(request: NextRequest) {
       return actor.response;
     }
 
-    let body: unknown;
-    try {
-      body = await request.json();
-    } catch {
-      const meta = getDebtReminderErrorMeta("ERR_API_VALIDATION_FAILED");
-      return errorResponse("ERR_API_VALIDATION_FAILED", meta.message, meta.status, {
-        body: ["تعذر قراءة JSON من الطلب."]
-      });
+    const validation = await parseAndValidate(request, runDebtReminderSchema, getDebtReminderErrorMeta);
+    if (!validation.success) {
+      return validation.response;
     }
 
-    const parsedBody = runDebtReminderSchema.safeParse(body);
-    if (!parsedBody.success) {
-      const meta = getDebtReminderErrorMeta("ERR_API_VALIDATION_FAILED");
-      return errorResponse("ERR_API_VALIDATION_FAILED", meta.message, meta.status, {
-        field_errors: parsedBody.error.flatten().fieldErrors
-      });
-    }
-
-    const payload = parsedBody.data;
+    const payload = validation.data;
     const { data, error } = await actor.supabase.rpc("run_debt_reminder_scheduler", {
       p_mode: payload.mode,
       p_as_of_date: payload.as_of_date,
@@ -73,9 +67,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (error) {
-      const code = extractErrorCode(error.message);
-      const meta = getDebtReminderErrorMeta(code);
-      return errorResponse(code, meta.message, meta.status);
+      throw error;
     }
 
     return NextResponse.json<StandardEnvelope<RunDebtReminderResponse>>(
@@ -96,6 +88,6 @@ export async function POST(request: NextRequest) {
       return errorResponse("ERR_API_RUNTIME_MISCONFIGURED", meta.message, meta.status);
     }
 
-    return internalErrorResponse(error, { context: "notifications.debt-reminders.unhandled" });
+    return handleRouteError(error, getDebtReminderErrorMeta);
   }
 }

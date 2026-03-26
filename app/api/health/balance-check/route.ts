@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { authorizeRequest, errorResponse, extractErrorCode, getApiErrorMeta, internalErrorResponse } from "@/lib/api/common";
+import { authorizeRequest, getApiErrorMeta, handleRouteError } from "@/lib/api/common";
 import type { StandardEnvelope } from "@/lib/pos/types";
 
 type BalanceIntegrityDrift = {
@@ -28,9 +28,7 @@ export async function POST() {
     });
 
     if (error) {
-      const code = extractErrorCode(error.message);
-      const meta = getApiErrorMeta(code);
-      return errorResponse(code, meta.message, meta.status);
+      throw error;
     }
 
     return NextResponse.json<StandardEnvelope<BalanceIntegrityResponseData>>(
@@ -45,6 +43,6 @@ export async function POST() {
       { status: 200 }
     );
   } catch (error) {
-    return internalErrorResponse(error, { context: "health.balance-check.unhandled" });
+    return handleRouteError(error, getApiErrorMeta);
   }
 }

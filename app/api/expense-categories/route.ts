@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { authorizeRequest, errorResponse, getApiErrorMeta } from "@/lib/api/common";
+import { authorizeRequest, errorResponse, getApiErrorMeta, handleRouteError, parseAndValidate } from "@/lib/api/common";
 import { getExpenseCategoryErrorMeta } from "@/lib/api/expenses";
 import type { StandardEnvelope } from "@/lib/pos/types";
 import { createExpenseCategorySchema } from "@/lib/validations/expenses";
@@ -59,10 +59,7 @@ export async function GET() {
 
     const { data, error } = await query.returns<ExpenseCategoryRow[]>();
     if (error) {
-      const meta = getApiErrorMeta("ERR_API_INTERNAL");
-      return errorResponse("ERR_API_INTERNAL", meta.message, meta.status, {
-        reason: error.message
-      });
+      throw error;
     }
 
     return NextResponse.json<StandardEnvelope<{ items: ExpenseCategoryResponseData[] }>>(
@@ -75,10 +72,7 @@ export async function GET() {
       { status: 200 }
     );
   } catch (error) {
-    const meta = getApiErrorMeta("ERR_API_INTERNAL");
-    return errorResponse("ERR_API_INTERNAL", meta.message, meta.status, {
-      reason: (error as Error).message
-    });
+    return handleRouteError(error, getApiErrorMeta);
   }
 }
 
@@ -89,25 +83,12 @@ export async function POST(request: Request) {
       return authorization.response;
     }
 
-    let body: unknown;
-    try {
-      body = await request.json();
-    } catch {
-      const meta = getExpenseCategoryErrorMeta("ERR_API_VALIDATION_FAILED");
-      return errorResponse("ERR_API_VALIDATION_FAILED", meta.message, meta.status, {
-        body: ["تعذر قراءة JSON من الطلب."]
-      });
+    const validation = await parseAndValidate(request, createExpenseCategorySchema, getExpenseCategoryErrorMeta);
+    if (!validation.success) {
+      return validation.response;
     }
 
-    const parsedBody = createExpenseCategorySchema.safeParse(body);
-    if (!parsedBody.success) {
-      const meta = getExpenseCategoryErrorMeta("ERR_API_VALIDATION_FAILED");
-      return errorResponse("ERR_API_VALIDATION_FAILED", meta.message, meta.status, {
-        field_errors: parsedBody.error.flatten().fieldErrors
-      });
-    }
-
-    const payload = parsedBody.data;
+    const payload = validation.data;
     if (await categoryNameExists(authorization.supabase, payload.name)) {
       const meta = getExpenseCategoryErrorMeta("ERR_API_VALIDATION_FAILED");
       return errorResponse("ERR_API_VALIDATION_FAILED", meta.message, meta.status, {
@@ -130,10 +111,7 @@ export async function POST(request: Request) {
       .single<ExpenseCategoryResponseData>();
 
     if (error || !data) {
-      const meta = getApiErrorMeta("ERR_API_INTERNAL");
-      return errorResponse("ERR_API_INTERNAL", meta.message, meta.status, {
-        reason: error?.message ?? "تعذر إنشاء فئة المصروف."
-      });
+      throw error ?? new Error("تعذر إنشاء فئة المصروف.");
     }
 
     const auditId = crypto.randomUUID();
@@ -159,9 +137,6 @@ export async function POST(request: Request) {
       { status: 200 }
     );
   } catch (error) {
-    const meta = getApiErrorMeta("ERR_API_INTERNAL");
-    return errorResponse("ERR_API_INTERNAL", meta.message, meta.status, {
-      reason: (error as Error).message
-    });
+    return handleRouteError(error, getExpenseCategoryErrorMeta);
   }
 }

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { authorizeRequest, errorResponse } from "@/lib/api/common";
+import { authorizeRequest, errorResponse, handleRouteError } from "@/lib/api/common";
 import {
   getExportPackageErrorMeta,
   revokeExportPackage,
@@ -77,10 +77,7 @@ export async function GET(
       }
     });
   } catch (error) {
-    const meta = getExportPackageErrorMeta("ERR_API_INTERNAL");
-    return errorResponse("ERR_API_INTERNAL", meta.message, meta.status, {
-      reason: (error as Error).message
-    });
+    return handleRouteError(error, getExportPackageErrorMeta);
   }
 }
 
@@ -108,12 +105,6 @@ export async function PATCH(
       { status: 200 }
     );
   } catch (error) {
-    const code = (error as Error).message.startsWith("ERR_")
-      ? (error as Error).message
-      : "ERR_API_INTERNAL";
-    const meta = getExportPackageErrorMeta(code);
-    return errorResponse(code, meta.message, meta.status, {
-      reason: (error as Error).message
-    });
+    return handleRouteError(error, getExportPackageErrorMeta);
   }
 }

@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server";
-import { authorizeRequest, errorResponse, extractErrorCode, getApiErrorMeta, internalErrorResponse } from "@/lib/api/common";
+import {
+  authorizeRequest,
+  getApiErrorMeta,
+  handleRouteError,
+  internalErrorResponse,
+  parseAndValidate
+} from "@/lib/api/common";
 import { getCancelInvoiceErrorMeta } from "@/lib/api/invoices";
 import type { StandardEnvelope } from "@/lib/pos/types";
 import { cancelInvoiceSchema } from "@/lib/validations/invoices";
@@ -16,25 +22,12 @@ export async function POST(request: Request) {
       return authorization.response;
     }
 
-    let body: unknown;
-    try {
-      body = await request.json();
-    } catch {
-      const meta = getApiErrorMeta("ERR_API_VALIDATION_FAILED");
-      return errorResponse("ERR_API_VALIDATION_FAILED", meta.message, meta.status, {
-        body: ["تعذر قراءة JSON من الطلب."]
-      });
+    const validation = await parseAndValidate(request, cancelInvoiceSchema, getApiErrorMeta);
+    if (!validation.success) {
+      return validation.response;
     }
 
-    const parsedBody = cancelInvoiceSchema.safeParse(body);
-    if (!parsedBody.success) {
-      const meta = getApiErrorMeta("ERR_API_VALIDATION_FAILED");
-      return errorResponse("ERR_API_VALIDATION_FAILED", meta.message, meta.status, {
-        field_errors: parsedBody.error.flatten().fieldErrors
-      });
-    }
-
-    const payload = parsedBody.data;
+    const payload = validation.data;
     const { data, error: rpcError } = await authorization.supabase.rpc("cancel_invoice", {
       p_invoice_id: payload.invoice_id,
       p_cancel_reason: payload.cancel_reason,
@@ -42,9 +35,7 @@ export async function POST(request: Request) {
     });
 
     if (rpcError) {
-      const code = extractErrorCode(rpcError.message);
-      const meta = getCancelInvoiceErrorMeta(code);
-      return errorResponse(code, meta.message, meta.status);
+      throw rpcError;
     }
 
     if (!data || typeof data !== "object") {
@@ -64,6 +55,6 @@ export async function POST(request: Request) {
       { status: 200 }
     );
   } catch (error) {
-    return internalErrorResponse(error, { context: "invoices.cancel.unhandled" });
+    return handleRouteError(error, getCancelInvoiceErrorMeta);
   }
 }

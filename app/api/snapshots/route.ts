@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { authorizeRequest, errorResponse, extractErrorCode, getApiErrorMeta } from "@/lib/api/common";
+import { authorizeRequest, getApiErrorMeta, handleRouteError, parseAndValidate } from "@/lib/api/common";
 import { getCreateSnapshotErrorMeta } from "@/lib/api/snapshots";
 import type { StandardEnvelope } from "@/lib/pos/types";
 import { createSnapshotSchema } from "@/lib/validations/snapshots";
@@ -20,34 +20,19 @@ export async function POST(request: Request) {
       return authorization.response;
     }
 
-    let body: unknown;
-    try {
-      body = await request.json();
-    } catch {
-      const meta = getApiErrorMeta("ERR_API_VALIDATION_FAILED");
-      return errorResponse("ERR_API_VALIDATION_FAILED", meta.message, meta.status, {
-        body: ["تعذر قراءة JSON من الطلب."]
-      });
+    const validation = await parseAndValidate(request, createSnapshotSchema, getApiErrorMeta);
+    if (!validation.success) {
+      return validation.response;
     }
 
-    const parsedBody = createSnapshotSchema.safeParse(body);
-    if (!parsedBody.success) {
-      const meta = getApiErrorMeta("ERR_API_VALIDATION_FAILED");
-      return errorResponse("ERR_API_VALIDATION_FAILED", meta.message, meta.status, {
-        field_errors: parsedBody.error.flatten().fieldErrors
-      });
-    }
-
-    const payload = parsedBody.data;
+    const payload = validation.data;
     const { data, error: rpcError } = await authorization.supabase.rpc("create_daily_snapshot", {
       p_notes: payload.notes ?? null,
       p_created_by: authorization.userId
     });
 
     if (rpcError) {
-      const code = extractErrorCode(rpcError.message);
-      const meta = getCreateSnapshotErrorMeta(code);
-      return errorResponse(code, meta.message, meta.status);
+      throw rpcError;
     }
 
     return NextResponse.json<StandardEnvelope<SnapshotResponseData>>(
@@ -65,9 +50,6 @@ export async function POST(request: Request) {
       { status: 200 }
     );
   } catch (error) {
-    const meta = getApiErrorMeta("ERR_API_INTERNAL");
-    return errorResponse("ERR_API_INTERNAL", meta.message, meta.status, {
-      reason: (error as Error).message
-    });
+    return handleRouteError(error, getCreateSnapshotErrorMeta);
   }
 }

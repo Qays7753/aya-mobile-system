@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { authorizeRequest, errorResponse, extractErrorCode, getApiErrorMeta } from "@/lib/api/common";
+import { authorizeRequest, handleRouteError, parseAndValidate } from "@/lib/api/common";
 import { getCreatePurchaseErrorMeta } from "@/lib/api/purchases";
 import type { StandardEnvelope } from "@/lib/pos/types";
 import { createPurchaseSchema } from "@/lib/validations/purchases";
@@ -17,39 +17,23 @@ export async function POST(request: Request) {
       return authorization.response;
     }
 
-    let body: unknown;
-    try {
-      body = await request.json();
-    } catch {
-      const meta = getApiErrorMeta("ERR_API_VALIDATION_FAILED");
-      return errorResponse("ERR_API_VALIDATION_FAILED", meta.message, meta.status, {
-        body: ["تعذر قراءة JSON من الطلب."]
-      });
+    const validation = await parseAndValidate(request, createPurchaseSchema, getCreatePurchaseErrorMeta);
+    if (!validation.success) {
+      return validation.response;
     }
 
-    const parsedBody = createPurchaseSchema.safeParse(body);
-    if (!parsedBody.success) {
-      const meta = getApiErrorMeta("ERR_API_VALIDATION_FAILED");
-      return errorResponse("ERR_API_VALIDATION_FAILED", meta.message, meta.status, {
-        field_errors: parsedBody.error.flatten().fieldErrors
-      });
-    }
-
-    const payload = parsedBody.data;
     const { data, error: rpcError } = await authorization.supabase.rpc("create_purchase", {
-      p_supplier_id: payload.supplier_id ?? null,
-      p_items: payload.items,
-      p_is_paid: payload.is_paid,
-      p_payment_account_id: payload.payment_account_id ?? null,
-      p_notes: payload.notes ?? null,
-      p_idempotency_key: payload.idempotency_key,
+      p_supplier_id: validation.data.supplier_id ?? null,
+      p_items: validation.data.items,
+      p_is_paid: validation.data.is_paid,
+      p_payment_account_id: validation.data.payment_account_id ?? null,
+      p_notes: validation.data.notes ?? null,
+      p_idempotency_key: validation.data.idempotency_key,
       p_created_by: authorization.userId
     });
 
     if (rpcError) {
-      const code = extractErrorCode(rpcError.message);
-      const meta = getCreatePurchaseErrorMeta(code);
-      return errorResponse(code, meta.message, meta.status);
+      throw rpcError;
     }
 
     return NextResponse.json<StandardEnvelope<PurchaseResponseData>>(
@@ -64,9 +48,6 @@ export async function POST(request: Request) {
       { status: 200 }
     );
   } catch (error) {
-    const meta = getApiErrorMeta("ERR_API_INTERNAL");
-    return errorResponse("ERR_API_INTERNAL", meta.message, meta.status, {
-      reason: (error as Error).message
-    });
+    return handleRouteError(error, getCreatePurchaseErrorMeta);
   }
 }

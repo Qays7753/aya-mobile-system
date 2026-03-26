@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { authorizeRequest, errorResponse, getApiErrorMeta } from "@/lib/api/common";
+import { authorizeRequest, getApiErrorMeta, handleRouteError, parseAndValidate } from "@/lib/api/common";
 import { getPermissionsErrorMeta } from "@/lib/api/permissions";
 import type { StandardEnvelope } from "@/lib/pos/types";
 import { previewPermissionBundleSchema } from "@/lib/validations/permissions";
@@ -19,28 +19,15 @@ export async function POST(request: Request) {
       return authorization.response;
     }
 
-    let body: unknown;
-    try {
-      body = await request.json();
-    } catch {
-      const meta = getApiErrorMeta("ERR_API_VALIDATION_FAILED");
-      return errorResponse("ERR_API_VALIDATION_FAILED", meta.message, meta.status, {
-        body: ["تعذر قراءة JSON من الطلب."]
-      });
-    }
-
-    const parsedBody = previewPermissionBundleSchema.safeParse(body);
-    if (!parsedBody.success) {
-      const meta = getApiErrorMeta("ERR_API_VALIDATION_FAILED");
-      return errorResponse("ERR_API_VALIDATION_FAILED", meta.message, meta.status, {
-        field_errors: parsedBody.error.flatten().fieldErrors
-      });
+    const validation = await parseAndValidate(request, previewPermissionBundleSchema, getApiErrorMeta);
+    if (!validation.success) {
+      return validation.response;
     }
 
     const { data, error } = await authorization.supabase
       .from("permission_bundles")
       .select("key, base_role, permissions, max_discount_percentage, discount_requires_approval")
-      .eq("key", parsedBody.data.bundle_key)
+      .eq("key", validation.data.bundle_key)
       .eq("is_active", true)
       .maybeSingle<{
         key: string;
@@ -51,8 +38,7 @@ export async function POST(request: Request) {
       }>();
 
     if (error || !data) {
-      const meta = getPermissionsErrorMeta("ERR_PERMISSION_BUNDLE_NOT_FOUND");
-      return errorResponse("ERR_PERMISSION_BUNDLE_NOT_FOUND", meta.message, meta.status);
+      throw new Error("ERR_PERMISSION_BUNDLE_NOT_FOUND");
     }
 
     return NextResponse.json<StandardEnvelope<BundlePreviewResponse>>(
@@ -69,9 +55,6 @@ export async function POST(request: Request) {
       { status: 200 }
     );
   } catch (error) {
-    const meta = getApiErrorMeta("ERR_API_INTERNAL");
-    return errorResponse("ERR_API_INTERNAL", meta.message, meta.status, {
-      reason: (error as Error).message
-    });
+    return handleRouteError(error, getPermissionsErrorMeta);
   }
 }

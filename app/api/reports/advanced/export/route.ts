@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { authorizeRequest, errorResponse, getApiErrorMeta } from "@/lib/api/common";
+import { authorizeRequest, errorResponse, getApiErrorMeta, handleRouteError, parseAndValidate } from "@/lib/api/common";
 import { getReportBaseline, parseSalesHistoryFilters } from "@/lib/api/reports";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
@@ -27,13 +27,9 @@ export async function GET(request: Request) {
 
     const url = new URL(request.url);
     const payload = Object.fromEntries(url.searchParams.entries());
-    const parsed = advancedReportQuerySchema.safeParse(payload);
-
-    if (!parsed.success) {
-      const meta = getApiErrorMeta("ERR_API_VALIDATION_FAILED");
-      return errorResponse("ERR_API_VALIDATION_FAILED", meta.message, meta.status, {
-        zod_errors: parsed.error.flatten()
-      });
+    const validation = await parseAndValidate(request, advancedReportQuerySchema, getApiErrorMeta);
+    if (!validation.success) {
+      return validation.response;
     }
 
     const filters = parseSalesHistoryFilters(url.searchParams);
@@ -67,9 +63,6 @@ export async function GET(request: Request) {
       }
     });
   } catch (error) {
-    const meta = getApiErrorMeta("ERR_API_INTERNAL");
-    return errorResponse("ERR_API_INTERNAL", meta.message, meta.status, {
-      reason: (error as Error).message
-    });
+    return handleRouteError(error, getApiErrorMeta);
   }
 }

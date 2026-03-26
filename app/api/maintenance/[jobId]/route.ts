@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { authorizeRequest, errorResponse, extractErrorCode } from "@/lib/api/common";
+import { authorizeRequest, handleRouteError, parseAndValidate } from "@/lib/api/common";
 import { getUpdateMaintenanceErrorMeta } from "@/lib/api/maintenance";
 import type { StandardEnvelope } from "@/lib/pos/types";
 import { updateMaintenanceStatusSchema } from "@/lib/validations/maintenance";
@@ -27,25 +27,12 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       return authorization.response;
     }
 
-    let body: unknown;
-    try {
-      body = await request.json();
-    } catch {
-      const meta = getUpdateMaintenanceErrorMeta("ERR_API_VALIDATION_FAILED");
-      return errorResponse("ERR_API_VALIDATION_FAILED", meta.message, meta.status, {
-        body: ["تعذر قراءة JSON من الطلب."]
-      });
+    const validation = await parseAndValidate(request, updateMaintenanceStatusSchema, getUpdateMaintenanceErrorMeta);
+    if (!validation.success) {
+      return validation.response;
     }
 
-    const parsedBody = updateMaintenanceStatusSchema.safeParse(body);
-    if (!parsedBody.success) {
-      const meta = getUpdateMaintenanceErrorMeta("ERR_API_VALIDATION_FAILED");
-      return errorResponse("ERR_API_VALIDATION_FAILED", meta.message, meta.status, {
-        field_errors: parsedBody.error.flatten().fieldErrors
-      });
-    }
-
-    const payload = parsedBody.data;
+    const payload = validation.data;
     const { data, error: rpcError } = await authorization.supabase.rpc("update_maintenance_job_status", {
       p_job_id: params.jobId,
       p_new_status: payload.status,
@@ -56,9 +43,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     });
 
     if (rpcError) {
-      const code = extractErrorCode(rpcError.message);
-      const meta = getUpdateMaintenanceErrorMeta(code);
-      return errorResponse(code, meta.message, meta.status);
+      throw rpcError;
     }
 
     return NextResponse.json<StandardEnvelope<MaintenanceStatusResponse>>(
@@ -75,9 +60,6 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       { status: 200 }
     );
   } catch (error) {
-    const meta = getUpdateMaintenanceErrorMeta("ERR_API_INTERNAL");
-    return errorResponse("ERR_API_INTERNAL", meta.message, meta.status, {
-      reason: (error as Error).message
-    });
+    return handleRouteError(error, getUpdateMaintenanceErrorMeta);
   }
 }

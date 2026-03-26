@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { authorizeRequest, errorResponse, getApiErrorMeta } from "@/lib/api/common";
+import { authorizeRequest, getApiErrorMeta, handleRouteError } from "@/lib/api/common";
 import { getReportBaseline, parseSalesHistoryFilters } from "@/lib/api/reports";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { buildReportWorkbookBuffer, buildReportWorkbookFilename } from "@/lib/reports/export";
@@ -35,9 +35,6 @@ export async function GET(request: Request) {
       }
     });
   } catch (error) {
-    const meta = getApiErrorMeta("ERR_API_INTERNAL");
-    return errorResponse("ERR_API_INTERNAL", meta.message, meta.status, {
-      reason: (error as Error).message
-    });
+    return handleRouteError(error, getApiErrorMeta);
   }
 }

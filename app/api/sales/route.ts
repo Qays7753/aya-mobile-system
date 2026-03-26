@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server";
-import { authorizeRequest, errorResponse as commonErrorResponse } from "@/lib/api/common";
+import {
+  authorizeRequest,
+  errorResponse as commonErrorResponse,
+  getApiErrorMeta,
+  handleRouteError,
+  parseAndValidate
+} from "@/lib/api/common";
 import { extractErrorCode, getCreateSaleErrorMeta } from "@/lib/api/sales";
 import type { SaleResponseData, StandardEnvelope } from "@/lib/pos/types";
 import { createSaleSchema } from "@/lib/validations/sales";
@@ -46,25 +52,12 @@ export async function POST(request: Request) {
       return authorization.response;
     }
 
-    let body: unknown;
-    try {
-      body = await request.json();
-    } catch {
-      const meta = getCreateSaleErrorMeta("ERR_API_VALIDATION_FAILED");
-      return commonErrorResponse("ERR_API_VALIDATION_FAILED", meta.message, meta.status, {
-        body: ["تعذر قراءة JSON من الطلب."]
-      });
+    const validation = await parseAndValidate(request, createSaleSchema, getApiErrorMeta);
+    if (!validation.success) {
+      return validation.response;
     }
 
-    const parsedBody = createSaleSchema.safeParse(body);
-    if (!parsedBody.success) {
-      const meta = getCreateSaleErrorMeta("ERR_API_VALIDATION_FAILED");
-      return commonErrorResponse("ERR_API_VALIDATION_FAILED", meta.message, meta.status, {
-        field_errors: parsedBody.error.flatten().fieldErrors
-      });
-    }
-
-    const payload = parsedBody.data;
+    const payload = validation.data;
     const { data, error: rpcError } = await authorization.supabase.rpc("create_sale", {
       p_items: payload.items,
       p_payments: payload.payments,
@@ -89,7 +82,7 @@ export async function POST(request: Request) {
         );
       }
 
-      return commonErrorResponse(code, meta.message, meta.status);
+      throw rpcError;
     }
 
     return NextResponse.json<StandardEnvelope<SaleResponseData>>(
@@ -105,9 +98,6 @@ export async function POST(request: Request) {
       { status: 200 }
     );
   } catch (error) {
-    const meta = getCreateSaleErrorMeta("ERR_API_INTERNAL");
-    return commonErrorResponse("ERR_API_INTERNAL", meta.message, meta.status, {
-      reason: (error as Error).message
-    });
+    return handleRouteError(error, getCreateSaleErrorMeta);
   }
 }

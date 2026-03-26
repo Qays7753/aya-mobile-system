@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { authorizeRequest, errorResponse, getApiErrorMeta } from "@/lib/api/common";
+import { authorizeRequest, getApiErrorMeta, handleRouteError } from "@/lib/api/common";
 import { parseNotificationFilters } from "@/lib/api/notifications";
 import type { StandardEnvelope } from "@/lib/pos/types";
 
@@ -79,10 +79,7 @@ export async function GET(request: Request) {
     ]);
 
     if (notificationsResult.error || unreadResult.error) {
-      const meta = getApiErrorMeta("ERR_API_INTERNAL");
-      return errorResponse("ERR_API_INTERNAL", meta.message, meta.status, {
-        reason: notificationsResult.error?.message ?? unreadResult.error?.message ?? "تعذر قراءة الإشعارات."
-      });
+      throw notificationsResult.error ?? unreadResult.error ?? new Error("تعذر قراءة الإشعارات.");
     }
 
     return NextResponse.json<StandardEnvelope<NotificationsResponseData>>(
@@ -109,9 +106,6 @@ export async function GET(request: Request) {
       { status: 200 }
     );
   } catch (error) {
-    const meta = getApiErrorMeta("ERR_API_INTERNAL");
-    return errorResponse("ERR_API_INTERNAL", meta.message, meta.status, {
-      reason: (error as Error).message
-    });
+    return handleRouteError(error, getApiErrorMeta);
   }
 }
