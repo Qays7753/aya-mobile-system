@@ -72,6 +72,6 @@ for (const route of [
 test("login route renders the runtime access form", async ({ page }) => {
   await page.goto("/login");
 
-  await expect(page.getByRole("heading", { name: "تسجيل الدخول للتشغيل الحقيقي" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "الدخول إلى بيئة التشغيل" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "تسجيل الدخول" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "تسجيل الدخول" })).toBeVisible();
 });
