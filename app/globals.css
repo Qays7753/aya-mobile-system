@@ -1,24 +1,24 @@
 :root {
   color-scheme: light dark;
   font-family: var(--aya-font-body), "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  background: #f4f7fb;
-  color: #0f172a;
+  background: #F9FAFB;
+  color: #1e293b;
   --aya-font-body: "Tajawal", "Segoe UI", sans-serif;
   --aya-font-mono: "Consolas", "Courier New", monospace;
-  --aya-ink: #0f172a;
-  --aya-ink-soft: #1e293b;
-  --aya-muted: #5f6f82;
-  --aya-bg: #f4f7fb;
-  --aya-bg-soft: #ecf3fb;
+  --aya-ink: #1e293b;
+  --aya-ink-soft: #334155;
+  --aya-muted: #64748b;
+  --aya-bg: #F9FAFB;
+  --aya-bg-soft: #f1f5f9;
   --aya-page-accent: rgba(29, 78, 216, 0.16);
   --aya-page-leaf: rgba(15, 118, 110, 0.13);
-  --aya-panel: rgba(255, 255, 255, 0.8);
-  --aya-panel-strong: rgba(255, 255, 255, 0.96);
-  --aya-panel-muted: rgba(236, 243, 251, 0.92);
-  --aya-line: rgba(15, 23, 42, 0.1);
-  --aya-line-strong: rgba(15, 23, 42, 0.18);
-  --aya-accent: #1d4ed8;
-  --aya-accent-deep: #1e40af;
+  --aya-panel: #FFFFFF;
+  --aya-panel-strong: #FFFFFF;
+  --aya-panel-muted: #f8fafc;
+  --aya-line: #e2e8f0;
+  --aya-line-strong: #cbd5e1;
+  --aya-accent: #0f172a;
+  --aya-accent-deep: #020617;
   --aya-cyan: #0891b2;
   --aya-cyan-soft: rgba(8, 145, 178, 0.12);
   --aya-leaf: #16a34a;
@@ -2992,4 +2992,244 @@ section[id] {
   .lp-hero__visual {
     grid-template-columns: 1fr 1fr;
   }
+}
+
+/* ── Overrides for Zen and Clean Layout ── */
+@media (min-width: 1024px) {
+  .dashboard-shell--sidebar {
+    display: flex;
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  .dashboard-sidebar,
+  .dashboard-topbar,
+  .dashboard-breadcrumbs {
+    border-radius: 0;
+    border: none;
+    background: var(--aya-panel);
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .dashboard-sidebar {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    width: 280px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    border-inline-end: 1px solid var(--aya-line);
+    padding: 1.5rem;
+    gap: 2rem;
+    z-index: 10;
+    overflow-y: auto;
+  }
+
+  .dashboard-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    background: var(--aya-bg);
+  }
+
+  .dashboard-topbar {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid var(--aya-line);
+    background: var(--aya-panel);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    height: auto;
+  }
+}
+
+.baseline-shell--auth {
+  width: 100%;
+  max-width: 440px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem 1.5rem;
+  margin: 0 auto;
+}
+
+.auth-card {
+  width: 100%;
+  background: var(--aya-panel);
+  border-radius: var(--aya-radius-lg);
+  box-shadow: var(--aya-shadow-lg);
+  border: 1px solid var(--aya-line);
+  padding: 2.5rem 2rem;
+  display: grid;
+  gap: 2rem;
+}
+
+.auth-header {
+  text-align: center;
+  display: grid;
+  gap: 1rem;
+  justify-items: center;
+}
+
+.auth-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  background: var(--aya-accent);
+  color: white;
+  border-radius: var(--aya-radius-md);
+}
+
+.auth-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--aya-ink);
+}
+
+.dashboard-main {
+  padding: 2rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-nav-group__items {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.dashboard-nav-group {
+  box-shadow: none;
+  border: none;
+  background: transparent;
+  padding: 0;
+}
+
+.dashboard-sidebar__nav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.dashboard-nav-group__title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--aya-muted);
+  margin-bottom: 0.5rem;
+  padding-inline-start: 0.75rem;
+}
+
+.dashboard-nav__item {
+  justify-content: flex-start;
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--aya-radius-sm);
+  border: none;
+  background: transparent;
+  gap: 0.75rem;
+  transition: all 0.2s ease;
+  min-height: 44px;
+}
+
+.dashboard-nav__item:hover {
+  background: var(--aya-bg-soft);
+  transform: none;
+  box-shadow: none;
+}
+
+.dashboard-nav__item.is-active {
+  background: var(--aya-accent) !important;
+  color: white !important;
+  box-shadow: none !important;
+  transform: none;
+}
+
+.dashboard-nav__icon {
+  width: auto;
+  height: auto;
+  background: transparent;
+  color: inherit;
+  border-radius: 0;
+}
+
+.dashboard-nav__content strong {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.primary-button,
+.install-button {
+  background: var(--aya-accent);
+  color: #fff;
+  border: 1px solid var(--aya-accent);
+  box-shadow: var(--aya-shadow-sm);
+  font-weight: 600;
+}
+
+.dashboard-brandmark__logo {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.5rem;
+  background: var(--aya-accent);
+  color: #fff;
+  font-size: 1.1rem;
+}
+
+.dashboard-brandmark__copy strong {
+  color: var(--aya-ink);
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.dashboard-header-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.dashboard-header-title h1 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--aya-ink);
+  margin: 0;
+}
+
+.dashboard-header-badge {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  min-height: auto;
+}
+
+.dashboard-quick-search-minimal {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--aya-bg-soft);
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--aya-line);
+}
+
+.dashboard-quick-search-minimal input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 0.9rem;
+  width: 150px;
+}
+
+.dashboard-quick-search-minimal .search-icon {
+  color: var(--aya-muted);
 }

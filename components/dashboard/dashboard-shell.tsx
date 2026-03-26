@@ -9,7 +9,6 @@ import {
   ChartColumn,
   ChevronLeft,
   FileArchive,
-  FileText,
   HandCoins,
   Home,
   LayoutDashboard,
@@ -20,16 +19,11 @@ import {
   Search,
   Settings,
   ShoppingCart,
-  Sparkles,
   Store,
-  ToolCase,
-  Wallet,
   Wrench,
   X
 } from "lucide-react";
 import { LogoutButton } from "@/components/auth/logout-button";
-import { PageHeader } from "@/components/ui/page-header";
-import { SectionCard } from "@/components/ui/section-card";
 
 type DashboardNavGroup = "daily" | "operations" | "management";
 
@@ -60,7 +54,7 @@ const GROUP_LABELS: Record<DashboardNavGroup, string> = {
 const ICONS = {
   pos: ShoppingCart,
   products: Package,
-  expenses: Wallet,
+  expenses: HandCoins,
   inventory: PackageSearch,
   suppliers: Store,
   operations: HandCoins,
@@ -77,23 +71,6 @@ function getIcon(icon: DashboardNavItem["icon"]) {
   return ICONS[icon as keyof typeof ICONS] ?? LayoutDashboard;
 }
 
-function getRoleMessage(roleLabel: string) {
-  return roleLabel === "إداري"
-    ? "تتابع من هنا التشغيل، التقارير، والتنبيهات الإدارية من مسار واحد واضح."
-    : "تصل بسرعة إلى البيع، الفواتير، والديون من دون ازدحام روابط غير لازمة.";
-}
-
-function getQuickLinks(roleLabel: string, navigation: DashboardNavItem[]) {
-  const preferred =
-    roleLabel === "إداري"
-      ? ["/reports", "/inventory", "/notifications"]
-      : ["/pos", "/invoices", "/debts"];
-
-  return preferred
-    .map((href) => navigation.find((item) => item.href === href))
-    .filter((item): item is DashboardNavItem => Boolean(item));
-}
-
 function getPageContext(pathname: string, navigation: DashboardNavItem[]) {
   const item = [...navigation]
     .sort((left, right) => right.href.length - left.href.length)
@@ -102,21 +79,13 @@ function getPageContext(pathname: string, navigation: DashboardNavItem[]) {
   if (!item) {
     return {
       title: "مساحات التشغيل",
-      description: "اختر المسار الذي تريد العمل عليه من الشريط الجانبي.",
-      groupLabel: "لوحة العمل",
-      breadcrumbs: [{ label: "مساحات التشغيل", href: null }]
+      groupLabel: "لوحة العمل"
     };
   }
 
   return {
     title: item.label,
-    description: item.description,
-    groupLabel: GROUP_LABELS[item.group],
-    breadcrumbs: [
-      { label: "مساحات التشغيل", href: null },
-      { label: GROUP_LABELS[item.group], href: null },
-      { label: item.label, href: item.href }
-    ]
+    groupLabel: GROUP_LABELS[item.group]
   };
 }
 
@@ -133,6 +102,7 @@ export function DashboardShell({
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const groupedNavigation = useMemo(() => {
     return navigation.reduce<Record<DashboardNavGroup, DashboardNavItem[]>>(
@@ -145,7 +115,6 @@ export function DashboardShell({
   }, [navigation]);
 
   const pageContext = useMemo(() => getPageContext(pathname, navigation), [navigation, pathname]);
-  const quickLinks = useMemo(() => getQuickLinks(roleLabel, navigation), [navigation, roleLabel]);
 
   function closeMenu() {
     setIsMenuOpen(false);
@@ -157,6 +126,7 @@ export function DashboardShell({
     if (!trimmed) {
       router.push("/notifications");
       closeMenu();
+      setIsSearchOpen(false);
       return;
     }
 
@@ -171,6 +141,7 @@ export function DashboardShell({
 
     router.push(`/notifications?${params.toString()}`);
     closeMenu();
+    setIsSearchOpen(false);
   }
 
   return (
@@ -187,7 +158,7 @@ export function DashboardShell({
             <span className="dashboard-brandmark__logo">Aya</span>
             <span className="dashboard-brandmark__copy">
               <strong>Aya Mobile</strong>
-              <small>تشغيل يومي سريع وواضح للتجزئة</small>
+              <small>{roleLabel}</small>
             </span>
           </Link>
 
@@ -196,58 +167,12 @@ export function DashboardShell({
           </button>
         </div>
 
-        <SectionCard
-          className="dashboard-role-card"
-          eyebrow="الحساب الحالي"
-          title={roleLabel}
-          description={getRoleMessage(roleLabel)}
-          tone="accent"
-        >
-          <div className="dashboard-role-card__meta">
-            <strong>{accountLabel}</strong>
-            <span className="status-pill status-pill--soft">
-              <Bell size={14} />
-              {unreadNotifications > 0 ? `${unreadNotifications} تنبيهًا غير مقروء` : "صندوق الإشعارات هادئ الآن"}
-            </span>
-          </div>
-
-          {quickLinks.length > 0 ? (
-            <div className="dashboard-shortcuts">
-              <span className="dashboard-shortcuts__label">اختصارات اليوم</span>
-              <div className="dashboard-shortcuts__grid">
-                {quickLinks.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className="dashboard-shortcut-tile"
-                    aria-current={pathname === item.href ? "page" : undefined}
-                    onClick={closeMenu}
-                  >
-                    <strong>{item.label}</strong>
-                    <small>{item.description}</small>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          ) : null}
-        </SectionCard>
-
         <nav className="dashboard-sidebar__nav" aria-label="التنقل داخل مساحات التشغيل">
           {(Object.keys(groupedNavigation) as DashboardNavGroup[]).map((groupKey) =>
             groupedNavigation[groupKey].length > 0 ? (
-              <section key={groupKey} className="dashboard-nav-group section-card section-card--subtle">
+              <section key={groupKey} className="dashboard-nav-group">
                 <div className="dashboard-nav-group__header">
-                  <div>
-                    <p className="dashboard-nav-group__title">{GROUP_LABELS[groupKey]}</p>
-                    <p className="dashboard-nav-group__count">{groupedNavigation[groupKey].length} مسارات جاهزة</p>
-                  </div>
-                  <span className="status-pill status-pill--neutral">
-                    {groupKey === "daily"
-                      ? "تشغيلي"
-                      : groupKey === "operations"
-                        ? "تشغيلي متقدم"
-                        : "إداري"}
-                  </span>
+                  <p className="dashboard-nav-group__title">{GROUP_LABELS[groupKey]}</p>
                 </div>
 
                 <div className="dashboard-nav-group__items">
@@ -277,10 +202,7 @@ export function DashboardShell({
                               <span className="dashboard-nav__badge">{unreadNotifications}</span>
                             ) : null}
                           </strong>
-                          <small>{item.description}</small>
                         </span>
-
-                        <ChevronLeft size={16} className="dashboard-nav__arrow" />
                       </Link>
                     );
                   })}
@@ -302,7 +224,7 @@ export function DashboardShell({
       </aside>
 
       <div className="dashboard-content">
-        <header className="dashboard-topbar workspace-panel">
+        <header className="dashboard-topbar">
           <div className="dashboard-topbar__context">
             <button
               type="button"
@@ -313,62 +235,39 @@ export function DashboardShell({
               <Menu size={18} />
             </button>
 
-            <PageHeader
-              eyebrow="مساحات التشغيل"
-              title={pageContext.title}
-              description={pageContext.description}
-              meta={
-                <>
-                  <span className="status-pill status-pill--brand">
-                    <Sparkles size={14} />
-                    {pageContext.groupLabel}
-                  </span>
-                  <span className="status-pill status-pill--soft">
-                    <LayoutDashboard size={14} />
-                    {roleLabel}
-                  </span>
-                </>
-              }
-            />
+            <div className="dashboard-header-title">
+              <h1>{pageContext.title}</h1>
+              {pageContext.groupLabel !== "لوحة العمل" && (
+                 <span className="status-pill status-pill--neutral dashboard-header-badge">{pageContext.groupLabel}</span>
+              )}
+            </div>
           </div>
 
-          <form className="dashboard-quick-search" onSubmit={handleSearchSubmit}>
-            <div className="dashboard-search-card">
-              <label className="workspace-search">
-                <Search size={18} />
-                <input
-                  type="search"
-                  placeholder="ابحث سريعًا عن فاتورة أو منتج أو عميل"
-                  value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
-                />
-              </label>
-
-              <button type="submit" className="primary-button">
-                <Sparkles size={16} />
-                البحث الشامل
-              </button>
-            </div>
-            <p className="workspace-footnote dashboard-quick-search__hint">
-              ابحث في الفواتير والمنتجات والعملاء والإشعارات من نفس نقطة الوصول.
-            </p>
-          </form>
+          <div className="dashboard-topbar__actions">
+             {isSearchOpen ? (
+                 <form className="dashboard-quick-search-minimal" onSubmit={handleSearchSubmit}>
+                    <Search size={16} className="search-icon" />
+                    <input
+                      type="search"
+                      placeholder="بحث..."
+                      value={searchQuery}
+                      onChange={(event) => setSearchQuery(event.target.value)}
+                      autoFocus
+                      onBlur={() => !searchQuery && setIsSearchOpen(false)}
+                    />
+                 </form>
+             ) : (
+                 <button
+                    type="button"
+                    className="icon-button ghost-button search-toggle"
+                    onClick={() => setIsSearchOpen(true)}
+                    aria-label="بحث"
+                 >
+                    <Search size={18} />
+                 </button>
+             )}
+          </div>
         </header>
-
-        <div className="dashboard-breadcrumbs workspace-panel" aria-label="مسار الصفحة">
-          <Link href={homeHref} className="dashboard-breadcrumbs__home">
-            <Home size={16} />
-            الرئيسية
-          </Link>
-
-          <ol>
-            {pageContext.breadcrumbs.map((item, index) => (
-              <li key={`${item.label}-${index}`}>
-                {item.href ? <Link href={item.href}>{item.label}</Link> : <span>{item.label}</span>}
-              </li>
-            ))}
-          </ol>
-        </div>
 
         <main className="dashboard-main">{children}</main>
       </div>
