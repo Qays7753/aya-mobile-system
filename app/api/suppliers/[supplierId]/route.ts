@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { authorizeRequest, errorResponse, getApiErrorMeta } from "@/lib/api/common";
+import { authorizeRequest, errorResponse, getApiErrorMeta, handleRouteError, parseAndValidate } from "@/lib/api/common";
 import type { StandardEnvelope } from "@/lib/pos/types";
 import { updateSupplierSchema } from "@/lib/validations/suppliers";
 
@@ -57,19 +57,21 @@ export async function PATCH(
       });
     }
 
-    const parsedBody = updateSupplierSchema.safeParse({
+    const payloadWithRouteId = {
       ...(typeof body === "object" && body !== null ? body : {}),
       supplier_id: context.params.supplierId
-    });
-    if (!parsedBody.success) {
+    };
+
+    const parsed = updateSupplierSchema.safeParse(payloadWithRouteId);
+    if (!parsed.success) {
       const meta = getApiErrorMeta("ERR_API_VALIDATION_FAILED");
       return errorResponse("ERR_API_VALIDATION_FAILED", meta.message, meta.status, {
-        field_errors: parsedBody.error.flatten().fieldErrors
+        field_errors: parsed.error.flatten().fieldErrors
       });
     }
 
-    const payload = parsedBody.data;
-    if (await supplierNameExists(authorization.supabase, payload.name, payload.supplier_id)) {
+    const payload = parsed.data;
+    if (await supplierNameExists(authorization.supabase, payload.name, context.params.supplierId)) {
       const meta = getApiErrorMeta("ERR_API_VALIDATION_FAILED");
       return errorResponse("ERR_API_VALIDATION_FAILED", meta.message, meta.status, {
         field_errors: {
@@ -86,15 +88,12 @@ export async function PATCH(
         address: payload.address?.trim() || null,
         is_active: payload.is_active
       })
-      .eq("id", payload.supplier_id)
+      .eq("id", context.params.supplierId)
       .select("id, name, phone, address, current_balance, is_active")
       .single<SupplierResponseData>();
 
     if (error || !data) {
-      const meta = getApiErrorMeta("ERR_API_INTERNAL");
-      return errorResponse("ERR_API_INTERNAL", meta.message, meta.status, {
-        reason: error?.message ?? "تعذر تحديث المورد."
-      });
+      throw error ?? new Error("تعذر تحديث المورد.");
     }
 
     return NextResponse.json<StandardEnvelope<SupplierResponseData>>(
@@ -105,9 +104,6 @@ export async function PATCH(
       { status: 200 }
     );
   } catch (error) {
-    const meta = getApiErrorMeta("ERR_API_INTERNAL");
-    return errorResponse("ERR_API_INTERNAL", meta.message, meta.status, {
-      reason: (error as Error).message
-    });
+    return handleRouteError(error, getApiErrorMeta);
   }
 }

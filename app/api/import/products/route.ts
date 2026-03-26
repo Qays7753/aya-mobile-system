@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { authorizeRequest, errorResponse } from "@/lib/api/common";
+import { authorizeRequest, handleRouteError, parseAndValidate } from "@/lib/api/common";
 import {
   commitProductImportJob,
   getImportProductsErrorMeta,
@@ -25,47 +25,28 @@ export async function POST(request: Request) {
       return authorization.response;
     }
 
-    let body: unknown;
-    try {
-      body = await request.json();
-    } catch {
-      const meta = getImportProductsErrorMeta("ERR_API_VALIDATION_FAILED");
-      return errorResponse("ERR_API_VALIDATION_FAILED", meta.message, meta.status, {
-        body: ["تعذرت قراءة JSON من الطلب."]
-      });
-    }
-
-    const parsed = importProductsSchema.safeParse(body);
-    if (!parsed.success) {
-      const meta = getImportProductsErrorMeta("ERR_API_VALIDATION_FAILED");
-      return errorResponse("ERR_API_VALIDATION_FAILED", meta.message, meta.status, {
-        field_errors: parsed.error.flatten().fieldErrors
-      });
+    const validation = await parseAndValidate(request, importProductsSchema, getImportProductsErrorMeta);
+    if (!validation.success) {
+      return validation.response;
     }
 
     const result =
-      parsed.data.mode === "dry_run"
-        ? await runProductImportDryRun(authorization.supabase, authorization.userId, parsed.data)
+      validation.data.mode === "dry_run"
+        ? await runProductImportDryRun(authorization.supabase, authorization.userId, validation.data)
         : await commitProductImportJob(
             authorization.supabase,
             authorization.userId,
-            parsed.data.dry_run_job_id
+            validation.data.dry_run_job_id
           );
 
     return NextResponse.json<StandardEnvelope<ImportProductsResponse>>(
       {
         success: true,
-        data: result
+        data: result as ImportProductsResponse
       },
       { status: 200 }
     );
   } catch (error) {
-    const code = (error as Error).message.startsWith("ERR_")
-      ? (error as Error).message
-      : "ERR_API_INTERNAL";
-    const meta = getImportProductsErrorMeta(code);
-    return errorResponse(code, meta.message, meta.status, {
-      reason: (error as Error).message
-    });
+    return handleRouteError(error, getImportProductsErrorMeta);
   }
 }

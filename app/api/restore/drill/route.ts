@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
-import { authorizeRequest, errorResponse, extractErrorCode, getApiErrorMeta, internalErrorResponse } from "@/lib/api/common";
 import {
-  getRestoreDrillErrorMeta,
-  runRestoreDrill
-} from "@/lib/api/portability";
+  authorizeRequest,
+  errorResponse,
+  extractErrorCode,
+  getApiErrorMeta,
+  handleRouteError,
+  parseAndValidate
+} from "@/lib/api/common";
+import { getRestoreDrillErrorMeta, runRestoreDrill } from "@/lib/api/portability";
 import { resolveFirstAdminActorId } from "@/lib/api/reports";
 import { getCronAuthorizationHeader } from "@/lib/env";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -51,25 +55,12 @@ export async function POST(request: Request) {
       return authorization.response;
     }
 
-    let body: unknown;
-    try {
-      body = await request.json();
-    } catch {
-      const meta = getRestoreDrillErrorMeta("ERR_API_VALIDATION_FAILED");
-      return errorResponse("ERR_API_VALIDATION_FAILED", meta.message, meta.status, {
-        body: ["تعذرت قراءة JSON من الطلب."]
-      });
+    const validation = await parseAndValidate(request, restoreDrillSchema, getRestoreDrillErrorMeta);
+    if (!validation.success) {
+      return validation.response;
     }
 
-    const parsed = restoreDrillSchema.safeParse(body);
-    if (!parsed.success) {
-      const meta = getRestoreDrillErrorMeta("ERR_API_VALIDATION_FAILED");
-      return errorResponse("ERR_API_VALIDATION_FAILED", meta.message, meta.status, {
-        field_errors: parsed.error.flatten().fieldErrors
-      });
-    }
-
-    const result = await runRestoreDrill(authorization.supabase, authorization.userId, parsed.data);
+    const result = await runRestoreDrill(authorization.supabase, authorization.userId, validation.data);
 
     return NextResponse.json<StandardEnvelope<RestoreResponse>>(
       {
@@ -85,11 +76,6 @@ export async function POST(request: Request) {
       return errorResponse("ERR_API_RUNTIME_MISCONFIGURED", meta.message, meta.status);
     }
 
-    if (code !== "ERR_API_INTERNAL") {
-      const meta = getRestoreDrillErrorMeta(code);
-      return errorResponse(code, meta.message, meta.status);
-    }
-
-    return internalErrorResponse(error, { context: "restore.drill.unhandled" });
+    return handleRouteError(error, getRestoreDrillErrorMeta);
   }
 }

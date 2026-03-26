@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { authorizeRequest, errorResponse, getApiErrorMeta } from "@/lib/api/common";
+import { authorizeRequest, errorResponse, getApiErrorMeta, handleRouteError, parseAndValidate } from "@/lib/api/common";
 import { getExpenseCategoryErrorMeta } from "@/lib/api/expenses";
 import type { StandardEnvelope } from "@/lib/pos/types";
 import { updateExpenseCategorySchema } from "@/lib/validations/expenses";
@@ -60,11 +60,16 @@ export async function PATCH(
       });
     }
 
-    const parsedBody = updateExpenseCategorySchema.safeParse(body);
-    if (!parsedBody.success) {
+    const payloadWithRouteId = {
+      ...(typeof body === "object" && body !== null ? body : {}),
+      category_id: context.params.categoryId
+    };
+
+    const parsed = updateExpenseCategorySchema.safeParse(payloadWithRouteId);
+    if (!parsed.success) {
       const meta = getExpenseCategoryErrorMeta("ERR_API_VALIDATION_FAILED");
       return errorResponse("ERR_API_VALIDATION_FAILED", meta.message, meta.status, {
-        field_errors: parsedBody.error.flatten().fieldErrors
+        field_errors: parsed.error.flatten().fieldErrors
       });
     }
 
@@ -76,18 +81,14 @@ export async function PATCH(
       .maybeSingle<ExistingCategoryRow>();
 
     if (existingError) {
-      const meta = getApiErrorMeta("ERR_API_INTERNAL");
-      return errorResponse("ERR_API_INTERNAL", meta.message, meta.status, {
-        reason: existingError.message
-      });
+      throw existingError;
     }
 
     if (!existing) {
-      const meta = getExpenseCategoryErrorMeta("ERR_EXPENSE_CATEGORY_NOT_FOUND");
-      return errorResponse("ERR_EXPENSE_CATEGORY_NOT_FOUND", meta.message, meta.status);
+      throw new Error("ERR_EXPENSE_CATEGORY_NOT_FOUND");
     }
 
-    const payload = parsedBody.data;
+    const payload = parsed.data;
     if (payload.name && (await categoryNameExists(authorization.supabase, payload.name, categoryId))) {
       const meta = getExpenseCategoryErrorMeta("ERR_API_VALIDATION_FAILED");
       return errorResponse("ERR_API_VALIDATION_FAILED", meta.message, meta.status, {
@@ -104,15 +105,11 @@ export async function PATCH(
         .eq("category_id", categoryId);
 
       if (referencesError) {
-        const meta = getApiErrorMeta("ERR_API_INTERNAL");
-        return errorResponse("ERR_API_INTERNAL", meta.message, meta.status, {
-          reason: referencesError.message
-        });
+        throw referencesError;
       }
 
       if ((count ?? 0) > 0) {
-        const meta = getExpenseCategoryErrorMeta("ERR_EXPENSE_CATEGORY_HAS_REFERENCES");
-        return errorResponse("ERR_EXPENSE_CATEGORY_HAS_REFERENCES", meta.message, meta.status);
+        throw new Error("ERR_EXPENSE_CATEGORY_HAS_REFERENCES");
       }
     }
 
@@ -134,10 +131,7 @@ export async function PATCH(
       .single<ExpenseCategoryResponseData>();
 
     if (error || !data) {
-      const meta = getApiErrorMeta("ERR_API_INTERNAL");
-      return errorResponse("ERR_API_INTERNAL", meta.message, meta.status, {
-        reason: error?.message ?? "تعذر تحديث فئة المصروف."
-      });
+      throw error ?? new Error("تعذر تحديث فئة المصروف.");
     }
 
     await authorization.supabase.from("audit_logs").insert({
@@ -159,9 +153,6 @@ export async function PATCH(
       { status: 200 }
     );
   } catch (error) {
-    const meta = getApiErrorMeta("ERR_API_INTERNAL");
-    return errorResponse("ERR_API_INTERNAL", meta.message, meta.status, {
-      reason: (error as Error).message
-    });
+    return handleRouteError(error, getExpenseCategoryErrorMeta);
   }
 }

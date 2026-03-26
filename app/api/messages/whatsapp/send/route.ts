@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { authorizeRequest, errorResponse, extractErrorCode } from "@/lib/api/common";
+import { authorizeRequest, extractErrorCode, handleRouteError, parseAndValidate } from "@/lib/api/common";
 import {
   buildWhatsAppDeepLink,
   buildWhatsAppMessage,
@@ -21,25 +21,12 @@ export async function POST(request: Request) {
       return authorization.response;
     }
 
-    let body: unknown;
-    try {
-      body = await request.json();
-    } catch {
-      const meta = getWhatsAppErrorMeta("ERR_API_VALIDATION_FAILED");
-      return errorResponse("ERR_API_VALIDATION_FAILED", meta.message, meta.status, {
-        body: ["تعذر قراءة JSON من الطلب."]
-      });
+    const validation = await parseAndValidate(request, sendWhatsAppMessageSchema, getWhatsAppErrorMeta);
+    if (!validation.success) {
+      return validation.response;
     }
 
-    const parsedBody = sendWhatsAppMessageSchema.safeParse(body);
-    if (!parsedBody.success) {
-      const meta = getWhatsAppErrorMeta("ERR_API_VALIDATION_FAILED");
-      return errorResponse("ERR_API_VALIDATION_FAILED", meta.message, meta.status, {
-        field_errors: parsedBody.error.flatten().fieldErrors
-      });
-    }
-
-    const payload = parsedBody.data;
+    const payload = validation.data;
 
     let waUrl: string;
     try {
@@ -54,8 +41,7 @@ export async function POST(request: Request) {
     } catch (error) {
       const code = extractErrorCode((error as Error).message);
       const normalizedCode = code === "ERR_API_INTERNAL" ? "ERR_WHATSAPP_DELIVERY_FAILED" : code;
-      const meta = getWhatsAppErrorMeta(normalizedCode);
-      return errorResponse(normalizedCode, meta.message, meta.status);
+      throw new Error(normalizedCode);
     }
 
     const { data, error: rpcError } = await authorization.supabase.rpc("create_whatsapp_delivery_log", {
@@ -68,9 +54,7 @@ export async function POST(request: Request) {
     });
 
     if (rpcError) {
-      const code = extractErrorCode(rpcError.message);
-      const meta = getWhatsAppErrorMeta(code);
-      return errorResponse(code, meta.message, meta.status);
+      throw rpcError;
     }
 
     return NextResponse.json<StandardEnvelope<SendWhatsAppResponse>>(
@@ -85,9 +69,6 @@ export async function POST(request: Request) {
       { status: 200 }
     );
   } catch (error) {
-    const meta = getWhatsAppErrorMeta("ERR_API_INTERNAL");
-    return errorResponse("ERR_API_INTERNAL", meta.message, meta.status, {
-      reason: (error as Error).message
-    });
+    return handleRouteError(error, getWhatsAppErrorMeta);
   }
 }

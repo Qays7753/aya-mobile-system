@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
-import { errorResponse, extractErrorCode, getApiErrorMeta, internalErrorResponse } from "@/lib/api/common";
+import { errorResponse, getApiErrorMeta, handleRouteError } from "@/lib/api/common";
 import { getCronAuthorizationHeader } from "@/lib/env";
 import { resolveFirstAdminActorId } from "@/lib/api/reports";
 import type { StandardEnvelope } from "@/lib/pos/types";
@@ -35,9 +35,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (error) {
-      const code = extractErrorCode(error.message);
-      const meta = getApiErrorMeta(code);
-      return errorResponse(code, meta.message, meta.status);
+      throw error;
     }
 
     return NextResponse.json<StandardEnvelope<BalanceIntegrityResponseData>>(
@@ -52,6 +50,6 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
-    return internalErrorResponse(error, { context: "cron.balance-check.unhandled" });
+    return handleRouteError(error, getApiErrorMeta);
   }
 }

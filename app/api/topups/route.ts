@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { authorizeRequest, errorResponse, extractErrorCode } from "@/lib/api/common";
+import { authorizeRequest, handleRouteError, parseAndValidate } from "@/lib/api/common";
 import { getCreateTopupErrorMeta } from "@/lib/api/operations";
 import type { StandardEnvelope } from "@/lib/pos/types";
 import { createTopupSchema } from "@/lib/validations/operations";
@@ -19,39 +19,23 @@ export async function POST(request: Request) {
       return authorization.response;
     }
 
-    let body: unknown;
-    try {
-      body = await request.json();
-    } catch {
-      const meta = getCreateTopupErrorMeta("ERR_API_VALIDATION_FAILED");
-      return errorResponse("ERR_API_VALIDATION_FAILED", meta.message, meta.status, {
-        body: ["تعذر قراءة JSON من الطلب."]
-      });
+    const validation = await parseAndValidate(request, createTopupSchema, getCreateTopupErrorMeta);
+    if (!validation.success) {
+      return validation.response;
     }
 
-    const parsedBody = createTopupSchema.safeParse(body);
-    if (!parsedBody.success) {
-      const meta = getCreateTopupErrorMeta("ERR_API_VALIDATION_FAILED");
-      return errorResponse("ERR_API_VALIDATION_FAILED", meta.message, meta.status, {
-        field_errors: parsedBody.error.flatten().fieldErrors
-      });
-    }
-
-    const payload = parsedBody.data;
     const { data, error: rpcError } = await authorization.supabase.rpc("create_topup", {
-      p_account_id: payload.account_id,
-      p_amount: payload.amount,
-      p_profit_amount: payload.profit_amount,
-      p_supplier_id: payload.supplier_id ?? null,
-      p_notes: payload.notes ?? null,
-      p_idempotency_key: payload.idempotency_key,
+      p_account_id: validation.data.account_id,
+      p_amount: validation.data.amount,
+      p_profit_amount: validation.data.profit_amount,
+      p_supplier_id: validation.data.supplier_id ?? null,
+      p_notes: validation.data.notes ?? null,
+      p_idempotency_key: validation.data.idempotency_key,
       p_created_by: authorization.userId
     });
 
     if (rpcError) {
-      const code = extractErrorCode(rpcError.message);
-      const meta = getCreateTopupErrorMeta(code);
-      return errorResponse(code, meta.message, meta.status);
+      throw rpcError;
     }
 
     return NextResponse.json<StandardEnvelope<TopupResponse>>(
@@ -66,9 +50,6 @@ export async function POST(request: Request) {
       { status: 200 }
     );
   } catch (error) {
-    const meta = getCreateTopupErrorMeta("ERR_API_INTERNAL");
-    return errorResponse("ERR_API_INTERNAL", meta.message, meta.status, {
-      reason: (error as Error).message
-    });
+    return handleRouteError(error, getCreateTopupErrorMeta);
   }
 }

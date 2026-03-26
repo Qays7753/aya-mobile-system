@@ -1,5 +1,12 @@
 import { NextResponse } from "next/server";
-import { authorizeRequest, errorResponse, extractErrorCode, getApiErrorMeta } from "@/lib/api/common";
+import {
+  authorizeRequest,
+  errorResponse,
+  extractErrorCode,
+  getApiErrorMeta,
+  handleRouteError,
+  parseAndValidate
+} from "@/lib/api/common";
 import { getCreateDebtManualErrorMeta } from "@/lib/api/debts";
 import type { StandardEnvelope } from "@/lib/pos/types";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -37,25 +44,12 @@ export async function POST(request: Request) {
       return authorization.response;
     }
 
-    let body: unknown;
-    try {
-      body = await request.json();
-    } catch {
-      const meta = getApiErrorMeta("ERR_API_VALIDATION_FAILED");
-      return errorResponse("ERR_API_VALIDATION_FAILED", meta.message, meta.status, {
-        body: ["تعذر قراءة JSON من الطلب."]
-      });
+    const validation = await parseAndValidate(request, createDebtManualSchema, getApiErrorMeta);
+    if (!validation.success) {
+      return validation.response;
     }
 
-    const parsedBody = createDebtManualSchema.safeParse(body);
-    if (!parsedBody.success) {
-      const meta = getApiErrorMeta("ERR_API_VALIDATION_FAILED");
-      return errorResponse("ERR_API_VALIDATION_FAILED", meta.message, meta.status, {
-        field_errors: parsedBody.error.flatten().fieldErrors
-      });
-    }
-
-    const payload = parsedBody.data;
+    const payload = validation.data;
     const { data, error: rpcError } = await authorization.supabase.rpc("create_debt_manual", {
       p_debt_customer_id: payload.debt_customer_id,
       p_amount: payload.amount,
@@ -70,10 +64,15 @@ export async function POST(request: Request) {
 
       if (code === "ERR_IDEMPOTENCY") {
         const existingEntry = await findExistingDebtEntryByIdempotencyKey(payload.idempotency_key);
-        return errorResponse(code, meta.message, meta.status, existingEntry ? { existing_result: existingEntry } : undefined);
+        return errorResponse(
+          code,
+          meta.message,
+          meta.status,
+          existingEntry ? { existing_result: existingEntry } : undefined
+        );
       }
 
-      return errorResponse(code, meta.message, meta.status);
+      throw rpcError;
     }
 
     return NextResponse.json<StandardEnvelope<DebtManualResponseData>>(
@@ -86,9 +85,6 @@ export async function POST(request: Request) {
       { status: 200 }
     );
   } catch (error) {
-    const meta = getApiErrorMeta("ERR_API_INTERNAL");
-    return errorResponse("ERR_API_INTERNAL", meta.message, meta.status, {
-      reason: (error as Error).message
-    });
+    return handleRouteError(error, getCreateDebtManualErrorMeta);
   }
 }

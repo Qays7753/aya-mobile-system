@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { authorizeRequest, errorResponse, getApiErrorMeta, internalErrorResponse } from "@/lib/api/common";
+import { authorizeRequest, getApiErrorMeta, handleRouteError, parseAndValidate } from "@/lib/api/common";
 import { getNotificationErrorMeta } from "@/lib/api/notifications";
 import type { StandardEnvelope } from "@/lib/pos/types";
 import { markNotificationsReadSchema } from "@/lib/validations/notifications";
@@ -19,25 +19,12 @@ export async function POST(request: Request) {
       return authorization.response;
     }
 
-    let body: unknown;
-    try {
-      body = await request.json();
-    } catch {
-      const meta = getNotificationErrorMeta("ERR_API_VALIDATION_FAILED");
-      return errorResponse("ERR_API_VALIDATION_FAILED", meta.message, meta.status, {
-        body: ["تعذر قراءة JSON من الطلب."]
-      });
+    const validation = await parseAndValidate(request, markNotificationsReadSchema, getApiErrorMeta);
+    if (!validation.success) {
+      return validation.response;
     }
 
-    const parsedBody = markNotificationsReadSchema.safeParse(body);
-    if (!parsedBody.success) {
-      const meta = getNotificationErrorMeta("ERR_API_VALIDATION_FAILED");
-      return errorResponse("ERR_API_VALIDATION_FAILED", meta.message, meta.status, {
-        field_errors: parsedBody.error.flatten().fieldErrors
-      });
-    }
-
-    const payload = parsedBody.data;
+    const payload = validation.data;
     let idsToUpdate: string[] = [];
 
     if (payload.mark_all) {
@@ -53,7 +40,7 @@ export async function POST(request: Request) {
 
       const { data, error } = await query.returns<NotificationIdRow[]>();
       if (error) {
-        return internalErrorResponse(error, { context: "notifications.read.lookup-all" });
+        throw error;
       }
 
       idsToUpdate = (data ?? []).map((row) => row.id);
@@ -70,13 +57,12 @@ export async function POST(request: Request) {
 
       const { data, error } = await query.returns<NotificationIdRow[]>();
       if (error) {
-        return internalErrorResponse(error, { context: "notifications.read.lookup-selection" });
+        throw error;
       }
 
       idsToUpdate = (data ?? []).map((row) => row.id);
       if (idsToUpdate.length !== requestedIds.length) {
-        const meta = getNotificationErrorMeta("ERR_NOTIFICATION_NOT_FOUND");
-        return errorResponse("ERR_NOTIFICATION_NOT_FOUND", meta.message, meta.status);
+        throw new Error("ERR_NOTIFICATION_NOT_FOUND");
       }
     }
 
@@ -102,7 +88,7 @@ export async function POST(request: Request) {
       .select("id");
 
     if (error) {
-      return internalErrorResponse(error, { context: "notifications.read.update" });
+      throw error;
     }
 
     return NextResponse.json<StandardEnvelope<UpdatedNotificationsResponse>>(
@@ -115,6 +101,6 @@ export async function POST(request: Request) {
       { status: 200 }
     );
   } catch (error) {
-    return internalErrorResponse(error, { context: "notifications.read.unhandled" });
+    return handleRouteError(error, getNotificationErrorMeta);
   }
 }

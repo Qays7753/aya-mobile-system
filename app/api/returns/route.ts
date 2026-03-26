@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server";
-import { authorizeRequest, errorResponse, extractErrorCode, getApiErrorMeta, internalErrorResponse } from "@/lib/api/common";
+import {
+  authorizeRequest,
+  getApiErrorMeta,
+  handleRouteError,
+  internalErrorResponse,
+  parseAndValidate
+} from "@/lib/api/common";
 import { getCreateReturnErrorMeta } from "@/lib/api/returns";
 import type { StandardEnvelope } from "@/lib/pos/types";
 import { createReturnSchema } from "@/lib/validations/returns";
@@ -20,25 +26,12 @@ export async function POST(request: Request) {
       return authorization.response;
     }
 
-    let body: unknown;
-    try {
-      body = await request.json();
-    } catch {
-      const meta = getApiErrorMeta("ERR_API_VALIDATION_FAILED");
-      return errorResponse("ERR_API_VALIDATION_FAILED", meta.message, meta.status, {
-        body: ["تعذر قراءة JSON من الطلب."]
-      });
+    const validation = await parseAndValidate(request, createReturnSchema, getApiErrorMeta);
+    if (!validation.success) {
+      return validation.response;
     }
 
-    const parsedBody = createReturnSchema.safeParse(body);
-    if (!parsedBody.success) {
-      const meta = getApiErrorMeta("ERR_API_VALIDATION_FAILED");
-      return errorResponse("ERR_API_VALIDATION_FAILED", meta.message, meta.status, {
-        field_errors: parsedBody.error.flatten().fieldErrors
-      });
-    }
-
-    const payload = parsedBody.data;
+    const payload = validation.data;
     const { data, error: rpcError } = await authorization.supabase.rpc("create_return", {
       p_invoice_id: payload.invoice_id,
       p_items: payload.items,
@@ -50,9 +43,7 @@ export async function POST(request: Request) {
     });
 
     if (rpcError) {
-      const code = extractErrorCode(rpcError.message);
-      const meta = getCreateReturnErrorMeta(code);
-      return errorResponse(code, meta.message, meta.status);
+      throw rpcError;
     }
 
     if (!data || typeof data.return_id !== "string" || typeof data.return_number !== "string") {
@@ -87,7 +78,10 @@ export async function POST(request: Request) {
           return_id: data.return_id,
           return_number: data.return_number,
           refunded_amount: refundedAmount,
-          return_type: data.return_type === "full" || data.return_type === "partial" ? data.return_type : payload.return_type,
+          return_type:
+            data.return_type === "full" || data.return_type === "partial"
+              ? data.return_type
+              : payload.return_type,
           total_amount: totalAmount,
           debt_reduction: data.debt_reduction ?? 0
         }
@@ -95,6 +89,6 @@ export async function POST(request: Request) {
       { status: 200 }
     );
   } catch (error) {
-    return internalErrorResponse(error, { context: "returns.unhandled" });
+    return handleRouteError(error, getCreateReturnErrorMeta);
   }
 }
