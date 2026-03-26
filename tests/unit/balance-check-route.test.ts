@@ -30,6 +30,10 @@ describe("balance check routes", () => {
     vi.clearAllMocks();
   });
 
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it("requires admin authorization for POST /api/health/balance-check", async () => {
     vi.mocked(authorizeRequest).mockResolvedValue({
       authorized: false,
@@ -67,6 +71,7 @@ describe("balance check routes", () => {
   });
 
   it("requires the cron bearer token", async () => {
+    vi.stubEnv("CRON_SECRET", "secret-secret-1234");
     const response = await cronBalanceCheck(
       new Request("http://localhost/api/cron/balance-check", { method: "POST" }) as never
     );
@@ -85,7 +90,7 @@ describe("balance check routes", () => {
     } as never);
     vi.mocked(resolveFirstAdminActorId).mockResolvedValue("admin-1");
 
-    process.env.CRON_SECRET = "secret-secret-1234";
+    vi.stubEnv("CRON_SECRET", "secret-secret-1234");
 
     const response = await cronBalanceCheck(
       new Request("http://localhost/api/cron/balance-check", {
