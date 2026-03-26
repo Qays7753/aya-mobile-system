@@ -68,7 +68,7 @@ describe("LoginForm", () => {
     fireEvent.change(screen.getByLabelText("كلمة المرور"), {
       target: { value: "password123" }
     });
-    fireEvent.click(screen.getByRole("button", { name: /الدخول إلى بيئة التشغيل/i }));
+    fireEvent.click(screen.getByRole("button", { name: /تسجيل الدخول/i }));
 
     await waitFor(() => {
       expect(mockSignInWithPassword).toHaveBeenCalledWith({
@@ -95,7 +95,7 @@ describe("LoginForm", () => {
     fireEvent.change(screen.getByLabelText("كلمة المرور"), {
       target: { value: "wrong-password" }
     });
-    fireEvent.click(screen.getByRole("button", { name: /الدخول إلى بيئة التشغيل/i }));
+    fireEvent.click(screen.getByRole("button", { name: /تسجيل الدخول/i }));
 
     expect(await screen.findByText("تعذر تسجيل الدخول")).toBeInTheDocument();
     expect(screen.getByText("Bad credentials")).toBeInTheDocument();
@@ -116,7 +116,7 @@ describe("LoginForm", () => {
     fireEvent.change(screen.getByLabelText("كلمة المرور"), {
       target: { value: "password123" }
     });
-    fireEvent.click(screen.getByRole("button", { name: /الدخول إلى بيئة التشغيل/i }));
+    fireEvent.click(screen.getByRole("button", { name: /تسجيل الدخول/i }));
 
     await waitFor(() => {
       expect(mockReplace).toHaveBeenCalledWith("/pos");
@@ -125,7 +125,7 @@ describe("LoginForm", () => {
     mockReplace.mockClear();
     mockRefresh.mockClear();
 
-    fireEvent.click(screen.getByRole("button", { name: /الدخول إلى بيئة التشغيل/i }));
+    fireEvent.click(screen.getByRole("button", { name: /تسجيل الدخول/i }));
 
     await waitFor(() => {
       expect(mockReplace).toHaveBeenCalledWith("/pos");
@@ -148,7 +148,7 @@ describe("LoginForm", () => {
 
     expect(screen.getByText("الاتصال غير متاح")).toBeInTheDocument();
 
-    const submitButton = screen.getByRole("button", { name: /الدخول إلى بيئة التشغيل/i });
+    const submitButton = screen.getByRole("button", { name: /تسجيل الدخول/i });
     expect(submitButton).not.toBeDisabled();
 
     fireEvent.change(screen.getByRole("textbox"), {
