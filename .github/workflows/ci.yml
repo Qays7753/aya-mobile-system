@@ -32,7 +32,8 @@ jobs:
         run: |
           npx supabase status -o env --override-name api.url=NEXT_PUBLIC_SUPABASE_URL --override-name anon.key=NEXT_PUBLIC_SUPABASE_ANON_KEY --override-name service_role.key=SUPABASE_SERVICE_ROLE_KEY > .env.local
           echo "CRON_SECRET=test-secret" >> .env.local
-          cat .env.local >> $GITHUB_ENV
+          # GitHub Actions parses quotes literally, so strip them before setting GITHUB_ENV
+          cat .env.local | sed 's/"//g' >> $GITHUB_ENV
 
       - name: Lint
         run: npm run lint
