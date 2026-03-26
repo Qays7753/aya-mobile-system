@@ -102,11 +102,7 @@ export function getApiErrorMeta(code: string) {
   return API_ERROR_MAP.ERR_API_INTERNAL;
 }
 
-export function internalErrorResponse(error: unknown, options?: { context?: string }) {
-  if (process.env.NODE_ENV !== "test") {
-    console.error(`[aya-api] ${options?.context ?? "internal"}`, error);
-  }
-
+export function internalErrorResponse(_error: unknown, _options?: { context?: string }) {
   const meta = getApiErrorMeta("ERR_API_INTERNAL");
   return errorResponse("ERR_API_INTERNAL", meta.message, meta.status);
 }

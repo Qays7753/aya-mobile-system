@@ -12,19 +12,31 @@ describe("rate limiting", () => {
   });
 
   it("matches mutating API routes", () => {
+    const originalEnv = process.env.NODE_ENV;
+    const originalCI = process.env.CI;
+    process.env.NODE_ENV = "production";
+    delete process.env.CI;
     expect(resolveRateLimitRule("/api/sales", "POST")).toEqual({
       scope: "api-mutation",
       limit: 30,
       windowMs: 60000
     });
+    process.env.NODE_ENV = originalEnv;
+    process.env.CI = originalCI;
   });
 
   it("matches public receipt reads", () => {
+    const originalEnv = process.env.NODE_ENV;
+    const originalCI = process.env.CI;
+    process.env.NODE_ENV = "production";
+    delete process.env.CI;
     expect(resolveRateLimitRule("/r/token-1", "GET")).toEqual({
       scope: "public-receipt",
       limit: 60,
       windowMs: 60000
     });
+    process.env.NODE_ENV = originalEnv;
+    process.env.CI = originalCI;
   });
 
   it("resolves the client address from forwarding headers", () => {
@@ -35,7 +47,7 @@ describe("rate limiting", () => {
       ip: null
     };
 
-    expect(resolveClientAddress(request)).toBe("10.0.0.1");
+    expect(resolveClientAddress(request as any)).toBe("10.0.0.1");
   });
 
   it("blocks requests after the limit is exhausted and resets after the window", () => {
