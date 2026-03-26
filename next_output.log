@@ -1,0 +1,17 @@
+  ▲ Next.js 14.2.5
+  - Local:        http://127.0.0.1:3100
+  - Network:      http://127.0.0.1:3100
+
+ ✓ Starting...
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
+ ✓ Ready in 1757ms
+ ○ Compiling /middleware ...
+ ✓ Compiled /middleware in 1068ms (124 modules)
+ ○ Compiling / ...
+ ✓ Compiled / in 6.4s (837 modules)
+ GET / 200 in 7165ms
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (133kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
