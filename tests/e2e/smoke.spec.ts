@@ -41,14 +41,14 @@ test("products route shows access guard when there is no active session", async 
   await page.goto("/products");
 
   await expect(page.getByRole("heading", { name: "يلزم تسجيل الدخول لقراءة المنتجات" })).toBeVisible();
-  await expect(page.getByText("الوصول يتطلب جلسة صالحة")).toBeVisible();
+  await expect(page.getByText("سجّل الدخول لعرض قائمة المنتجات المتاحة للبيع من الحساب المصرح له.")).toBeVisible();
 });
 
 test("pos route shows access guard when there is no active session", async ({ page }) => {
   await page.goto("/pos");
 
   await expect(page.getByRole("heading", { name: "يلزم تسجيل الدخول لفتح نقطة البيع" })).toBeVisible();
-  await expect(page.getByText("الوصول يتطلب جلسة صالحة")).toBeVisible();
+  await expect(page.getByText("سجّل الدخول بحساب مخصص للبيع")).toBeVisible();
 });
 
 for (const route of [
@@ -61,7 +61,7 @@ for (const route of [
     await page.goto(route.path);
 
     await expect(page.getByRole("heading", { name: route.title })).toBeVisible();
-    await expect(page.getByText("الوصول يتطلب جلسة وصلاحية مناسبة")).toBeVisible();
+    await expect(page.getByText("سجّل الدخول أولًا")).toBeVisible();
   });
 }
 
