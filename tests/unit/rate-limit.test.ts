@@ -12,33 +12,27 @@ describe("rate limiting", () => {
   });
 
   it("matches mutating API routes", () => {
-    const originalEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = "production";
+    vi.stubEnv("NODE_ENV", "production");
 
-    try {
-      expect(resolveRateLimitRule("/api/sales", "POST")).toEqual({
-        scope: "api-mutation",
-        limit: 30,
-        windowMs: 60000
-      });
-    } finally {
-      process.env.NODE_ENV = originalEnv;
-    }
+    expect(resolveRateLimitRule("/api/sales", "POST")).toEqual({
+      scope: "api-mutation",
+      limit: 30,
+      windowMs: 60000
+    });
+
+    vi.unstubAllEnvs();
   });
 
   it("matches public receipt reads", () => {
-    const originalEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = "production";
+    vi.stubEnv("NODE_ENV", "production");
 
-    try {
-      expect(resolveRateLimitRule("/r/token-1", "GET")).toEqual({
-        scope: "public-receipt",
-        limit: 60,
-        windowMs: 60000
-      });
-    } finally {
-      process.env.NODE_ENV = originalEnv;
-    }
+    expect(resolveRateLimitRule("/r/token-1", "GET")).toEqual({
+      scope: "public-receipt",
+      limit: 60,
+      windowMs: 60000
+    });
+
+    vi.unstubAllEnvs();
   });
 
   it("resolves the client address from forwarding headers", () => {
