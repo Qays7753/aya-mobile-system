@@ -1,8 +1,8 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { getServerEnv } from "@/lib/env";
+import type { Database } from "@/types/database.types";
 
-type SupabaseDatabase = any;
-type SupabaseAdminClient = SupabaseClient<SupabaseDatabase, "public", any>;
+type SupabaseAdminClient = SupabaseClient<Database>;
 
 let cachedAdminClient: SupabaseAdminClient | null = null;
 
@@ -13,12 +13,16 @@ export function getSupabaseAdminClient() {
 
   const env = getServerEnv();
 
-  cachedAdminClient = createClient<SupabaseDatabase>(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false
+  cachedAdminClient = createClient<Database>(
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.SUPABASE_SERVICE_ROLE_KEY,
+    {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false
+      }
     }
-  });
+  );
 
   return cachedAdminClient;
 }
