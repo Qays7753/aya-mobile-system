@@ -12,17 +12,13 @@ export function PosAccessRequired({ title, description }: PosAccessRequiredProps
         <div>
           <p className="eyebrow">يتطلب تسجيل الدخول</p>
           <h1>{title}</h1>
-          <p className="workspace-lead">{description}</p>
         </div>
       </div>
 
       <div className="workspace-panel">
         <div className="empty-panel">
           <h2>نقطة البيع متاحة بعد تسجيل الدخول</h2>
-          <p>
-            سجّل الدخول بحساب مخوّل للوصول إلى نقطة البيع والمنتجات، ثم ارجع إلى هذه الشاشة
-            للمتابعة.
-          </p>
+          <p>{description}</p>
           <Link href="/" className="secondary-button">
             العودة إلى الصفحة الرئيسية
           </Link>
