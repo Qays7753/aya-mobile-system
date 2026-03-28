@@ -324,7 +324,7 @@ Remove padding from `.pos-product-grid` since the parent already provides it:
 
 ---
 
-## Part 10 — `.pos-products__header` Sticky Conflict
+## Part 10 — Dead CSS Rule: `.pos-products__header`
 
 ### 10.1 Problem
 
@@ -335,19 +335,6 @@ Remove padding from `.pos-product-grid` since the parent already provides it:
   position: sticky;
   top: 0;
   z-index: calc(var(--z-base) + 2);
-  /* ... */
-}
-```
-
-Similar to Part 4 — this header is positioned sticky but the parent `.pos-products__content` has `overflow: auto`, which makes it a scroll container. However, `.pos-products__header` is **outside** `.pos-products__content` (it's a sibling in the grid), so sticky serves no purpose here.
-
-### 10.2 Fix
-
-Remove the sticky positioning:
-
-```css
-.pos-products__header {
-  z-index: 1;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -357,6 +344,12 @@ Remove the sticky positioning:
   border-bottom: 1px solid var(--aya-line);
 }
 ```
+
+The class `.pos-products__header` **does not exist in any JSX file**. Searching `components/pos/pos-workspace.tsx` confirms no element uses this class — the actual search bar container uses `pos-products-header` (no double underscore, inside `transaction-toolbar`). This entire CSS rule is dead code: it targets nothing, renders nothing, and wastes specificity budget.
+
+### 10.2 Fix
+
+Delete the entire `.pos-products__header` block from `app/globals.css`.
 
 ---
 
@@ -421,16 +414,23 @@ grep -A3 "dashboard-shell--pos .dashboard-content" app/globals.css | grep "paddi
 grep "isCartSheetExpanded.*useState" components/pos/pos-workspace.tsx | grep "true"
 # Expected: 1 result
 
-# AC-10: Compact breakpoint is 767px
+# AC-10: Compact breakpoint moved to 767px
 grep "max-width: 1023px" app/globals.css | grep "pos-layout"
-# Expected: 0 results (old breakpoint removed)
+# Expected: 0 results (old 1023px pos-layout rule removed)
 
-grep "max-width: 767px" components/pos/pos-workspace.tsx
-# Expected: 0 results from grep (it's in JS not CSS), check the matchMedia line manually
+grep "max-width: 767px" app/globals.css | grep "pos-layout"
+# Expected: 1 result (new rule added)
+
+grep "matchMedia" components/pos/pos-workspace.tsx | grep "767px"
+# Expected: 1 result (JS breakpoint updated)
 
 # AC-11: No duplicate .pos-layout font-size block
 grep -c "font-size: var(--pos-body-size)" app/globals.css
 # Expected: exactly 1 (inside main .pos-layout block only)
+
+# AC-12: Dead .pos-products__header rule removed
+grep "\.pos-products__header" app/globals.css
+# Expected: 0 results
 ```
 
 ---
@@ -478,5 +478,6 @@ After completing all fixes, create a file `POS_LAYOUT_FIX_REPORT_2026-03-28.md` 
 | AC-7 | Product grid caps at 200px | grep finds 200px |
 | AC-8 | Dashboard padding zeroed for POS | grep finds padding: 0 |
 | AC-9 | Cart sheet starts expanded | useState(true) |
-| AC-10 | Compact breakpoint moved to 767px | No 1023px for pos-layout |
+| AC-10 | Compact breakpoint moved to 767px | grep CSS + TSX for 767px |
 | AC-11 | Single .pos-layout font-size definition | Count = 1 |
+| AC-12 | Dead `.pos-products__header` rule deleted | grep returns 0 |
