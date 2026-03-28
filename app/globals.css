@@ -4741,10 +4741,16 @@ h3 {
 }
 
 .pos-cart-sheet__bar {
-  display: flex;
+  display: none;
   align-items: stretch;
   min-height: 56px;
   border-bottom: 1px solid var(--aya-line);
+}
+
+@media (max-width: 767px) {
+  .pos-cart-sheet__bar {
+    display: flex;
+  }
 }
 
 .pos-cart-sheet__summary {
