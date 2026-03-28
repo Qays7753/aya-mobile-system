@@ -955,7 +955,7 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
         <div className="pos-products">
           <div className="pos-topbar">
             <div className="pos-topbar__identity">
-              <span className="pos-topbar__label">نقطة البيع</span>
+              <h1 className="pos-topbar__label">نقطة البيع السريعة</h1>
               {selectedAccount ? (
                 <span className="pos-topbar__account">
                   {selectedAccount.name}
@@ -994,7 +994,7 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
                       ref={searchRef}
                       type="search"
                       autoFocus
-                  placeholder="اسم المنتج أو SKU"
+                      placeholder="ابحث عن منتج..."
                       value={searchInput}
                       onChange={(event) => {
                         const nextValue = event.target.value;

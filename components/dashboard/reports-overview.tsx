@@ -109,6 +109,8 @@ export function ReportsOverview({ filters, users, terminals, reportBaseline }: R
         }
       />
 
+      <p className="workspace-lead">ابدأ بالفلاتر، راجع المؤشرات الأساسية</p>
+
       <nav className="analytical-section-nav" aria-label="التنقل داخل أقسام التقارير">
         {REPORT_SECTIONS.map((section) => (
           <a key={section.href} href={section.href} className="chip">
