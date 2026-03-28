@@ -249,7 +249,7 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
   const [isClearCartDialogOpen, setIsClearCartDialogOpen] = useState(false);
   const [productView, setProductView] = useState<ProductViewMode>("text");
   const [isCompactViewport, setIsCompactViewport] = useState(false);
-  const [isCartSheetExpanded, setIsCartSheetExpanded] = useState(true);
+  const [isCartSheetExpanded, setIsCartSheetExpanded] = useState(false);
   const [, startTransition] = useTransition();
   const [isSubmitting, startSubmission] = useTransition();
 
@@ -1215,25 +1215,43 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
 
         <aside className={cartSheetClassName}>
           {isCompactViewport ? (
-            <button
-              type="button"
-              className="pos-cart-sheet__summary"
-              onClick={() => {
-                if (panelState !== "cart") {
-                  return;
-                }
+            <div className="pos-cart-sheet__bar">
+              <button
+                type="button"
+                className="pos-cart-sheet__summary"
+                onClick={() => {
+                  if (panelState !== "cart") {
+                    return;
+                  }
 
-                setIsCartSheetExpanded((currentValue) => !currentValue);
-              }}
-            >
-              <span className="pos-cart-sheet__summary-handle" aria-hidden="true">
-                <GripHorizontal size={18} />
-              </span>
-              <span>
-                {formatCompactNumber(items.length)} بنود — {formatCurrency(netTotal)}
-              </span>
-              <strong>{isCartSheetExpanded ? "إخفاء" : "إظهار"}</strong>
-            </button>
+                  setIsCartSheetExpanded((currentValue) => !currentValue);
+                }}
+              >
+                <span className="pos-cart-sheet__summary-handle" aria-hidden="true">
+                  <GripHorizontal size={18} />
+                </span>
+                <span>
+                  {formatCompactNumber(items.length)} بنود — {formatCurrency(netTotal)}
+                </span>
+                <strong>{isCartSheetExpanded ? "إخفاء" : "إظهار"}</strong>
+              </button>
+              <button
+                type="button"
+                className={
+                  canCreateDebt
+                    ? "pos-cart-sheet__confirm-cta btn btn--warning"
+                    : "pos-cart-sheet__confirm-cta btn btn--primary"
+                }
+                disabled={panelState === "processing" || isSubmitting || !canConfirmSale || isOffline}
+                onClick={() => {
+                  startSubmission(() => {
+                    void submitSale();
+                  });
+                }}
+              >
+                {panelState === "processing" || isSubmitting ? "جارٍ التنفيذ..." : "تأكيد البيع"}
+              </button>
+            </div>
           ) : null}
 
           <SectionCard

@@ -4341,19 +4341,35 @@ h3 {
   padding-bottom: var(--safe-area-bottom);
 }
 
-.pos-cart-sheet__summary {
+.pos-cart-sheet__bar {
+  display: flex;
+  align-items: stretch;
   min-height: 56px;
-  width: 100%;
+  border-bottom: 1px solid var(--aya-line);
+}
+
+.pos-cart-sheet__summary {
+  flex: 1;
+  min-height: 56px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--sp-2);
   padding: var(--sp-3);
   border: none;
-  border-bottom: 1px solid var(--aya-line);
   background: var(--aya-panel);
   color: var(--aya-ink);
   text-align: start;
+}
+
+.pos-cart-sheet__confirm-cta {
+  flex-shrink: 0;
+  align-self: center;
+  margin: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .pos-cart-sheet__summary-handle {

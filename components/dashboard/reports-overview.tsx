@@ -73,7 +73,7 @@ export function ReportsOverview({ filters, users, terminals, reportBaseline }: R
     <section className="workspace-stack analytical-page">
       <PageHeader
         eyebrow="التقارير التحليلية"
-        title="قراءة أوضح للأداء والمقارنات"
+        title="التقارير المتقدمة والتحليلات المقارنة"
         meta={
           <div className="analytical-page__meta-grid">
             <div className="analytical-page__meta-card">
@@ -223,7 +223,7 @@ export function ReportsOverview({ filters, users, terminals, reportBaseline }: R
       <section id="reports-compare" className="workspace-stack">
         <SectionCard
           eyebrow="المقارنة"
-          title="ملخص سريع قبل النزول إلى التفاصيل"
+          title="ملخص الفترة الحالية مقابل فترة المقارنة"
           className="analytical-card"
         >
           <div className="analytical-kpi-grid">
@@ -258,9 +258,10 @@ export function ReportsOverview({ filters, users, terminals, reportBaseline }: R
 
         <SectionCard
           eyebrow="الاتجاهات"
-          title="اتجاه المبيعات وتفكيك البعد الحالي"
+          title="اتجاه المبيعات وصافي الربح"
           className="analytical-card"
         >
+          <p className="analytical-card__section-label">تفكيك البعد الحالي</p>
           <ReportsAdvancedCharts trend={advancedReport.trend} breakdown={advancedReport.breakdown} />
         </SectionCard>
 
