@@ -730,22 +730,18 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     activeMobileTab,
-    adjustLastCartItem,
     canCompleteSale,
-    goBackToCart,
-    handleAddProduct,
     isCompactViewport,
     isHeldCartsOpen,
     isOffline,
     isSubmitting,
     items,
-    openCheckout,
     panelState,
     quickAddProducts,
-    searchInput,
-    submitSale
+    searchInput
   ]);
 
   function clearSubmissionFeedback() {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useDeferredValue, useEffect, useState, useTransition } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { PackageSearch, PencilLine, Plus, RefreshCcw, Save, ShieldCheck, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/ui/page-header";
@@ -39,6 +39,10 @@ const PRODUCT_CATEGORY_LABELS: Record<ProductCategory, string> = {
 
 function normalizeArabic(value: string) {
   return value.toLowerCase().trim();
+}
+
+function normalizeSearchValue(value: string) {
+  return normalizeArabic(value).replace(/\s+/g, " ");
 }
 
 function getStockLabel(trackStock: boolean, stockQuantity: number) {
@@ -102,6 +106,7 @@ function getCategoryLabel(category: string) {
 
 export function ProductsBrowser({ role = "pos_staff" }: ProductsBrowserProps) {
   const isAdmin = role === "admin";
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>("all");
@@ -116,7 +121,7 @@ export function ProductsBrowser({ role = "pos_staff" }: ProductsBrowserProps) {
   const normalizedQuery = normalizeArabic(deferredQuery);
   const { products, isLoading, isLoadingMore, isOffline, errorMessage, hasMore, totalCount, loadMore, refresh } =
     useProducts({
-      searchQuery: normalizedQuery,
+      searchQuery: "",
       category: activeCategory
     });
 
@@ -130,10 +135,84 @@ export function ProductsBrowser({ role = "pos_staff" }: ProductsBrowserProps) {
     };
   }, [searchInput]);
 
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      const activeElement = document.activeElement;
+      const isTypingField =
+        activeElement instanceof HTMLInputElement ||
+        activeElement instanceof HTMLTextAreaElement ||
+        activeElement instanceof HTMLSelectElement;
+      const isSearchFieldFocused = activeElement === searchInputRef.current;
+
+      if (event.key === "/" && !isTypingField) {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+      }
+
+      if (
+        event.key === "Escape" &&
+        searchInput.trim().length > 0 &&
+        (!isTypingField || isSearchFieldFocused)
+      ) {
+        event.preventDefault();
+        setSearchInput("");
+        searchInputRef.current?.focus();
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [searchInput]);
+
   const categories = ["all", ...PRODUCT_CATEGORY_VALUES];
   const categoryOptions = [...PRODUCT_CATEGORY_VALUES];
-  const filteredProducts = products;
-  const quickAddProducts = filteredProducts.filter((product) => product.is_quick_add).slice(0, 8);
+  const filteredProducts = useMemo(() => {
+    if (!normalizedQuery) {
+      return products;
+    }
+
+    const query = normalizeSearchValue(deferredQuery);
+
+    return [...products]
+      .filter((product) => {
+        const normalizedName = normalizeArabic(product.name);
+        const normalizedSku = product.sku?.toLowerCase().trim() ?? "";
+        const normalizedDescription = product.description ? normalizeArabic(product.description) : "";
+
+        return (
+          normalizedSku === query ||
+          normalizedName.includes(query) ||
+          normalizedSku.includes(query) ||
+          normalizedDescription.includes(query)
+        );
+      })
+      .sort((left, right) => {
+        const leftSkuExact = (left.sku?.toLowerCase().trim() ?? "") === query ? 1 : 0;
+        const rightSkuExact = (right.sku?.toLowerCase().trim() ?? "") === query ? 1 : 0;
+
+        if (leftSkuExact !== rightSkuExact) {
+          return rightSkuExact - leftSkuExact;
+        }
+
+        const leftQuickAdd = left.is_quick_add ? 1 : 0;
+        const rightQuickAdd = right.is_quick_add ? 1 : 0;
+
+        if (leftQuickAdd !== rightQuickAdd) {
+          return rightQuickAdd - leftQuickAdd;
+        }
+
+        return left.name.localeCompare(right.name, "ar");
+      });
+  }, [deferredQuery, normalizedQuery, products]);
+
+  const quickAddProducts = useMemo(
+    () => products.filter((product) => product.is_quick_add).slice(0, 8),
+    [products]
+  );
+  const quickAddCount = quickAddProducts.length;
   const lowStockCount = products.filter(
     (product) => product.track_stock && product.stock_quantity > 0 && product.stock_quantity <= 5
   ).length;
@@ -278,7 +357,7 @@ export function ProductsBrowser({ role = "pos_staff" }: ProductsBrowserProps) {
           <>
             <span className="status-pill badge badge--brand">الدور: {role === "admin" ? "إداري" : "نقطة بيع"}</span>
             <span className="status-pill badge badge--neutral">التصنيفات: {formatCompactNumber(categories.length - 1)}</span>
-            <span className="status-pill badge badge--neutral">السريعة: {formatCompactNumber(products.filter((product) => product.is_quick_add).length)}</span>
+            <span className="status-pill badge badge--neutral">السريعة: {formatCompactNumber(quickAddCount)}</span>
           </>
         }
         actions={
@@ -502,9 +581,11 @@ export function ProductsBrowser({ role = "pos_staff" }: ProductsBrowserProps) {
           <label className="workspace-search">
             <PackageSearch size={18} />
             <input
+              ref={searchInputRef}
               className="field-input"
               type="search"
-              placeholder="ابحث باسم المنتج أو SKU"
+              autoFocus
+              placeholder="ابحث باسم المنتج أو SKU أو الوصف"
               value={searchInput}
               onChange={(event) => {
                 const nextValue = event.target.value;
@@ -532,25 +613,37 @@ export function ProductsBrowser({ role = "pos_staff" }: ProductsBrowserProps) {
           <p className="workspace-footnote">
             {isTyping
               ? "تحديث نتائج البحث..."
-              : "يُنفَّذ البحث والتصنيف من المصدر نفسه مع مهلة 200ms للحفاظ على سرعة التصفح."}
+              : "اضغط / للبحث السريع و Esc لمسح البحث. يتم فلترة النتائج محلياً لتبقى الاستجابة سريعة."}
           </p>
 
           {quickAddProducts.length > 0 ? (
-            <div className="operational-list">
-              <p className="workspace-footnote">الأكثر استخدامًا داخل البيع اليومي:</p>
-              {quickAddProducts.map((product) => (
-                <article key={product.id} className="operational-list-card">
-                  <div className="operational-list-card__header">
-                    <div>
-                      <h3 className="operational-list-card__title">{product.name}</h3>
-                      <p className="operational-list-card__description">{formatCurrency(product.sale_price)}</p>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <p className="workspace-footnote">الإضافات السريعة</p>
+                <span className="status-pill badge badge--neutral">{formatCompactNumber(quickAddCount)} عنصر</span>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {quickAddProducts.map((product) => (
+                  <article
+                    key={product.id}
+                    className="flex min-h-24 flex-col justify-between rounded-xl border border-border bg-background p-3 shadow-sm transition-colors hover:border-primary hover:bg-accent/30"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <h3 className="truncate text-sm font-semibold text-foreground">{product.name}</h3>
+                        <p className="mt-1 truncate text-xs text-muted-foreground">{product.sku || "بدون SKU"}</p>
+                      </div>
+                      <span className="status-pill badge badge--brand shrink-0">سريع</span>
                     </div>
-                    <div className="operational-list-card__meta">
-                      <span className="status-pill badge badge--brand">سريع</span>
+                    <div className="mt-3 flex items-end justify-between gap-2">
+                      <p className="text-sm font-semibold text-primary">{formatCurrency(product.sale_price)}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {product.track_stock ? formatCompactNumber(product.stock_quantity) : "خدمة"}
+                      </p>
                     </div>
-                  </div>
-                </article>
-              ))}
+                  </article>
+                ))}
+              </div>
             </div>
           ) : null}
         </SectionCard>
@@ -591,6 +684,11 @@ export function ProductsBrowser({ role = "pos_staff" }: ProductsBrowserProps) {
               title="لم نصل إلى منتجات مطابقة"
               tone="subtle"
             >
+              <p className="workspace-footnote">
+                {searchInput.trim()
+                  ? `لا توجد نتائج تطابق "${searchInput.trim()}". جرّب SKU أو وصفاً أقصر.`
+                  : "ابدأ بالبحث أو بدّل التصنيف للعثور على المنتجات الأسرع استخداماً."}
+              </p>
               {hasMore ? (
                 <div className="transaction-action-cluster">
                   <button type="button" className="secondary-button" onClick={loadMore} disabled={isLoadingMore}>
@@ -608,7 +706,11 @@ export function ProductsBrowser({ role = "pos_staff" }: ProductsBrowserProps) {
                 {filteredProducts.map((product) => (
                   <article
                     key={product.id}
-                    className={isAdmin ? "product-card product-card--interactive product-admin-card" : "product-card"}
+                    className={
+                      isAdmin
+                        ? "product-card product-card--interactive product-admin-card"
+                        : "product-card min-h-28 p-4 transition-shadow hover:shadow-md"
+                    }
                     role={isAdmin ? "button" : undefined}
                     tabIndex={isAdmin ? 0 : undefined}
                     aria-label={isAdmin ? `تحرير ${product.name}` : undefined}
