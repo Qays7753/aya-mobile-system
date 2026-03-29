@@ -1105,15 +1105,15 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
 
   const cartSheetClassName = [
     "transaction-stack",
-    !isCompactViewport ? "transaction-stack--sticky pos-cart-panel" : "",
-    isCompactViewport ? "pos-cart-sheet" : "",
-    isCompactViewport && panelState === "cart" && !isCartSheetExpanded
+    "pos-cart-sheet",
+    "pos-cart-panel",
+    panelState === "cart" && !isCartSheetExpanded
       ? "pos-cart-sheet--collapsed"
       : "",
-    isCompactViewport && panelState === "cart" && isCartSheetExpanded
+    panelState === "cart" && isCartSheetExpanded
       ? "pos-cart-sheet--expanded"
       : "",
-    isCompactViewport && panelState !== "cart" ? "pos-cart-sheet--fullscreen" : ""
+    panelState !== "cart" ? "pos-cart-sheet--fullscreen" : ""
   ]
     .filter(Boolean)
     .join(" ");

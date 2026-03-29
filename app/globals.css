@@ -4839,36 +4839,50 @@ h3 {
   min-width: 0;
 }
 
-.pos-cart-sheet {
-  position: fixed;
-  bottom: calc(64px + var(--safe-area-bottom));
-  left: 0;
-  right: 0;
-  background: var(--aya-panel);
-  border-top: 1px solid var(--aya-line);
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  box-shadow: var(--shadow-md);
-  transition: transform 250ms ease;
-  z-index: var(--z-cart-sheet);
+/* Mobile: cart sheet fixed at bottom */
+@media (max-width: 1023px) {
+  .pos-cart-sheet {
+    position: fixed;
+    bottom: calc(64px + var(--safe-area-bottom));
+    left: 0;
+    right: 0;
+    background: var(--aya-panel);
+    border-top: 1px solid var(--aya-line);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    box-shadow: var(--shadow-md);
+    transition: transform 250ms ease;
+    z-index: var(--z-cart-sheet);
+  }
 }
 
-.pos-cart-sheet--collapsed {
-  transform: translateY(calc(100% - 56px));
+/* Desktop: cart panel is a sticky sidebar */
+@media (min-width: 1024px) {
+  .pos-cart-sheet {
+    position: sticky;
+    top: 6.5rem;
+    align-self: start;
+  }
 }
 
-.pos-cart-sheet--expanded {
-  transform: translateY(0);
-  max-height: calc(100vh - 64px - var(--safe-area-bottom));
-  overflow-y: auto;
-}
+@media (max-width: 1023px) {
+  .pos-cart-sheet--collapsed {
+    transform: translateY(calc(100% - 56px));
+  }
 
-.pos-cart-sheet--fullscreen {
-  position: fixed;
-  inset: 0;
-  border-radius: 0;
-  max-height: 100vh;
-  z-index: var(--z-fullscreen-checkout);
-  padding-bottom: var(--safe-area-bottom);
+  .pos-cart-sheet--expanded {
+    transform: translateY(0);
+    max-height: calc(100vh - 64px - var(--safe-area-bottom));
+    overflow-y: auto;
+  }
+
+  .pos-cart-sheet--fullscreen {
+    position: fixed;
+    inset: 0;
+    border-radius: 0;
+    max-height: 100vh;
+    z-index: var(--z-fullscreen-checkout);
+    padding-bottom: var(--safe-area-bottom);
+  }
 }
 
 .pos-cart-sheet__bar {
@@ -4878,7 +4892,7 @@ h3 {
   border-bottom: 1px solid var(--aya-line);
 }
 
-@media (max-width: 767px) {
+@media (max-width: 1023px) {
   .pos-cart-sheet__bar {
     display: flex;
   }
