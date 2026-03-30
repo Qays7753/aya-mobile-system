@@ -5207,7 +5207,7 @@ h3 {
 }
 
 @media (max-width: 1023px) {
-  .cart-panel__cta-row {
+  .cart-panel__cta-row > .transaction-checkout-button:last-child {
     display: none;
   }
 }
