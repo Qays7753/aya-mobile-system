@@ -477,7 +477,7 @@ test.describe.serial("PX-06-T02 UAT release gate", () => {
       await posSession.page.goto("/pos", { waitUntil: "domcontentloaded" });
       await posSession.page.waitForLoadState("networkidle");
 
-      const searchInput = posSession.page.getByPlaceholder("ابحث باسم المنتج أو SKU");
+      const searchInput = posSession.page.getByPlaceholder("ابحث عن منتج...");
       await expect(searchInput).toBeVisible();
       await expect
         .poll(
@@ -492,7 +492,7 @@ test.describe.serial("PX-06-T02 UAT release gate", () => {
         const expectedTitle = `PX06 ${prefix.toUpperCase()} Product 001`;
         const duration = await posSession.page.evaluate(
           async ({ query, title }) => {
-            const input = document.querySelector('input[placeholder="ابحث باسم المنتج أو SKU"]');
+            const input = document.querySelector('input[placeholder="ابحث عن منتج..."]');
             const grid = document.querySelector(".product-grid--compact");
 
             if (!(input instanceof HTMLInputElement) || !(grid instanceof HTMLElement)) {

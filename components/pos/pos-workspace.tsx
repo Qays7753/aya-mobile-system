@@ -1205,7 +1205,7 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
                       ref={searchRef}
                       type="search"
                       autoFocus
-                      placeholder="ابحث باسم المنتج أو SKU"
+                      placeholder="ابحث عن منتج..."
                       value={searchInput}
                       onChange={(event) => {
                         const nextValue = event.target.value;
