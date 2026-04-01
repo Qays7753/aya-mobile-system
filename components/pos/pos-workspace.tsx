@@ -58,8 +58,8 @@ type PosWorkspaceProps = {
   maxDiscountPercentage: number | null;
 };
 
-type CartPanelState = "cart" | "checkout" | "processing" | "success";
-type MobileTab = "products" | "cart" | "checkout";
+type CartPanelState = "cart" | "processing" | "success";
+type MobileTab = "products" | "cart";
 type ProductViewMode = "text" | "thumbnail";
 
 type CustomerSearchResult = {
@@ -680,11 +680,7 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
       setProductView(storedView);
     }
 
-    if (
-      storedMobileTab === "products" ||
-      storedMobileTab === "cart" ||
-      storedMobileTab === "checkout"
-    ) {
+    if (storedMobileTab === "products" || storedMobileTab === "cart") {
       setActiveMobileTab(storedMobileTab);
     }
   }, []);
@@ -718,15 +714,6 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
           setSearchInput("");
           setSearchQuery("");
           return;
-        }
-
-        if (
-          isMobileViewport &&
-          activeMobileTab === "checkout" &&
-          panelState !== "success"
-        ) {
-          event.preventDefault();
-          goBackToCart();
         }
 
         return;
@@ -766,7 +753,7 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
 
       if (event.key === "F2" && items.length > 0) {
         event.preventDefault();
-        openCheckout();
+        if (isMobileViewport) setActiveMobileTab("cart");
         return;
       }
 
@@ -802,10 +789,7 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
       if (event.key.toLowerCase() === "d") {
         event.preventDefault();
         setIsDiscountExpanded(true);
-        if (isMobileViewport) {
-          setActiveMobileTab("checkout");
-          setPanelState("checkout");
-        }
+        if (isMobileViewport) setActiveMobileTab("cart");
       }
     }
 
@@ -924,21 +908,11 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
   }
 
   function openCheckout() {
-    if (items.length === 0) {
-      return;
-    }
-
-    setPanelState("checkout");
-    if (isMobileViewport) {
-      setActiveMobileTab("checkout");
-    }
+    if (isMobileViewport && items.length > 0) setActiveMobileTab("cart");
   }
 
   function goBackToCart() {
-    setPanelState("cart");
-    if (isMobileViewport) {
-      setActiveMobileTab("cart");
-    }
+    if (isMobileViewport) setActiveMobileTab("products");
   }
 
   function selectCustomer(customer: CustomerSearchResult) {
@@ -1144,7 +1118,7 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
         const message = getSafeArabicErrorMessage(envelope.error, "تعذر تنفيذ البيع.");
 
         markError(errorCode);
-        setPanelState("checkout");
+        setPanelState("cart");
 
         if (errorCode === "ERR_IDEMPOTENCY") {
           const existingInvoice = (
@@ -1190,14 +1164,14 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
       setIsNotesExpanded(false);
       setIsPrimarySplitSelectorOpen(false);
       setPanelState("success");
-      setActiveMobileTab("checkout");
+      setActiveMobileTab("cart");
       toast.success(`تم إنشاء الفاتورة ${envelope.data.invoice_number} بنجاح.`);
       refreshOperationalData();
     } catch (error) {
       const message = getSafeArabicErrorMessage(error, "تعذر الوصول إلى مسار البيع.");
 
       markError("ERR_API_INTERNAL");
-      setPanelState("checkout");
+      setPanelState("cart");
       setSubmissionErrorMessage(message);
       toast.error(message);
     }
@@ -1323,28 +1297,13 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
                   ? "pos-mobile-tabs__button pos-cart-sheet__summary is-active"
                   : "pos-mobile-tabs__button pos-cart-sheet__summary"
               }
-              onClick={() => {
-                setActiveMobileTab("cart");
-                setPanelState("cart");
-              }}
+              onClick={() => setActiveMobileTab("cart")}
               aria-pressed={activeMobileTab === "cart"}
             >
               <span>السلة</span>
               <strong>
                 {formatCompactNumber(items.length)} • {formatCurrency(netTotal)}
               </strong>
-            </button>
-            <button
-              type="button"
-              className={
-                activeMobileTab === "checkout"
-                  ? "pos-mobile-tabs__button is-active"
-                  : "pos-mobile-tabs__button"
-              }
-              onClick={openCheckout}
-              aria-pressed={activeMobileTab === "checkout"}
-            >
-              <span>الدفع</span>
             </button>
           </nav>
         ) : null}
@@ -1635,7 +1594,7 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
                   </button>
                 </div>
               </div>
-            ) : panelState === "cart" ? (
+            ) : panelState !== "success" ? (
               <>
                 <div className="pos-cart-card__header">
                   <div className="pos-cart-card__title-group">
@@ -1851,102 +1810,39 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
                   </div>
                 )}
 
-                <div className="cart-summary pos-cart-mode-summary">
-                  <dl>
-                    <div className="cart-summary__total">
-                      <dt>الإجمالي</dt>
-                      <dd>{formatCurrency(netTotal)}</dd>
-                    </div>
-                  </dl>
-
-                  <div className="cart-panel__cta-row">
-                    <button
-                      type="button"
-                      className="secondary-button btn btn--secondary transaction-checkout-button transaction-checkout-button--secondary"
-                      disabled={items.length === 0}
-                      onClick={openCheckout}
-                      title="F2"
-                    >
-                      مراجعة الدفع
-                    </button>
-                    <button
-                      type="button"
-                      className={
-                        canCreateDebt
-                          ? "primary-button btn btn--warning transaction-checkout-button transaction-checkout-button--primary"
-                          : "primary-button btn btn--primary transaction-checkout-button transaction-checkout-button--primary"
-                      }
-                      disabled={isSubmitting || !canCompleteSale || isOffline}
-                      onClick={() => {
-                        startSubmission(() => {
-                          void submitSale();
-                        });
-                      }}
-                      title="Ctrl+Enter"
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <Loader2 className="spin" size={16} />
-                          جارٍ التنفيذ...
-                        </>
-                      ) : (
-                        "إتمام البيع"
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="pos-cart-card__header pos-cart-card__header--checkout">
-                  <div className="pos-cart-card__title-group">
-                    <div className="pos-cart-card__title-row">
-                      <h2 className="pos-cart-card__title">إتمام البيع</h2>
-                    </div>
-
-                    <div className="pos-checkout-header">
-                      <span className="product-pill product-pill--accent">
-                        {activePaymentLabel}
-                      </span>
-                      <span
-                        className={
-                          remainingToSettle > 0
-                            ? "product-pill product-pill--warning"
-                            : "product-pill product-pill--success"
-                        }
-                      >
-                        {checkoutStatusLabel}
-                      </span>
-                    </div>
+                <div className="pos-unified-checkout">
+                  <div className="pos-cart-summary">
+                    <dl>
+                      <div>
+                        <dt>المجموع الخُقاني</dt>
+                        <dd>{formatCurrency(subtotal)}</dd>
+                      </div>
+                      {totalDiscount > 0 ? (
+                        <div>
+                          <dt>الخصم</dt>
+                          <dd>- {formatCurrency(totalDiscount)}</dd>
+                        </div>
+                      ) : null}
+                      {invoiceDiscountAmount > 0 ? (
+                        <div>
+                          <dt>خصم الفاتورة</dt>
+                          <dd>- {formatCurrency(invoiceDiscountAmount)}</dd>
+                        </div>
+                      ) : null}
+                      <div className="cart-summary__total pos-amount-due">
+                        <dt>المبلغ المستحق</dt>
+                        <dd>{formatCurrency(netTotal)}</dd>
+                      </div>
+                    </dl>
                   </div>
 
-                  <button
-                    type="button"
-                    className="ghost-button btn btn--ghost cart-panel__header-button"
-                    onClick={goBackToCart}
-                    disabled={isSubmitting}
-                  >
-                    <ArrowRight size={16} />
-                    عودة
-                  </button>
-                </div>
-
-                <div
-                  className={
-                    panelState === "processing"
-                      ? "transaction-checkout-fields is-processing"
-                      : "transaction-checkout-fields"
-                  }
-                  aria-busy={panelState === "processing"}
-                >
                   {!isSplitMode ? (
                     <div className="stack-field">
-                      <span className="field-label">طريقة الدفع</span>
+                      <span className="field-label">طرق الدفع</span>
                       <div className="chip-row pos-payment-chip-row">
                         {accounts.map((account) => {
                           const Icon = getAccountIcon(account.type);
                           const isSelected = account.id === selectedAccountId;
-
                           return (
                             <button
                               key={account.id}
@@ -1997,10 +1893,7 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
                       <div className="pos-split-payment-row pos-split-payment-row--primary">
                         {selectedAccount
                           ? (() => {
-                              const SelectedAccountIcon = getAccountIcon(
-                                selectedAccount.type
-                              );
-
+                              const SelectedAccountIcon = getAccountIcon(selectedAccount.type);
                               return (
                                 <button
                                   type="button"
@@ -2043,7 +1936,6 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
                           {availablePrimarySplitAccounts.map((account) => {
                             const Icon = getAccountIcon(account.type);
                             const isSelected = account.id === selectedAccountId;
-
                             return (
                               <button
                                 key={`primary-selector-${account.id}`}
@@ -2074,7 +1966,6 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
                               (account) => {
                                 const Icon = getAccountIcon(account.type);
                                 const isSelected = account.id === payment.accountId;
-
                                 return (
                                   <button
                                     key={`${index}-${account.id}`}
@@ -2136,244 +2027,6 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
                     </div>
                   ) : null}
 
-                  <button
-                    type="button"
-                    className="ghost-button btn btn--ghost pos-add-split-payment"
-                    onClick={handleAddSplitPayment}
-                    disabled={
-                      panelState === "processing" ||
-                      splitPayments.length >= 2 ||
-                      accounts.length <= paymentRows.length
-                    }
-                  >
-                    <Plus size={16} />
-                    أضف طريقة دفع أخرى
-                  </button>
-
-                  <div className="pos-checkout-optional">
-                    {isCustomerExpanded ? (
-                      <div className="stack-field customer-search-field">
-                        <span className="field-label">العميل</span>
-                        <input
-                          className="field-input"
-                          type="text"
-                          value={customerSearchInput}
-                          onChange={(event) => {
-                            clearSubmissionFeedback();
-                            setCustomerSearchInput(event.target.value);
-                          }}
-                          placeholder="بحث العميل"
-                          disabled={panelState === "processing"}
-                        />
-
-                        {shouldShowCustomerResults ? (
-                          <div className="customer-search-results">
-                            {customersLoading ? (
-                              <div className="customer-search-results__empty">
-                                جارٍ البحث عن العملاء...
-                              </div>
-                            ) : customerResults.length === 0 ? (
-                              <div className="customer-search-results__empty">
-                                لا توجد نتائج مطابقة.
-                              </div>
-                            ) : (
-                              customerResults.map((customer) => (
-                                <button
-                                  key={customer.id}
-                                  type="button"
-                                  className="customer-search-option"
-                                  onClick={() =>
-                                    selectCustomer(customer as CustomerSearchResult)
-                                  }
-                                >
-                                  <strong>{customer.name}</strong>
-                                  <span>
-                                    {customer.phone || "بدون هاتف"} • الرصيد الحالي{" "}
-                                    {formatCurrency(customer.current_balance)}
-                                  </span>
-                                </button>
-                              ))
-                            )}
-                          </div>
-                        ) : null}
-
-                        {selectedCustomerId && selectedCustomerName ? (
-                          <div className="selected-customer-card">
-                            <div>
-                              <strong>{selectedCustomerName}</strong>
-                              <span>
-                                الرصيد الحالي:{" "}
-                                {selectedCustomerBalance !== null
-                                  ? formatCurrency(selectedCustomerBalance)
-                                  : "جارٍ التحميل..."}
-                                {selectedCustomerPhone ? ` • ${selectedCustomerPhone}` : ""}
-                              </span>
-                            </div>
-
-                            <button
-                              type="button"
-                              className="secondary-button"
-                              onClick={clearCustomerSelection}
-                              disabled={panelState === "processing"}
-                            >
-                              إزالة
-                            </button>
-                          </div>
-                        ) : null}
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        className="pos-optional-field-toggle"
-                        onClick={() => setIsCustomerExpanded(true)}
-                        disabled={panelState === "processing"}
-                      >
-                        ▸ إضافة عميل (اختياري)
-                      </button>
-                    )}
-
-                    {isDiscountExpanded ? (
-                      <label className="stack-field">
-                        <span className="field-label">خصم الفاتورة</span>
-                        <input
-                          className="field-input"
-                          type="number"
-                          min={0}
-                          max={effectiveMaxDiscount}
-                          value={invoiceDiscountPercentage}
-                          onChange={(event) => {
-                            clearSubmissionFeedback();
-                            const rawValue = Number(event.target.value);
-                            setInvoiceDiscountPercentage(
-                              Number.isNaN(rawValue)
-                                ? 0
-                                : Math.min(Math.max(rawValue, 0), effectiveMaxDiscount)
-                            );
-                          }}
-                          disabled={panelState === "processing"}
-                        />
-                      </label>
-                    ) : (
-                        <button
-                          type="button"
-                          className="pos-optional-field-toggle"
-                          onClick={() => setIsDiscountExpanded(true)}
-                          disabled={panelState === "processing"}
-                          title="d"
-                        >
-                          ▸ إضافة خصم (اختياري)
-                        </button>
-                    )}
-
-                    {isTerminalCodeExpanded ? (
-                      <div className="stack-field terminal-code-field">
-                        <span className="field-label">رمز الجهاز</span>
-
-                        {terminalCodeLocked ? (
-                          <div className="terminal-code-field__locked">
-                            <strong>{posTerminalCode}</strong>
-                          </div>
-                        ) : (
-                          <div className="terminal-code-field__edit">
-                            <input
-                              className="field-input"
-                              type="text"
-                              maxLength={30}
-                              value={posTerminalCode}
-                              onChange={(event) => {
-                                clearSubmissionFeedback();
-                                setPosTerminalCode(event.target.value);
-                              }}
-                              placeholder="POS-01"
-                              disabled={panelState === "processing"}
-                            />
-                            <button
-                              type="button"
-                              className="secondary-button"
-                              onClick={() => {
-                                if (posTerminalCode.trim()) {
-                                  lockTerminalCode();
-                                }
-                              }}
-                              disabled={
-                                !posTerminalCode.trim() || panelState === "processing"
-                              }
-                            >
-                              تثبيت
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        className="pos-optional-field-toggle"
-                        onClick={() => setIsTerminalCodeExpanded(true)}
-                        disabled={panelState === "processing"}
-                      >
-                        ▸ رمز الجهاز (اختياري)
-                      </button>
-                    )}
-
-                    <div className="stack-field pos-notes-field">
-                      {!isNotesExpanded ? (
-                        <button
-                          type="button"
-                          className="pos-optional-field-toggle"
-                          onClick={() => setIsNotesExpanded(true)}
-                          disabled={panelState === "processing"}
-                        >
-                          ▸ إضافة ملاحظة (اختياري)
-                        </button>
-                      ) : (
-                        <>
-                          <span className="field-label">ملاحظات</span>
-                          <textarea
-                            className="field-input pos-notes-field__textarea"
-                            rows={3}
-                            maxLength={500}
-                            value={notes}
-                            onChange={(event) => {
-                              clearSubmissionFeedback();
-                              setNotes(event.target.value);
-                            }}
-                            placeholder="ملاحظة على الفاتورة"
-                            disabled={panelState === "processing"}
-                          />
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="cart-summary transaction-checkout-summary pos-checkout-summary">
-                  <dl>
-                    <div>
-                      <dt>المجموع</dt>
-                      <dd>{formatCurrency(subtotal)}</dd>
-                    </div>
-                    <div>
-                      <dt>خصومات البنود</dt>
-                      <dd>{formatCurrency(totalDiscount)}</dd>
-                    </div>
-                    {invoiceDiscountAmount > 0 ? (
-                      <div>
-                        <dt>خصم الفاتورة</dt>
-                        <dd>{formatCurrency(invoiceDiscountAmount)}</dd>
-                      </div>
-                    ) : null}
-                    <div className="cart-summary__total">
-                      <dt>الصافي</dt>
-                      <dd>{formatCurrency(netTotal)}</dd>
-                    </div>
-                    {totalFees > 0 ? (
-                      <div>
-                        <dt>رسوم الدفع</dt>
-                        <dd>{formatCurrency(totalFees)}</dd>
-                      </div>
-                    ) : null}
-                  </dl>
-
                   <div
                     className={
                       remainingToSettle > 0
@@ -2390,6 +2043,119 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
                     )}
                   </div>
 
+                  {isCustomerExpanded ? (
+                    <div className="stack-field customer-search-field">
+                      <span className="field-label">العميل</span>
+                      <input
+                        className="field-input"
+                        type="text"
+                        value={customerSearchInput}
+                        onChange={(event) => {
+                          clearSubmissionFeedback();
+                          setCustomerSearchInput(event.target.value);
+                        }}
+                        placeholder="بحث العميل"
+                        disabled={panelState === "processing"}
+                      />
+
+                      {shouldShowCustomerResults ? (
+                        <div className="customer-search-results">
+                          {customersLoading ? (
+                            <div className="customer-search-results__empty">
+                              جارٍ البحث عن العملاء...
+                            </div>
+                          ) : customerResults.length === 0 ? (
+                            <div className="customer-search-results__empty">
+                              لا توجد نتائج مطابقة.
+                            </div>
+                          ) : (
+                            customerResults.map((customer) => (
+                              <button
+                                key={customer.id}
+                                type="button"
+                                className="customer-search-option"
+                                onClick={() =>
+                                  selectCustomer(customer as CustomerSearchResult)
+                                }
+                              >
+                                <strong>{customer.name}</strong>
+                                <span>
+                                  {customer.phone || "بدون هاتف"} • الرصيد الحالي{" "}
+                                  {formatCurrency(customer.current_balance)}
+                                </span>
+                              </button>
+                            ))
+                          )}
+                        </div>
+                      ) : null}
+
+                      {selectedCustomerId && selectedCustomerName ? (
+                        <div className="selected-customer-card">
+                          <div>
+                            <strong>{selectedCustomerName}</strong>
+                            <span>
+                              الرصيد الحالي:{" "}
+                              {selectedCustomerBalance !== null
+                                ? formatCurrency(selectedCustomerBalance)
+                                : "جارٍ التحميل..."}
+                              {selectedCustomerPhone ? ` • ${selectedCustomerPhone}` : ""}
+                            </span>
+                          </div>
+
+                          <button
+                            type="button"
+                            className="secondary-button"
+                            onClick={clearCustomerSelection}
+                            disabled={panelState === "processing"}
+                          >
+                            إزالة
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
+
+                  {isDiscountExpanded ? (
+                    <label className="stack-field">
+                      <span className="field-label">خصم الفاتورة</span>
+                      <input
+                        className="field-input"
+                        type="number"
+                        min={0}
+                        max={effectiveMaxDiscount}
+                        value={invoiceDiscountPercentage}
+                        onChange={(event) => {
+                          clearSubmissionFeedback();
+                          const rawValue = Number(event.target.value);
+                          setInvoiceDiscountPercentage(
+                            Number.isNaN(rawValue)
+                              ? 0
+                              : Math.min(Math.max(rawValue, 0), effectiveMaxDiscount)
+                          );
+                        }}
+                        disabled={panelState === "processing"}
+                      />
+                    </label>
+                  ) : null}
+
+                  {isNotesExpanded ? (
+                    <div className="stack-field pos-notes-field">
+                      <span className="field-label">ملاحظات</span>
+                      <textarea
+                        className="field-input pos-notes-field__textarea"
+                        rows={3}
+                        maxLength={500}
+                        value={notes}
+                        onChange={(event) => {
+                          clearSubmissionFeedback();
+                          setNotes(event.target.value);
+                        }}
+                        placeholder="ملاحظة على الفاتورة"
+                        disabled={panelState === "processing"}
+                      />
+                    </div>
+                  ) : null}
+
                   {shouldBlockForDebt ? (
                     <p className="field-error pos-debt-block-message">
                       يجب اختيار عميل أو إكمال المبلغ
@@ -2405,6 +2171,48 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
                       ) : null}
                     </div>
                   ) : null}
+
+                  <div className="pos-cart-actions-row">
+                    <button
+                      type="button"
+                      className="chip pos-action-chip"
+                      onClick={handleAddSplitPayment}
+                      disabled={
+                        panelState === "processing" ||
+                        splitPayments.length >= 2 ||
+                        accounts.length <= paymentRows.length
+                      }
+                    >
+                      <Plus size={14} />
+                      تمدة
+                    </button>
+                    <button
+                      type="button"
+                      className={
+                        isDiscountExpanded
+                          ? "chip chip--active pos-action-chip"
+                          : "chip pos-action-chip"
+                      }
+                      onClick={() => setIsDiscountExpanded(true)}
+                      disabled={panelState === "processing" || isDiscountExpanded}
+                    >
+                      <Plus size={14} />
+                      خصم
+                    </button>
+                    <button
+                      type="button"
+                      className={
+                        isCustomerExpanded
+                          ? "chip chip--active pos-action-chip"
+                          : "chip pos-action-chip"
+                      }
+                      onClick={() => setIsCustomerExpanded(true)}
+                      disabled={panelState === "processing" || isCustomerExpanded}
+                    >
+                      <Plus size={14} />
+                      عميل
+                    </button>
+                  </div>
 
                   <button
                     type="button"
@@ -2432,14 +2240,14 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
                         جارٍ التنفيذ...
                       </>
                     ) : canCreateDebt ? (
-                      "إتمام البيع وتسجيل الدين"
+                      `إتمام البيع وتسجيل الدين • ${formatCurrency(netTotal)}`
                     ) : (
-                      "إتمام البيع"
+                      `تاكيد البيع • ${formatCurrency(netTotal)}`
                     )}
                   </button>
                 </div>
               </>
-            )}
+            ) : null}
           </SectionCard>
         </aside>
       </div>
@@ -2457,6 +2265,22 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
             <Clock3 size={14} />
             <bdi dir="ltr">{formatStatusTime(now)}</bdi>
           </span>
+          {lastCompletedSale ? (
+            <button
+              type="button"
+              className="pos-status-bar__print-btn"
+              onClick={() => {
+                window.open(
+                  `/invoices/${lastCompletedSale.invoice_id}?print=1`,
+                  "_blank",
+                  "noopener,noreferrer"
+                );
+              }}
+            >
+              <Printer size={14} />
+              طباعة آخر إيصال
+            </button>
+          ) : null}
         </footer>
       </div>
 
