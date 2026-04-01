@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import type { StandardEnvelope } from "@/lib/pos/types";
 
 export type CustomerSearchResult = {
   id: string;
@@ -26,24 +26,33 @@ export function useCustomerSearch(query: string) {
     let cancelled = false;
     setIsLoading(true);
 
-    const supabase = createSupabaseBrowserClient();
-    const pattern = `%${trimmed}%`;
+    void (async () => {
+      try {
+        const response = await fetch(`/api/pos/customers?q=${encodeURIComponent(trimmed)}`, {
+          method: "GET",
+          cache: "no-store"
+        });
+        const envelope = (await response.json()) as StandardEnvelope<{
+          items: CustomerSearchResult[];
+        }>;
 
-    supabase
-      .from("debt_customers")
-      .select("id, name, phone, current_balance")
-      .eq("is_active", true)
-      .or(`name.ilike.${pattern},phone.ilike.${pattern}`)
-      .order("name", { ascending: true })
-      .limit(8)
-      .then(({ data, error }) => {
         if (cancelled) {
           return;
         }
 
-        setResults(error ? [] : ((data ?? []) as CustomerSearchResult[]));
-        setIsLoading(false);
-      });
+        setResults(
+          !response.ok || !envelope.success || !envelope.data ? [] : envelope.data.items
+        );
+      } catch {
+        if (!cancelled) {
+          setResults([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    })();
 
     return () => {
       cancelled = true;

@@ -26,57 +26,49 @@ test.describe.serial("PX-23 operational workspaces", () => {
   });
 
   test("phone POS gets a clearer products catalog without horizontal overflow", async ({ page }) => {
-    await login(page, seed.pos.email, seed.pos.password, "/products");
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/products", { waitUntil: "domcontentloaded" });
-    await page.waitForLoadState("networkidle");
+    await login(page, seed.pos.email, seed.pos.password, "/products");
 
-    await expect(page.getByRole("heading", { name: "المنتجات الجاهزة للبيع" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "ابدأ من المنتج أو التصنيف" })).toBeVisible();
-    await expect(page.getByPlaceholder("ابحث باسم المنتج أو SKU")).toBeVisible();
+    await expect(page.locator("main").getByRole("heading", { name: "المنتجات" }).first()).toBeVisible();
+    await expect(page.getByPlaceholder("ابحث باسم المنتج أو SKU أو الوصف")).toBeVisible();
     await expect(page.getByRole("button", { name: "الكل" })).toBeVisible();
-    await expect(
-      page
-        .getByRole("heading", { name: "بطاقات المنتجات" })
-        .or(page.getByRole("heading", { name: "لم نصل إلى منتجات مطابقة" }))
-    ).toBeVisible();
+    await expect(page.locator(".catalog-page__results")).toBeVisible();
     await expectNoHorizontalOverflow(page);
   });
 
-  test("tablet admin gets notifications inbox, alerts, and search in a clearer structure", async ({ page }) => {
-    await login(page, seed.admin.email, seed.admin.password, "/notifications");
+  test("tablet admin gets notifications inbox, alerts, and search in a clearer structure", async ({
+    page
+  }) => {
     await page.setViewportSize({ width: 768, height: 1024 });
-    await page.goto("/notifications", { waitUntil: "domcontentloaded" });
-    await page.waitForLoadState("networkidle");
+    await login(page, seed.admin.email, seed.admin.password, "/notifications");
 
-    await expect(page.getByRole("heading", { name: "مركز التنبيهات والمتابعة" })).toBeVisible();
+    await expect(
+      page.locator("main").getByRole("heading", { name: "الإشعارات", exact: true })
+    ).toBeVisible();
     const sectionNav = page.getByLabel("أقسام مركز الإشعارات");
 
     await expect(sectionNav.getByRole("button", { name: "صندوق الإشعارات" })).toBeVisible();
     await expect(sectionNav.getByRole("button", { name: "الملخصات والتنبيهات" })).toBeVisible();
     await expect(sectionNav.getByRole("button", { name: "البحث الشامل" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "الإشعارات الحالية" })).toBeVisible();
 
     await sectionNav.getByRole("button", { name: "البحث الشامل" }).click();
-    await expect(page.getByRole("heading", { name: "نتائج البحث الحالية" })).toBeVisible();
+    await expect(page.getByPlaceholder("اسم منتج، رقم فاتورة، عميل أو رقم صيانة")).toBeVisible();
     await expectNoHorizontalOverflow(page);
   });
 
   test("desktop admin gets calmer operational IA across inventory, suppliers, expenses, operations, and maintenance", async ({
     page
   }) => {
-    await login(page, seed.admin.email, seed.admin.password, "/inventory");
     await page.setViewportSize({ width: 1280, height: 900 });
+    await login(page, seed.admin.email, seed.admin.password, "/inventory");
 
-    await page.goto("/inventory", { waitUntil: "domcontentloaded" });
-    await page.waitForLoadState("networkidle");
-    await expect(page.getByRole("heading", { name: "الجرد والتسوية المحسنة" })).toBeVisible();
+    await expect(page.locator("main").getByRole("heading", { name: "الجرد" })).toBeVisible();
     await expect(page.getByRole("button", { name: "الجرد المفتوح" })).toBeVisible();
     await expect(page.getByRole("button", { name: "آخر النتائج" })).toBeVisible();
 
     await page.goto("/suppliers", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle");
-    await expect(page.getByRole("heading", { name: "الموردون والمشتريات" })).toBeVisible();
+    await expect(page.locator("main").getByRole("heading", { name: "الموردون" })).toBeVisible();
     const suppliersSections = page.getByLabel("أقسام الموردين والمشتريات");
     await expect(suppliersSections.getByRole("button", { name: "الدليل والتفاصيل" })).toBeVisible();
     await expect(suppliersSections.getByRole("button", { name: "أوامر الشراء" })).toBeVisible();
@@ -84,19 +76,21 @@ test.describe.serial("PX-23 operational workspaces", () => {
 
     await page.goto("/expenses", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle");
-    await expect(page.getByRole("heading", { name: "المصروفات ومركز الفئات" })).toBeVisible();
+    await expect(page.locator("main").getByRole("heading", { name: "المصروفات" })).toBeVisible();
     const expensesSections = page.getByLabel("أقسام شاشة المصروفات");
     await expect(expensesSections.getByRole("button", { name: "تسجيل المصروف" })).toBeVisible();
 
     await page.goto("/operations", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle");
-    await expect(page.getByRole("main").getByRole("heading", { name: "الشحن والتحويلات" })).toBeVisible();
+    await expect(
+      page.getByRole("main").getByRole("heading", { name: "الشحن والتحويلات" })
+    ).toBeVisible();
     const operationsSections = page.getByLabel("أقسام شاشة العمليات");
     await expect(operationsSections.getByRole("button", { name: "تحويل داخلي" })).toBeVisible();
 
     await page.goto("/maintenance", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle");
-    await expect(page.getByRole("heading", { name: "الصيانة الأساسية" })).toBeVisible();
+    await expect(page.locator("main").getByRole("heading", { name: "الصيانة الأساسية" })).toBeVisible();
     await expect(page.getByRole("button", { name: "أوامر الصيانة" })).toBeVisible();
 
     await expectNoHorizontalOverflow(page);

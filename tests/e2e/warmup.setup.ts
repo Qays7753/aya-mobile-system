@@ -7,6 +7,8 @@ import { test as setup } from "@playwright/test";
  */
 const PAGES_TO_WARM = ["/", "/login", "/pos", "/reports", "/notifications", "/debts", "/invoices", "/settings"];
 
+setup.setTimeout(180_000);
+
 setup("warm up next dev pages", async ({ page }) => {
   for (const path of PAGES_TO_WARM) {
     try {

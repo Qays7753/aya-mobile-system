@@ -45,7 +45,7 @@ async function seedPx13Fixtures() {
   const supabase = createServiceRoleClient();
   const admin = await createFixtureUser(supabase, "admin", "px13-alerts-admin");
   const pos = await createFixtureUser(supabase, "pos_staff", "px13-alerts-pos");
-  const queryPrefix = `PX13E2E${Date.now().toString().slice(-6)}`;
+  const queryPrefix = `AAAPX13E2E${Date.now().toString().slice(-6)}`;
   const terminalCode = queryPrefix;
   const currentDate = toIsoDate(new Date());
   const yesterday = shiftDays(-1);
@@ -77,6 +77,7 @@ async function seedPx13Fixtures() {
       stock_quantity: 1,
       min_stock_level: 2,
       track_stock: true,
+      is_active: true,
       is_quick_add: false,
       created_by: admin.id
     })
@@ -99,6 +100,7 @@ async function seedPx13Fixtures() {
       stock_quantity: 10,
       min_stock_level: 1,
       track_stock: true,
+      is_active: true,
       is_quick_add: false,
       created_by: admin.id
     })
@@ -281,8 +283,9 @@ test.describe.serial("PX-13 search + alerts device regression", () => {
       await expect(page.getByText(seed.invoiceNumber, { exact: true })).toBeVisible();
       await expect(page.getByText(seed.debtCustomerName, { exact: true })).toBeVisible();
       await expect(page.getByText(seed.maintenanceJobNumber, { exact: true })).toBeVisible();
-      await expect(page.getByText(seed.adminNotificationTitle, { exact: true })).toBeVisible();
       await expectNoHorizontalOverflow(page);
+      await page.getByRole("button", { name: "صندوق الإشعارات" }).click();
+      await expect(page.getByText(seed.adminNotificationTitle, { exact: true })).toBeVisible();
 
       await page.goto("/reports", { waitUntil: "domcontentloaded" });
       await page.waitForLoadState("networkidle");
@@ -298,10 +301,11 @@ test.describe.serial("PX-13 search + alerts device regression", () => {
 
       await expect(page.getByText("البحث الشامل", { exact: true })).toBeVisible();
       await expect(page.getByText("صندوق الإشعارات", { exact: true })).toBeVisible();
-      await expect(page.getByText(seed.posNotificationTitle, { exact: true })).toBeVisible();
-      await expect(page.getByText(seed.adminNotificationTitle, { exact: true })).not.toBeVisible();
       await expect(page.getByText(seed.invoiceNumber, { exact: true })).toBeVisible();
       await expectNoHorizontalOverflow(page);
+      await page.getByRole("button", { name: "صندوق الإشعارات" }).click();
+      await expect(page.getByText(seed.posNotificationTitle, { exact: true })).toBeVisible();
+      await expect(page.getByText(seed.adminNotificationTitle, { exact: true })).toHaveCount(0);
     });
   }
 });

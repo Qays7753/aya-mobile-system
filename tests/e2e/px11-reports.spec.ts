@@ -29,6 +29,9 @@ async function seedPx11Fixtures() {
     .select("id")
     .eq("type", "cash")
     .eq("module_scope", "core")
+    .eq("is_active", true)
+    .order("display_order", { ascending: true })
+    .limit(1)
     .single<{ id: string }>();
   if (accountError || !account) {
     throw accountError ?? new Error("Core cash account not found.");
@@ -109,14 +112,20 @@ test.describe.serial("PX-11 advanced reports", () => {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       await login(page, admin.email, admin.password, "/reports");
 
-      await page.goto(`/reports?from_date=${seededDate}&to_date=${seededDate}`, { waitUntil: "domcontentloaded" });
+      await page.goto(`/reports?from_date=${seededDate}&to_date=${seededDate}`, {
+        waitUntil: "domcontentloaded"
+      });
       await page.waitForLoadState("networkidle");
 
-      await expect(page.getByRole("heading", { name: "التقارير المتقدمة والتحليلات المقارنة" })).toBeVisible();
+      await expect(
+        page.locator("main").getByRole("heading", { name: "التقارير" })
+      ).toBeVisible();
       await expect(page.getByRole("button", { name: "تطبيق الفلاتر" })).toBeVisible();
-      await expect(page.getByText("ملخص الفترة الحالية مقابل فترة المقارنة")).toBeVisible();
-      await expect(page.getByText("اتجاه المبيعات وصافي الربح")).toBeVisible();
-      await expect(page.getByText("تفكيك البعد الحالي")).toBeVisible();
+      await expect(page.getByText("ملخص المقارنة")).toBeVisible();
+      await expect(page.getByText("اتجاه الأداء")).toBeVisible();
+      await expect(
+        page.locator("main").getByRole("heading", { name: "تفكيك البعد الحالي" })
+      ).toBeVisible();
 
       await page.getByLabel("من تاريخ المقارنة").fill(seededDate);
       await page.getByLabel("إلى تاريخ المقارنة").fill(seededDate);
@@ -125,7 +134,7 @@ test.describe.serial("PX-11 advanced reports", () => {
       await page.getByRole("button", { name: "تطبيق الفلاتر" }).click();
       await page.waitForLoadState("networkidle");
 
-      const exportLink = page.getByRole("link", { name: "تصدير Excel المتقدم" });
+      const exportLink = page.getByRole("link", { name: "تصدير Excel" });
       await expect(exportLink).toHaveAttribute("href", /\/api\/reports\/advanced\/export/);
       await expectNoHorizontalOverflow(page);
     });

@@ -11,6 +11,8 @@ type ServiceWorkerRegistrationHandle = globalThis.ServiceWorkerRegistration;
 
 const MANIFEST_URL = "/manifest.webmanifest";
 const VERSION_CHECK_INTERVAL_MS = 60_000;
+const CACHE_PREFIX = "aya-mobile";
+const SHOULD_REGISTER_SERVICE_WORKER = process.env.NODE_ENV === "production";
 
 async function readManifestVersion(): Promise<string | null> {
   const response = await fetch(`${MANIFEST_URL}?fresh=${Date.now()}`, {
@@ -35,11 +37,32 @@ function activateWaitingWorker(registration: ServiceWorkerRegistrationHandle) {
   }
 }
 
+async function unregisterDevelopmentServiceWorkers() {
+  if (!isServiceWorkerSupported()) {
+    return;
+  }
+
+  const registrations = await navigator.serviceWorker.getRegistrations();
+  await Promise.all(registrations.map((registration) => registration.unregister()));
+
+  const cacheKeys = await caches.keys();
+  await Promise.all(
+    cacheKeys
+      .filter((key) => key.startsWith(CACHE_PREFIX))
+      .map((key) => caches.delete(key))
+  );
+}
+
 export function ServiceWorkerRegistration({ buildId }: { buildId: string }) {
   const hasShownUpdateToast = useRef(false);
 
   useEffect(() => {
     if (!isServiceWorkerSupported()) {
+      return;
+    }
+
+    if (!SHOULD_REGISTER_SERVICE_WORKER) {
+      void unregisterDevelopmentServiceWorkers();
       return;
     }
 

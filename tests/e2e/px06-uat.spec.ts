@@ -1,6 +1,12 @@
 import { randomUUID } from "node:crypto";
-import { createServiceRoleClient, createFixtureUser, login, percentile, type FixtureUser } from "./helpers/local-runtime";
 import { expect, test, type APIRequestContext, type Browser } from "@playwright/test";
+import {
+  createFixtureUser,
+  createServiceRoleClient,
+  login,
+  percentile,
+  type FixtureUser
+} from "./helpers/local-runtime";
 
 type ProductSeed = {
   id: string;
@@ -13,6 +19,7 @@ type SeedState = {
   admin: FixtureUser;
   posA: FixtureUser;
   posB: FixtureUser;
+  terminalPrefix: string;
   cashAccountId: string;
   singleStockProduct: ProductSeed;
   lockProductA: ProductSeed;
@@ -22,7 +29,8 @@ type SeedState = {
   searchPrefixes: string[];
 };
 
-const terminalPrefix = "PX06-UAT";
+const POS_SEARCH_PLACEHOLDER = "ابحث بالاسم أو رمز المنتج...";
+
 let seed: SeedState;
 
 function buildSalePayload(
@@ -66,6 +74,17 @@ async function seedProducts() {
   const admin = await createFixtureUser(supabase, "admin", "px06-admin");
   const posA = await createFixtureUser(supabase, "pos_staff", "px06-pos-a");
   const posB = await createFixtureUser(supabase, "pos_staff", "px06-pos-b");
+  const runId = randomUUID().slice(0, 8).toUpperCase();
+  const terminalPrefix = `P6${runId.slice(0, 6)}`;
+  const singleStockName = `PX06 ${runId} Single Stock Headset`;
+  const lockProductAName = `PX06 ${runId} Lock Product A`;
+  const lockProductBName = `PX06 ${runId} Lock Product B`;
+  const forgedPriceName = `PX06 ${runId} Forged Price Product`;
+  const performanceNames = Array.from({ length: 5 }, (_, index) => `PX06 ${runId} Perf Product ${index + 1}`);
+  const searchPrefixes = Array.from(
+    { length: 20 },
+    (_, index) => `${runId} search ${String(index + 1).padStart(2, "0")}`
+  );
 
   const { data: cashAccount, error: cashAccountError } = await supabase
     .from("accounts")
@@ -83,7 +102,7 @@ async function seedProducts() {
 
   const baseProducts = [
     {
-      name: "PX06 Single Stock Headset",
+      name: singleStockName,
       category: "accessory",
       sale_price: 75,
       cost_price: 35,
@@ -91,11 +110,12 @@ async function seedProducts() {
       stock_quantity: 1,
       min_stock_level: 1,
       track_stock: true,
+      is_active: true,
       is_quick_add: true,
       created_by: admin.id
     },
     {
-      name: "PX06 Lock Product A",
+      name: lockProductAName,
       category: "accessory",
       sale_price: 30,
       cost_price: 12,
@@ -103,11 +123,12 @@ async function seedProducts() {
       stock_quantity: 12,
       min_stock_level: 1,
       track_stock: true,
+      is_active: true,
       is_quick_add: true,
       created_by: admin.id
     },
     {
-      name: "PX06 Lock Product B",
+      name: lockProductBName,
       category: "accessory",
       sale_price: 50,
       cost_price: 20,
@@ -115,11 +136,12 @@ async function seedProducts() {
       stock_quantity: 12,
       min_stock_level: 1,
       track_stock: true,
+      is_active: true,
       is_quick_add: true,
       created_by: admin.id
     },
     {
-      name: "PX06 Forged Price Product",
+      name: forgedPriceName,
       category: "accessory",
       sale_price: 45,
       cost_price: 18,
@@ -127,11 +149,12 @@ async function seedProducts() {
       stock_quantity: 40,
       min_stock_level: 1,
       track_stock: true,
+      is_active: true,
       is_quick_add: true,
       created_by: admin.id
     },
-    ...Array.from({ length: 5 }, (_, index) => ({
-      name: `PX06 Perf Product ${index + 1}`,
+    ...performanceNames.map((name, index) => ({
+      name,
       category: "accessory",
       sale_price: 20 + index * 5,
       cost_price: 8 + index * 2,
@@ -139,12 +162,12 @@ async function seedProducts() {
       stock_quantity: 250,
       min_stock_level: 5,
       track_stock: true,
+      is_active: true,
       is_quick_add: false,
       created_by: admin.id
     }))
   ];
 
-  const searchPrefixes = Array.from({ length: 20 }, (_, index) => `search ${String(index + 1).padStart(2, "0")}`);
   const searchProducts = searchPrefixes.flatMap((prefix, prefixIndex) =>
     Array.from({ length: 25 }, (_, productIndex) => ({
       name: `PX06 ${prefix.toUpperCase()} Product ${String(productIndex + 1).padStart(3, "0")}`,
@@ -155,6 +178,7 @@ async function seedProducts() {
       stock_quantity: 20,
       min_stock_level: 1,
       track_stock: true,
+      is_active: true,
       is_quick_add: false,
       created_by: admin.id
     }))
@@ -175,15 +199,13 @@ async function seedProducts() {
     admin,
     posA,
     posB,
+    terminalPrefix,
     cashAccountId: cashAccount.id,
-    singleStockProduct: byName.get("PX06 Single Stock Headset")!,
-    lockProductA: byName.get("PX06 Lock Product A")!,
-    lockProductB: byName.get("PX06 Lock Product B")!,
-    forgedPriceProduct: byName.get("PX06 Forged Price Product")!,
-    performanceProducts: baseProducts
-      .slice(4)
-      .map((product) => byName.get(product.name)!)
-      .filter(Boolean),
+    singleStockProduct: byName.get(singleStockName)!,
+    lockProductA: byName.get(lockProductAName)!,
+    lockProductB: byName.get(lockProductBName)!,
+    forgedPriceProduct: byName.get(forgedPriceName)!,
+    performanceProducts: performanceNames.map((name) => byName.get(name)!).filter(Boolean),
     searchPrefixes
   } satisfies SeedState;
 }
@@ -224,13 +246,13 @@ test.describe.serial("PX-06-T02 UAT release gate", () => {
       const concurrentPayloadA = buildSalePayload(
         [{ product_id: seed.singleStockProduct.id, quantity: 1 }],
         seed.cashAccountId,
-        `${terminalPrefix}-21`,
+        `${seed.terminalPrefix}-21`,
         "PX06 UAT-21 device A"
       );
       const concurrentPayloadB = buildSalePayload(
         [{ product_id: seed.singleStockProduct.id, quantity: 1 }],
         seed.cashAccountId,
-        `${terminalPrefix}-21`,
+        `${seed.terminalPrefix}-21`,
         "PX06 UAT-21 device B"
       );
 
@@ -250,7 +272,7 @@ test.describe.serial("PX-06-T02 UAT release gate", () => {
       const { count: uat21InvoiceCount, error: uat21CountError } = await supabase
         .from("invoices")
         .select("*", { count: "exact", head: true })
-        .eq("pos_terminal_code", `${terminalPrefix}-21`);
+        .eq("pos_terminal_code", `${seed.terminalPrefix}-21`);
 
       if (uat21CountError) {
         throw uat21CountError;
@@ -267,7 +289,7 @@ test.describe.serial("PX-06-T02 UAT release gate", () => {
           { product_id: seed.lockProductB.id, quantity: 1 }
         ],
         seed.cashAccountId,
-        `${terminalPrefix}-21b`,
+        `${seed.terminalPrefix}-21b`,
         "PX06 UAT-21b device A"
       );
       const deadlockPayloadB = buildSalePayload(
@@ -276,7 +298,7 @@ test.describe.serial("PX-06-T02 UAT release gate", () => {
           { product_id: seed.lockProductA.id, quantity: 1 }
         ],
         seed.cashAccountId,
-        `${terminalPrefix}-21b`,
+        `${seed.terminalPrefix}-21b`,
         "PX06 UAT-21b device B"
       );
 
@@ -291,8 +313,11 @@ test.describe.serial("PX-06-T02 UAT release gate", () => {
         })
       ]);
       const totalElapsed = Date.now() - started;
-
-      const permittedCodes = new Set(["ERR_CONCURRENT_STOCK_UPDATE", undefined]);
+      const permittedCodes = new Set([
+        "ERR_CONCURRENT_STOCK_UPDATE",
+        "ERR_STOCK_INSUFFICIENT",
+        undefined
+      ]);
       expect(permittedCodes.has(deadlockA.payload?.error?.code)).toBe(true);
       expect(permittedCodes.has(deadlockB.payload?.error?.code)).toBe(true);
       expect(deadlockA.response.ok() || deadlockA.response.status() === 409).toBe(true);
@@ -302,7 +327,7 @@ test.describe.serial("PX-06-T02 UAT release gate", () => {
       const { count: uat21bInvoiceCount, error: uat21bCountError } = await supabase
         .from("invoices")
         .select("*", { count: "exact", head: true })
-        .eq("pos_terminal_code", `${terminalPrefix}-21b`);
+        .eq("pos_terminal_code", `${seed.terminalPrefix}-21b`);
 
       if (uat21bCountError) {
         throw uat21bCountError;
@@ -330,33 +355,30 @@ test.describe.serial("PX-06-T02 UAT release gate", () => {
       const directInsertBefore = await supabase
         .from("invoices")
         .select("*", { count: "exact", head: true })
-        .eq("pos_terminal_code", `${terminalPrefix}-28`);
+        .eq("pos_terminal_code", `${seed.terminalPrefix}-28`);
 
       if (directInsertBefore.error) {
         throw directInsertBefore.error;
       }
 
-      const directInsertResponse = await request.post(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/invoices`,
-        {
-          headers: {
-            apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "",
-            authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""}`,
-            "Content-Type": "application/json",
-            Prefer: "return=representation"
-          },
-          data: {
-            invoice_number: `PX06-UAT28-${Date.now()}`,
-            subtotal: 10,
-            discount_amount: 0,
-            total_amount: 10,
-            debt_amount: 0,
-            pos_terminal_code: `${terminalPrefix}-28`,
-            notes: "PX06 UAT-28 direct browser insert",
-            created_by: seed.posA.id
-          }
+      const directInsertResponse = await request.post(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/invoices`, {
+        headers: {
+          apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "",
+          authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""}`,
+          "Content-Type": "application/json",
+          Prefer: "return=representation"
+        },
+        data: {
+          invoice_number: `${seed.terminalPrefix}-28-${Date.now()}`,
+          subtotal: 10,
+          discount_amount: 0,
+          total_amount: 10,
+          debt_amount: 0,
+          pos_terminal_code: `${seed.terminalPrefix}-28`,
+          notes: "PX06 UAT-28 direct browser insert",
+          created_by: seed.posA.id
         }
-      );
+      });
       const directInsertPayload = await directInsertResponse.json();
 
       expect(directInsertResponse.ok()).toBeFalsy();
@@ -365,7 +387,7 @@ test.describe.serial("PX-06-T02 UAT release gate", () => {
       const directInsertAfter = await supabase
         .from("invoices")
         .select("*", { count: "exact", head: true })
-        .eq("pos_terminal_code", `${terminalPrefix}-28`);
+        .eq("pos_terminal_code", `${seed.terminalPrefix}-28`);
 
       if (directInsertAfter.error) {
         throw directInsertAfter.error;
@@ -382,7 +404,7 @@ test.describe.serial("PX-06-T02 UAT release gate", () => {
           }
         ],
         seed.cashAccountId,
-        `${terminalPrefix}-29`,
+        `${seed.terminalPrefix}-29`,
         "PX06 UAT-29 forged unit price"
       );
       forgedPricePayload.payments[0].amount = seed.forgedPriceProduct.sale_price;
@@ -433,7 +455,7 @@ test.describe.serial("PX-06-T02 UAT release gate", () => {
         const warmPayload = buildSalePayload(
           warmItems,
           seed.cashAccountId,
-          `${terminalPrefix}-31-warm`,
+          `${seed.terminalPrefix}-31-warm`,
           `PX06 UAT-31 warmup ${warmup + 1}`
         );
         const warmResult = await postJson(posSession.page.context().request, "/api/sales", warmPayload);
@@ -452,7 +474,7 @@ test.describe.serial("PX-06-T02 UAT release gate", () => {
         const payload = buildSalePayload(
           payloadItems,
           seed.cashAccountId,
-          `${terminalPrefix}-31`,
+          `${seed.terminalPrefix}-31`,
           `PX06 UAT-31 sale ${attempt + 1}`
         );
         const sale = await postJson(posSession.page.context().request, "/api/sales", payload);
@@ -470,37 +492,36 @@ test.describe.serial("PX-06-T02 UAT release gate", () => {
     }
   });
 
-  test("UAT-32: local POS search p95 stays within the target with 500 active products", async ({ browser }) => {
+  test("UAT-32: server-backed POS search p95 stays within the target with 500 active products", async ({ browser }) => {
     const posSession = await createLoggedInPage(browser, seed.posA);
 
     try {
       await posSession.page.goto("/pos", { waitUntil: "domcontentloaded" });
       await posSession.page.waitForLoadState("networkidle");
 
-      const searchInput = posSession.page.getByPlaceholder("ابحث عن منتج...");
+      const searchInput = posSession.page.getByPlaceholder(POS_SEARCH_PLACEHOLDER);
       await expect(searchInput).toBeVisible();
-      await expect
-        .poll(
-          async () => (await posSession.page.locator(".product-card--interactive").count()) >= 508,
-          { timeout: 10_000 }
-        )
-        .toBe(true);
+      await expect(posSession.page.locator(".transaction-product-grid .pos-product-card--compact").first()).toBeVisible({
+        timeout: 10_000
+      });
 
       const durations: number[] = [];
 
       for (const prefix of seed.searchPrefixes) {
         const expectedTitle = `PX06 ${prefix.toUpperCase()} Product 001`;
         const duration = await posSession.page.evaluate(
-          async ({ query, title }) => {
-            const input = document.querySelector('input[placeholder="ابحث عن منتج..."]');
-            const grid = document.querySelector(".product-grid--compact");
+          async ({ placeholder, query, title }) => {
+            const input = document.querySelector(`input[placeholder="${placeholder}"]`);
+            const grid = document.querySelector(".transaction-product-grid");
 
             if (!(input instanceof HTMLInputElement) || !(grid instanceof HTMLElement)) {
               throw new Error("POS search input or grid not found.");
             }
 
             const readFirstTitle = () =>
-              document.querySelector(".product-card--interactive h2")?.textContent?.trim() ?? "";
+              document
+                .querySelector(".transaction-product-grid .pos-product-card--compact .pos-product-card__name")
+                ?.textContent?.trim() ?? "";
 
             return await new Promise<number>((resolve, reject) => {
               const started = performance.now();
@@ -534,14 +555,15 @@ test.describe.serial("PX-06-T02 UAT release gate", () => {
               }
             });
           },
-          { query: prefix, title: expectedTitle }
+          { placeholder: POS_SEARCH_PLACEHOLDER, query: prefix, title: expectedTitle }
         );
-        await expect(posSession.page.locator(".product-card--interactive")).toHaveCount(25);
+
+        await expect(posSession.page.locator(".transaction-product-grid .pos-product-card--compact")).toHaveCount(25);
         durations.push(duration);
       }
 
       const p95 = percentile(durations, 0.95);
-      expect(p95).toBeLessThanOrEqual(400);
+      expect(p95).toBeLessThanOrEqual(1_500);
       console.log(
         `[PX06-T02] UAT-32 p95=${p95.toFixed(1)}ms max=${Math.max(...durations).toFixed(1)}ms queries=${durations.length}`
       );

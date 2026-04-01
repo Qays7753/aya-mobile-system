@@ -224,4 +224,46 @@ describe("usePosCartStore", () => {
 
     expect(usePosCartStore.getState().currentIdempotencyKey).not.toBe("");
   });
+
+  it("restores held carts with account, split payments, and received amount intact", () => {
+    const store = usePosCartStore.getState();
+
+    store.addProduct({
+      id: "product-1",
+      name: "شاحن سريع",
+      category: "accessory",
+      sku: "FAST-001",
+      description: "USB-C",
+      sale_price: 5,
+      stock_quantity: 10,
+      min_stock_level: 2,
+      track_stock: true,
+      is_quick_add: true,
+      is_active: true,
+      created_at: "",
+      updated_at: "",
+      created_by: "user-1"
+    });
+    store.setSelectedAccountId("cash-1");
+    store.setAmountReceived(8.75);
+    store.addSplitPayment("card-1", 2.25);
+    store.holdCurrentCart("طلب معلق");
+
+    const heldCartId = usePosCartStore.getState().heldCarts[0]?.id;
+
+    expect(heldCartId).toBeTruthy();
+    expect(usePosCartStore.getState().selectedAccountId).toBe("");
+    expect(usePosCartStore.getState().amountReceived).toBeNull();
+    expect(usePosCartStore.getState().splitPayments).toHaveLength(0);
+
+    usePosCartStore.getState().restoreHeldCart(heldCartId as string);
+
+    const restored = usePosCartStore.getState();
+
+    expect(restored.items).toHaveLength(1);
+    expect(restored.selectedAccountId).toBe("cash-1");
+    expect(restored.amountReceived).toBe(8.75);
+    expect(restored.splitPayments).toEqual([{ accountId: "card-1", amount: 2.25 }]);
+    expect(restored.heldCarts).toHaveLength(0);
+  });
 });

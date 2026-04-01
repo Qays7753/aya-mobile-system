@@ -1,20 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import type { PosAccount } from "@/lib/pos/types";
+import type { PosAccount, StandardEnvelope } from "@/lib/pos/types";
 
-const ACCOUNT_COLUMNS = [
-  "id",
-  "name",
-  "type",
-  "module_scope",
-  "fee_percentage",
-  "is_active",
-  "display_order",
-  "created_at",
-  "updated_at"
-].join(", ");
+type AccountsResponseData = {
+  items: PosAccount[];
+};
 
 export function usePosAccounts() {
   const [accounts, setAccounts] = useState<PosAccount[]>([]);
@@ -30,13 +21,27 @@ export function usePosAccounts() {
       setIsLoading(true);
       setErrorMessage(null);
 
-      const supabase = createSupabaseBrowserClient();
-      const { data, error } = await supabase
-        .from("v_pos_accounts")
-        .select(ACCOUNT_COLUMNS)
-        .eq("is_active", true)
-        .order("display_order", { ascending: true })
-        .order("name", { ascending: true });
+      let data: AccountsResponseData | undefined;
+      let error: Error | null = null;
+
+      try {
+        const response = await fetch("/api/pos/accounts", {
+          method: "GET",
+          cache: "no-store"
+        });
+        const envelope = (await response.json()) as StandardEnvelope<AccountsResponseData>;
+
+        if (!response.ok || !envelope.success || !envelope.data) {
+          error = new Error(envelope.error?.message ?? "تعذر جلب الحسابات الآن.");
+        } else {
+          data = envelope.data;
+        }
+      } catch (fetchError) {
+        error =
+          fetchError instanceof Error
+            ? fetchError
+            : new Error("تعذر جلب الحسابات الآن.");
+      }
 
       if (isCancelled) {
         return;
@@ -46,7 +51,7 @@ export function usePosAccounts() {
         setAccounts([]);
         setErrorMessage(error.message);
       } else {
-        setAccounts((data ?? []) as unknown as PosAccount[]);
+        setAccounts(data?.items ?? []);
       }
 
       setIsLoading(false);

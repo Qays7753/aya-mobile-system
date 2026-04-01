@@ -144,4 +144,20 @@ describe("PosWorkspace", () => {
 
     expect(globalThis.fetch).not.toHaveBeenCalled();
   }, 30000);
+  it("adds the first matching result when Enter is pressed in search", async () => {
+    render(<PosWorkspace maxDiscountPercentage={null} />);
+
+    const searchInput = screen.getByRole("searchbox");
+
+    fireEvent.change(searchInput, { target: { value: "FAST-001" } });
+    fireEvent.keyDown(searchInput, { key: "Enter", code: "Enter" });
+
+    await waitFor(() => {
+      expect(usePosCartStore.getState().items).toHaveLength(1);
+    });
+
+    expect(usePosCartStore.getState().items[0]?.product_id).toBe("product-1");
+    expect(searchInput).toHaveValue("");
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+  }, 30000);
 });

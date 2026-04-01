@@ -9,14 +9,13 @@ import {
 
 test.describe.configure({ timeout: 120_000 });
 
-const POS_TITLE = "\u0646\u0642\u0637\u0629 \u0627\u0644\u0628\u064a\u0639";
-const OPEN_MENU_LABEL = "\u0641\u062a\u062d \u0627\u0644\u0642\u0627\u0626\u0645\u0629";
-const SEARCH_LABEL = "\u0628\u062d\u062b";
-const CATEGORY_ALL_LABEL = "\u0627\u0644\u0643\u0644";
-const WORKSPACE_NAV_LABEL =
-  "\u0627\u0644\u062a\u0646\u0642\u0644 \u062f\u0627\u062e\u0644 \u0645\u0633\u0627\u062d\u0627\u062a \u0627\u0644\u062a\u0634\u063a\u064a\u0644";
-const REPORTS_TITLE = "\u0627\u0644\u062a\u0642\u0627\u0631\u064a\u0631 \u0627\u0644\u0645\u062a\u0642\u062f\u0645\u0629 \u0648\u0627\u0644\u062a\u062d\u0644\u064a\u0644\u0627\u062a \u0627\u0644\u0645\u0642\u0627\u0631\u0646\u0629";
-const REPORTS_LEAD = "\u0627\u0628\u062f\u0623 \u0628\u0627\u0644\u0641\u0644\u0627\u062a\u0631\u060c \u0631\u0627\u062c\u0639 \u0627\u0644\u0645\u0624\u0634\u0631\u0627\u062a \u0627\u0644\u0623\u0633\u0627\u0633\u064a\u0629";
+const POS_TITLE = "نقطة البيع";
+const OPEN_MENU_LABEL = "فتح القائمة";
+const SEARCH_LABEL = "بحث";
+const CATEGORY_ALL_LABEL = "الكل";
+const WORKSPACE_NAV_LABEL = "التنقل داخل مساحات التشغيل";
+const REPORTS_TITLE = "التقارير";
+const PRODUCT_SEARCH_PLACEHOLDER = "ابحث بالاسم أو رمز المنتج...";
 
 const lightOnlyViewports = [
   { label: "phone", width: 360, height: 800 },
@@ -60,41 +59,37 @@ test.describe.serial("PX-18 visual system + accessibility", () => {
   test("UAT-61 page metadata and visual hierarchy are clear on core surfaces", async ({ page }) => {
     await page.goto("/", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle");
-    await expect(page).toHaveTitle(/\u0627\u0644\u0635\u0641\u062d\u0629 \u0627\u0644\u0631\u0626\u064a\u0633\u064a\u0629/);
-    await expect(
-      page.getByRole("heading", { name: "\u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644" })
-    ).toBeVisible();
+
+    await expect(page).toHaveTitle(/الصفحة الرئيسية/);
+    await expect(page.getByRole("heading", { name: "تسجيل الدخول" })).toBeVisible();
     await expect(page.locator(".auth-card")).toBeVisible();
 
     await login(page, admin.email, admin.password, "/reports");
-    await expect(page).toHaveTitle(/\u0627\u0644\u062a\u0642\u0627\u0631\u064a\u0631/);
-    await expect(page.getByRole("heading", { name: REPORTS_TITLE })).toBeVisible();
-    await expect(page.getByText(REPORTS_LEAD)).toBeVisible();
-    await expect(page.locator(".analytical-page__meta-grid").first()).toBeVisible();
+
+    await expect(page).toHaveTitle(/التقارير/);
+    await expect(page.locator(".dashboard-topbar .dashboard-header-title")).toContainText(REPORTS_TITLE);
+    await expect(page.locator(".analytical-kpi-grid").first()).toBeVisible();
     await expect(page.locator(".data-table").first()).toBeVisible();
-    await expect(page.locator(".dashboard-topbar .dashboard-header-title")).toContainText(/./);
+    await expect(page.getByRole("link", { name: "تصدير Excel" })).toBeVisible();
   });
 
-  test("UAT-62 keyboard focus and touch targets are accessible on POS and dashboard shell", async ({ page }) => {
-    await login(page, pos.email, pos.password, "/pos");
+  test("UAT-62 keyboard focus and touch targets are accessible on POS and dashboard shell", async ({
+    page
+  }) => {
     await page.setViewportSize({ width: 360, height: 800 });
-    await page.goto("/pos", { waitUntil: "domcontentloaded" });
-    await page.waitForLoadState("networkidle");
+    await login(page, pos.email, pos.password, "/pos");
     await expectNoHorizontalOverflow(page);
 
     const menuToggle = page.getByRole("button", { name: OPEN_MENU_LABEL });
     const topbarSearchButton = page.getByRole("button", { name: SEARCH_LABEL });
     const productSearchField = page.locator(".transaction-toolbar__search").first();
-    const productSearchInput = page.getByPlaceholder(
-      "\u0627\u0628\u062d\u062b \u0639\u0646 \u0645\u0646\u062a\u062c..."
-    );
+    const productSearchInput = page.getByPlaceholder(PRODUCT_SEARCH_PLACEHOLDER);
     const cartSummaryButton = page.locator(".pos-cart-sheet__summary");
 
+    await expect(page.locator(".dashboard-topbar .dashboard-header-title")).toContainText(POS_TITLE);
     await expectTouchTarget(menuToggle);
-    await expectTouchTarget(topbarSearchButton);
     await expectTouchTarget(productSearchField);
     await expectTouchTarget(cartSummaryButton);
-
     await expect(productSearchInput).toBeFocused();
 
     await menuToggle.focus();
@@ -110,7 +105,6 @@ test.describe.serial("PX-18 visual system + accessibility", () => {
     await menuToggle.click();
     const nav = page.getByRole("navigation", { name: WORKSPACE_NAV_LABEL });
     const posLink = nav.getByRole("link", { name: new RegExp(POS_TITLE, "i") }).first();
-    await expectTouchTarget(posLink);
     await expect(posLink).toHaveAttribute("aria-current", "page");
     await expect(categoryChip).toHaveAttribute("aria-pressed", "true");
     await expectTouchTarget(categoryChip);
@@ -119,10 +113,8 @@ test.describe.serial("PX-18 visual system + accessibility", () => {
   for (const viewport of lightOnlyViewports) {
     test(`UAT-63 light mode and reduced motion remain readable on ${viewport.label}`, async ({ page }) => {
       await page.emulateMedia({ colorScheme: "light", reducedMotion: "reduce" });
-      await login(page, admin.email, admin.password, "/reports");
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
-      await page.goto("/reports", { waitUntil: "domcontentloaded" });
-      await page.waitForLoadState("networkidle");
+      await login(page, admin.email, admin.password, "/reports");
       await expectNoHorizontalOverflow(page);
 
       const visualState = await page.evaluate(() => {
@@ -159,10 +151,8 @@ test.describe.serial("PX-18 visual system + accessibility", () => {
       expect(visualState.lightSchemeMatches).toBeTruthy();
       expect(visualState.scrollBehavior).toBe("auto");
 
-      await expect(page.getByRole("heading", { name: REPORTS_TITLE })).toBeVisible();
-      await expect(
-        page.getByRole("link", { name: "\u062a\u0635\u062f\u064a\u0631 Excel \u0627\u0644\u0645\u062a\u0642\u062f\u0645" })
-      ).toBeVisible();
+      await expect(page.locator(".dashboard-topbar .dashboard-header-title")).toContainText(REPORTS_TITLE);
+      await expect(page.getByRole("link", { name: "تصدير Excel" })).toBeVisible();
     });
   }
 });

@@ -1,43 +1,26 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { useProducts } from "@/hooks/use-products";
 
-const mockRange = vi.fn();
-const mockSecondOrder = vi.fn(() => ({
-  range: mockRange
-}));
-const mockFirstOrder = vi.fn(() => ({
-  order: mockSecondOrder
-}));
-const mockSelect = vi.fn(() => ({
-  order: mockFirstOrder
-}));
-const mockFrom = vi.fn(() => ({
-  select: mockSelect
-}));
-
-vi.mock("@/lib/supabase/client", () => ({
-  createSupabaseBrowserClient: () => ({
-    from: mockFrom
-  })
-}));
+const fetchMock = vi.fn<typeof fetch>();
 
 describe("useProducts", () => {
   beforeEach(() => {
-    mockRange.mockReset();
-    mockSecondOrder.mockClear();
-    mockFirstOrder.mockClear();
-    mockSelect.mockClear();
-    mockFrom.mockClear();
+    fetchMock.mockReset();
+    vi.stubGlobal("fetch", fetchMock);
     Object.defineProperty(window.navigator, "onLine", {
       configurable: true,
       value: true
     });
   });
 
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("loads products in pages and appends the next page on demand", async () => {
     const pages = [
       {
-        data: [
+        items: [
           {
             id: "product-1",
             name: "شاحن سريع",
@@ -71,11 +54,11 @@ describe("useProducts", () => {
             created_by: "admin-1"
           }
         ],
-        error: null,
-        count: 3
+        totalCount: 3,
+        hasMore: true
       },
       {
-        data: [
+        items: [
           {
             id: "product-3",
             name: "غطاء حماية",
@@ -93,12 +76,24 @@ describe("useProducts", () => {
             created_by: "admin-1"
           }
         ],
-        error: null,
-        count: 3
+        totalCount: 3,
+        hasMore: false
       }
     ];
 
-    mockRange.mockImplementation(async () => pages.shift() ?? { data: [], error: null, count: 3 });
+    fetchMock.mockImplementation(async (input) => {
+      const url = typeof input === "string" ? input : input.toString();
+      const page = Number(new URL(url, "http://localhost").searchParams.get("page") ?? "0");
+      const payload = pages[page] ?? { items: [], totalCount: 3, hasMore: false };
+
+      return {
+        ok: true,
+        json: async () => ({
+          success: true,
+          data: payload
+        })
+      } as Response;
+    });
 
     const { result } = renderHook(() => useProducts());
 
@@ -108,7 +103,14 @@ describe("useProducts", () => {
 
     expect(result.current.products).toHaveLength(2);
     expect(result.current.hasMore).toBe(true);
-    expect(mockRange).toHaveBeenNthCalledWith(1, 0, 149);
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      "/api/pos/products?page=0",
+      expect.objectContaining({
+        method: "GET",
+        cache: "no-store"
+      })
+    );
 
     await act(async () => {
       result.current.loadMore();
@@ -119,6 +121,13 @@ describe("useProducts", () => {
     });
 
     expect(result.current.hasMore).toBe(false);
-    expect(mockRange).toHaveBeenNthCalledWith(2, 150, 299);
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      "/api/pos/products?page=1",
+      expect.objectContaining({
+        method: "GET",
+        cache: "no-store"
+      })
+    );
   });
 });

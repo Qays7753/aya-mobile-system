@@ -93,7 +93,7 @@ export async function login(page: Page, email: string, password: string, targetP
   await page.goto("/login", { waitUntil: "domcontentloaded" });
   await page.waitForLoadState("networkidle");
   await page.getByLabel(EMAIL_LABEL).fill(email);
-  await page.getByLabel(PASSWORD_LABEL).fill(password);
+  await page.getByLabel(PASSWORD_LABEL, { exact: true }).fill(password);
   await page.getByRole("button", { name: LOGIN_BUTTON }).click();
 
   const expectedPath = targetPath || "/pos";
@@ -104,7 +104,23 @@ export async function login(page: Page, email: string, password: string, targetP
     });
   } catch {
     await page.waitForTimeout(1_000);
-    await page.goto(expectedPath, { waitUntil: "domcontentloaded" });
+
+    const currentPath = new URL(page.url()).pathname;
+    if (currentPath !== expectedPath) {
+      try {
+        await page.goto(expectedPath, { waitUntil: "domcontentloaded" });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+
+        if (!message.includes("interrupted by another navigation")) {
+          throw error;
+        }
+
+        await page.waitForURL((url) => url.pathname === expectedPath, {
+          timeout: 15_000
+        });
+      }
+    }
   }
 
   await page.waitForLoadState("networkidle");

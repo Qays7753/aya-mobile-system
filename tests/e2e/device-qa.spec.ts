@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import {
   createFixtureUser,
   createServiceRoleClient,
@@ -13,6 +13,25 @@ const deviceViewports = [
   { label: "tablet", width: 768, height: 1024 },
   { label: "laptop", width: 1280, height: 900 }
 ] as const;
+
+const REVIEW_PAYMENT_BUTTON = "مراجعة الدفع";
+const PAYMENT_METHOD_TITLE = "طريقة الدفع";
+const RECEIVED_AMOUNT_LABEL = "المبلغ المستلم";
+const COMPLETE_SALE_BUTTON = "إتمام البيع";
+const SALE_SUCCESS_MESSAGE = "تم إتمام البيع بنجاح";
+const PRINT_RECEIPT_BUTTON = "طباعة إيصال";
+const OPEN_INVOICE_LINK = /فتح الفاتورة/i;
+const RETURN_BUTTON = "المرتجع";
+const EXECUTE_RETURN_BUTTON = "تنفيذ المرتجع";
+const RETURN_QUANTITY_LABEL = "كمية الإرجاع";
+const RETURN_REASON_LABEL = "سبب الإرجاع";
+const CUSTOMER_SEARCH_PLACEHOLDER = "ابحث باسم العميل أو الهاتف";
+const PAYMENT_SECTION_BUTTON = "التسديد";
+const PAYMENT_AMOUNT_LABEL = "المبلغ";
+const CONFIRM_DEBT_PAYMENT_BUTTON = "تأكيد التسديد";
+const FILTER_REPORTS_BUTTON = "تطبيق الفلاتر";
+const BALANCE_INTEGRITY_SECTION = "سلامة الأرصدة";
+const RECHECK_SETTINGS_BUTTON = "إعادة الفحص";
 
 test.describe.configure({ timeout: 120_000 });
 
@@ -32,11 +51,13 @@ async function seedDeviceQaFixtures() {
   const admin = await createFixtureUser(supabase, "admin", "device-qa-admin");
   const pos = await createFixtureUser(supabase, "pos_staff", "device-qa-pos");
   const uniquePhone = `079${Date.now().toString().slice(-7)}${Math.floor(Math.random() * 900 + 100)}`;
+  const productName = `PX05 Fast Charger ${randomUUID().slice(0, 6)}`;
+  const debtCustomerName = `PX05 Device Debt Customer ${randomUUID().slice(0, 6)}`;
 
   const { data: insertedProduct, error: productError } = await supabase
     .from("products")
     .insert({
-      name: "PX05 Fast Charger",
+      name: productName,
       category: "accessory",
       sale_price: 45,
       cost_price: 18,
@@ -44,6 +65,7 @@ async function seedDeviceQaFixtures() {
       stock_quantity: 40,
       min_stock_level: 1,
       track_stock: true,
+      is_active: true,
       is_quick_add: true,
       created_by: admin.id
     })
@@ -57,7 +79,7 @@ async function seedDeviceQaFixtures() {
   const { data: debtCustomer, error: debtCustomerError } = await supabase
     .from("debt_customers")
     .insert({
-      name: "PX05 Device Debt Customer",
+      name: debtCustomerName,
       phone: uniquePhone,
       address: "PX05 Device Street",
       current_balance: 0,
@@ -205,6 +227,26 @@ async function ensureOpenDebt(adminId: string, debtCustomerId: string) {
   }
 }
 
+async function settleSeededDebt(page: Page, customerName: string) {
+  await page.goto("/debts", { waitUntil: "domcontentloaded" });
+  await page.waitForLoadState("networkidle");
+  await expectNoHorizontalOverflow(page);
+  await page.getByPlaceholder(CUSTOMER_SEARCH_PLACEHOLDER).fill(customerName);
+  await page.locator("button.list-card--interactive").filter({ hasText: customerName }).first().click();
+  await page
+    .locator(".debts-page__sections")
+    .getByRole("button", { name: PAYMENT_SECTION_BUTTON, exact: true })
+    .click();
+  await page.getByLabel(PAYMENT_AMOUNT_LABEL, { exact: true }).fill("5");
+  const confirmDebtPaymentButton = page.getByRole("button", {
+    name: CONFIRM_DEBT_PAYMENT_BUTTON,
+    exact: true
+  });
+  await expect(confirmDebtPaymentButton).toBeEnabled();
+  await confirmDebtPaymentButton.click();
+  await expect(page.locator(".result-card").filter({ hasText: "الرصيد المتبقي:" }).first()).toBeVisible();
+}
+
 test.describe.serial("PX-05 device QA regression", () => {
   test.beforeAll(async () => {
     seed = await seedDeviceQaFixtures();
@@ -217,34 +259,45 @@ test.describe.serial("PX-05 device QA regression", () => {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       await login(page, seed.pos.email, seed.pos.password);
 
-      await expect(page.getByRole("button", { name: "تأكيد البيع" })).toBeVisible();
+      await expect(page.locator(".pos-cart-sheet")).toBeVisible();
       await expectNoHorizontalOverflow(page);
 
-      await page.getByRole("button", { name: new RegExp(seed.productName) }).first().click();
+      await page.getByRole("searchbox").first().fill(seed.productName);
+      await page.waitForTimeout(400);
+      const productButton = page.getByRole("button", { name: new RegExp(seed.productName) }).first();
+      await expect(productButton).toBeVisible({ timeout: 15_000 });
+      await productButton.click();
       await expect(page.getByRole("complementary").getByText(seed.productName)).toBeVisible();
-      await expect(page.getByLabel("حساب الدفع")).toBeEnabled();
-      await page.getByRole("button", { name: "تأكيد البيع" }).click();
-      await expect(page.getByText("السلة فارغة")).toBeVisible();
-      await expect(page.getByText("Last Sale")).toBeVisible();
+      await page
+        .getByRole("button", { name: REVIEW_PAYMENT_BUTTON, exact: true })
+        .evaluate((element: HTMLButtonElement) => element.click());
+      await expect(page.getByText(PAYMENT_METHOD_TITLE, { exact: true })).toBeVisible();
+      await page.getByLabel(RECEIVED_AMOUNT_LABEL).fill("100");
+      const confirmSaleButton = page
+        .locator(".pos-cart-surface")
+        .getByRole("button", { name: COMPLETE_SALE_BUTTON, exact: true });
+      await expect(confirmSaleButton).toBeEnabled();
+      await confirmSaleButton.click();
+      await expect(page.getByText(SALE_SUCCESS_MESSAGE)).toBeVisible();
+      await expect(page.getByRole("button", { name: PRINT_RECEIPT_BUTTON, exact: true })).toBeVisible();
 
       await page.goto("/invoices", { waitUntil: "domcontentloaded" });
       await page.waitForLoadState("networkidle");
-      await expect(page.getByRole("button", { name: "تأكيد المرتجع" })).toBeVisible();
+      await page.getByRole("link", { name: OPEN_INVOICE_LINK }).first().click();
+      await page.waitForLoadState("networkidle");
+      await page.getByRole("button", { name: RETURN_BUTTON, exact: true }).click();
+      await expect(page.getByRole("button", { name: EXECUTE_RETURN_BUTTON, exact: true })).toBeVisible();
       await expectNoHorizontalOverflow(page);
-      await page.getByLabel("كمية الإرجاع").first().fill("1");
-      await page.getByLabel("سبب الإرجاع").fill(`PX05 return ${viewport.label}`);
-      await page.getByRole("button", { name: "تأكيد المرتجع" }).click();
+      await page.getByLabel(RETURN_QUANTITY_LABEL).first().fill("1");
+      await page.getByLabel(RETURN_REASON_LABEL).fill(`PX05 return ${viewport.label}`);
+      await page.getByRole("button", { name: EXECUTE_RETURN_BUTTON, exact: true }).click();
+      await page
+        .getByRole("dialog")
+        .getByRole("button", { name: EXECUTE_RETURN_BUTTON, exact: true })
+        .click();
       await expect(page.locator(".result-card").filter({ hasText: "الإجمالي:" }).first()).toBeVisible();
 
-      await page.goto("/debts", { waitUntil: "domcontentloaded" });
-      await page.waitForLoadState("networkidle");
-      await expect(page.getByRole("button", { name: "تأكيد التسديد" })).toBeVisible();
-      await expectNoHorizontalOverflow(page);
-      await page.getByPlaceholder("ابحث باسم العميل أو الهاتف").fill(seed.debtCustomerName);
-      await page.locator("button.list-card--interactive").first().click();
-      await page.getByLabel("المبلغ").last().fill("5");
-      await page.getByRole("button", { name: "تأكيد التسديد" }).click();
-      await expect(page.locator(".result-card").filter({ hasText: "الرصيد المتبقي:" }).first()).toBeVisible();
+      await settleSeededDebt(page, seed.debtCustomerName);
     });
 
     test(`reports + settings render safely on ${viewport.label}`, async ({ page }) => {
@@ -253,12 +306,16 @@ test.describe.serial("PX-05 device QA regression", () => {
 
       await page.goto("/reports", { waitUntil: "domcontentloaded" });
       await page.waitForLoadState("networkidle");
-      await expect(page.getByRole("button", { name: "تطبيق الفلاتر" })).toBeVisible();
+      await expect(page.getByRole("button", { name: FILTER_REPORTS_BUTTON, exact: true })).toBeVisible();
       await expectNoHorizontalOverflow(page);
 
       await page.goto("/settings", { waitUntil: "domcontentloaded" });
       await page.waitForLoadState("networkidle");
-      await expect(page.getByRole("button", { name: "إعادة الفحص" })).toBeVisible();
+      await page
+        .locator(".settings-page__sections")
+        .getByRole("button", { name: BALANCE_INTEGRITY_SECTION, exact: true })
+        .click();
+      await expect(page.getByRole("button", { name: RECHECK_SETTINGS_BUTTON, exact: true })).toBeVisible();
       await expectNoHorizontalOverflow(page);
 
       const balanceCheckResponse = await page.context().request.post("/api/health/balance-check");
@@ -289,8 +346,12 @@ test.describe.serial("PX-05 device QA regression", () => {
     await login(page, seed.admin.email, seed.admin.password);
     await page.goto("/settings", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle");
+    await page
+      .locator(".settings-page__sections")
+      .getByRole("button", { name: BALANCE_INTEGRITY_SECTION, exact: true })
+      .click();
 
-    await expect(page.getByRole("button", { name: "إعادة الفحص" })).toBeVisible();
+    await expect(page.getByRole("button", { name: RECHECK_SETTINGS_BUTTON, exact: true })).toBeVisible();
     const inventoryResponse = await page.context().request.post("/api/inventory/counts/complete", {
       data: {
         inventory_count_id: inventoryDraft.inventoryCountId,

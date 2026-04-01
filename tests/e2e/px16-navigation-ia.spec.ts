@@ -33,7 +33,7 @@ test.describe.serial("PX-16 navigation + IA", () => {
     };
   });
 
-  test("phone POS sees a clean drawer with role-scoped navigation", async ({ page }) => {
+  test("phone POS sees role-scoped navigation without admin-only entries", async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 800 });
     await login(page, seed.pos.email, seed.pos.password);
     await expectNoHorizontalOverflow(page);
@@ -41,7 +41,6 @@ test.describe.serial("PX-16 navigation + IA", () => {
     await openNavigation(page);
     const nav = page.getByLabel("التنقل داخل مساحات التشغيل");
 
-    await expect(nav.getByText("التشغيل اليومي")).toBeVisible();
     await expect(nav.getByRole("link", { name: /نقطة البيع/i })).toBeVisible();
     await expect(nav.getByRole("link", { name: /الفواتير/i })).toBeVisible();
     await expect(nav.getByRole("link", { name: /الديون/i })).toBeVisible();
@@ -51,41 +50,55 @@ test.describe.serial("PX-16 navigation + IA", () => {
 
     await page.goto("/debts", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle");
-    await expect(page.getByRole("heading", { name: "الديون", exact: true })).toBeVisible();
+    await expect(
+      page.locator("main").getByRole("heading", { name: "الديون", exact: true })
+    ).toBeVisible();
     await expect(page.getByRole("button", { name: "العملاء والقيود" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "التسديد" })).toBeVisible();
-    await expect(page.getByText("ملف العميل")).toBeVisible();
+    await expect(
+      page.getByLabel("أقسام شاشة الديون").getByRole("button", { name: "التسديد" })
+    ).toBeVisible();
     await expectNoHorizontalOverflow(page);
   });
 
-  test("tablet admin can use topbar search and notification IA without losing context", async ({ page }) => {
+  test("tablet admin can use topbar search and notification IA without losing context", async ({
+    page
+  }) => {
     await page.setViewportSize({ width: 768, height: 1024 });
     await login(page, seed.admin.email, seed.admin.password, "/notifications");
     await expectNoHorizontalOverflow(page);
 
-    await expect(page.getByRole("heading", { name: "الإشعارات", exact: true })).toBeVisible();
+    await expect(
+      page.locator("main").getByRole("heading", { name: "الإشعارات", exact: true })
+    ).toBeVisible();
     await expect(page.getByRole("button", { name: "صندوق الإشعارات" })).toBeVisible();
     await expect(page.getByRole("button", { name: "الملخصات والتنبيهات" })).toBeVisible();
     await expect(page.getByRole("button", { name: "البحث الشامل" })).toBeVisible();
 
     await page.getByRole("button", { name: "البحث الشامل" }).click();
-    await expect(page.getByRole("heading", { name: "نتائج البحث الحالية" })).toBeVisible();
-    await expect(page.getByPlaceholder("اسم منتج، رقم فاتورة، عميل أو رقم صيانة")).toBeVisible();
+    await expect(
+      page.getByPlaceholder("اسم منتج، رقم فاتورة، عميل أو رقم صيانة")
+    ).toBeVisible();
     await expectNoHorizontalOverflow(page);
   });
 
-  test("laptop admin gets grouped navigation, breadcrumbs, and decomposed workspaces", async ({ page }) => {
+  test("laptop admin gets admin navigation and decomposed workspace sections", async ({
+    page
+  }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await login(page, seed.admin.email, seed.admin.password, "/invoices");
     const nav = page.getByLabel("التنقل داخل مساحات التشغيل");
 
-    await expect(nav.getByText("التشغيل اليومي")).toBeVisible();
-    await expect(nav.getByText("المخزون والخدمات")).toBeVisible();
-    await expect(nav.getByText("المتابعة والإدارة")).toBeVisible();
-    await expect(page.getByLabel("مسار الصفحة")).toContainText("الفواتير");
-    await expect(page.getByRole("button", { name: "الملخص والإيصال" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "المرتجع" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "الإجراء الإداري" })).toBeVisible();
+    await expect(nav.getByRole("link", { name: /نقطة البيع/i })).toBeVisible();
+    await expect(nav.getByRole("link", { name: /المنتجات/i })).toBeVisible();
+    await expect(nav.getByRole("link", { name: /الفواتير/i })).toBeVisible();
+    await expect(nav.getByRole("link", { name: /الجرد/i })).toBeVisible();
+    await expect(nav.getByRole("link", { name: /التقارير/i })).toBeVisible();
+    await expect(nav.getByRole("link", { name: /الإعدادات/i })).toBeVisible();
+    await expect(page.locator("main").getByRole("heading", { name: "الفواتير" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "السجل" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "الأحدث" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "الأعلى قيمة" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "الأعلى دينًا" })).toBeVisible();
 
     await page.goto("/inventory", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle");
@@ -104,10 +117,11 @@ test.describe.serial("PX-16 navigation + IA", () => {
 
     await page.goto("/reports", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle");
-    await expect(page.getByRole("link", { name: "الفلاتر", exact: true })).toBeVisible();
-    await expect(page.getByRole("link", { name: "المقارنة", exact: true })).toBeVisible();
-    await expect(page.getByRole("link", { name: "المرتجعات", exact: true })).toBeVisible();
-    await expect(page.getByRole("link", { name: "الصيانة", exact: true })).toBeVisible();
+    const reportsSections = page.getByLabel("التنقل داخل أقسام التقارير");
+    await expect(reportsSections.getByRole("link", { name: "الفلاتر", exact: true })).toBeVisible();
+    await expect(reportsSections.getByRole("link", { name: "المقارنة", exact: true })).toBeVisible();
+    await expect(reportsSections.getByRole("link", { name: "المرتجعات", exact: true })).toBeVisible();
+    await expect(reportsSections.getByRole("link", { name: "الصيانة", exact: true })).toBeVisible();
     await expectNoHorizontalOverflow(page);
   });
 });

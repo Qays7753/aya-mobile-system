@@ -98,7 +98,10 @@ test.describe.serial("PX-21 shell + auth entry", () => {
     await login(page, admin.email, admin.password, "/reports");
 
     await expect(page.locator(".dashboard-layout__sidebar")).toBeVisible();
-    await expect(page.locator(".dashboard-nav-group__title").first()).toBeVisible();
+    const nav = page.getByRole("navigation", { name: WORKSPACE_NAV_LABEL });
+    await expect(nav).toBeVisible();
+    await expect(nav.getByRole("link", { name: /التقارير/i })).toBeVisible();
+    await expect(nav.getByRole("link", { name: /الإعدادات/i })).toBeVisible();
     await expect(page.locator(".dashboard-topbar .dashboard-header-title")).toContainText(/./);
     await expect(page.locator(".dashboard-user-chip")).toContainText(/./);
     await expect(

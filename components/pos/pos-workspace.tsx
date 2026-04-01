@@ -14,6 +14,7 @@ import {
   ArrowRight,
   Banknote,
   CheckCircle2,
+  Clock3,
   CreditCard,
   GripHorizontal,
   ImageIcon,
@@ -90,6 +91,35 @@ function normalizeArabic(text: string) {
     .replace(/\s+/g, " ");
 }
 
+function filterProductsByQuery(products: PosProduct[], query: string) {
+  const normalizedQuery = normalizeArabic(query);
+
+  if (!normalizedQuery) {
+    return products;
+  }
+
+  const rawQuery = query.toLowerCase().trim();
+
+  return [...products]
+    .filter((product) => {
+      const normalizedName = normalizeArabic(product.name);
+      const normalizedSku = product.sku?.toLowerCase().trim() ?? "";
+      const normalizedDescription = normalizeArabic(product.description ?? "");
+
+      return (
+        normalizedSku === rawQuery ||
+        normalizedName.includes(normalizedQuery) ||
+        normalizedSku.includes(rawQuery) ||
+        normalizedDescription.includes(normalizedQuery)
+      );
+    })
+    .sort((left, right) => {
+      const leftSkuExact = (left.sku?.toLowerCase().trim() ?? "") === rawQuery ? 1 : 0;
+      const rightSkuExact = (right.sku?.toLowerCase().trim() ?? "") === rawQuery ? 1 : 0;
+      return rightSkuExact - leftSkuExact;
+    });
+}
+
 function roundAmount(value: number) {
   return Math.round((value + Number.EPSILON) * 1000) / 1000;
 }
@@ -133,6 +163,22 @@ function getProductStockState(product: {
     label: `${formatCompactNumber(product.stock_quantity)} متوفر`,
     tone: "available"
   } as const;
+}
+
+function getProductCategoryTone(category: string) {
+  if (category === "device") {
+    return "device";
+  }
+
+  if (category === "sim") {
+    return "sim";
+  }
+
+  if (category === "service_general" || category === "service_repair") {
+    return "service";
+  }
+
+  return "accessory";
 }
 
 function getAccountIcon(type: string) {
@@ -197,6 +243,15 @@ function getHeldCartAge(heldAt: string) {
   }
 
   return `منذ ${formatCompactNumber(Math.floor(hours / 24))} يوم`;
+}
+
+function formatStatusTime(value: Date) {
+  return value.toLocaleTimeString("en-US", {
+    timeZone: "Asia/Amman",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true
+  });
 }
 
 export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
@@ -272,7 +327,8 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
   const [isClearCartDialogOpen, setIsClearCartDialogOpen] = useState(false);
   const [productView, setProductView] = useState<ProductViewMode>("thumbnail");
   const [isCompactViewport, setIsCompactViewport] = useState(false);
-  const [isCartSheetExpanded, setIsCartSheetExpanded] = useState(false);
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
+  const [now, setNow] = useState(() => new Date());
   const [, startTransition] = useTransition();
   const [isSubmitting, startSubmission] = useTransition();
 
@@ -312,33 +368,10 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
     () => products.filter((product) => product.is_quick_add).slice(0, 8),
     [products]
   );
-  const filteredProducts = useMemo(() => {
-    if (!normalizedQuery) {
-      return products;
-    }
-
-    const rawQuery = deferredQuery.toLowerCase().trim();
-
-    return [...products]
-      .filter((product) => {
-        const normalizedName = normalizeArabic(product.name);
-        const normalizedSku = product.sku?.toLowerCase().trim() ?? "";
-        const normalizedDescription = normalizeArabic(product.description ?? "");
-
-        return (
-          normalizedSku === rawQuery ||
-          normalizedName.includes(normalizedQuery) ||
-          normalizedSku.includes(rawQuery) ||
-          normalizedDescription.includes(normalizedQuery)
-        );
-      })
-      .sort((left, right) => {
-        const leftSkuExact = (left.sku?.toLowerCase().trim() ?? "") === rawQuery ? 1 : 0;
-        const rightSkuExact =
-          (right.sku?.toLowerCase().trim() ?? "") === rawQuery ? 1 : 0;
-        return rightSkuExact - leftSkuExact;
-      });
-  }, [deferredQuery, normalizedQuery, products]);
+  const filteredProducts = useMemo(
+    () => filterProductsByQuery(products, deferredQuery),
+    [deferredQuery, products]
+  );
 
   const subtotal = calculateCartSubtotal(items);
   const totalDiscount = calculateCartDiscount(items);
@@ -428,8 +461,9 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
 
   function renderCompactProductCard(product: PosProduct, variant: "quick-add" | "grid") {
     const stockState = getProductStockState(product);
-    const isThumbnailView = productView === "thumbnail";
     const isOutOfStock = product.track_stock && product.stock_quantity <= 0;
+    const isThumbnailView = productView === "thumbnail";
+    const categoryTone = getProductCategoryTone(product.category);
     const productCardClassName = [
       "pos-product-card",
       "pos-product-card--compact",
@@ -449,19 +483,13 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
           handleAddProduct(product);
         }}
         disabled={isOutOfStock}
-        title={product.name}
+        title={variant === "quick-add" ? `${product.name} • ${quickAddProducts.findIndex((entry) => entry.id === product.id) + 1}` : product.name}
       >
-        {isOutOfStock ? (
-          <span className="pos-product-card__badge pos-product-card__badge--out">
-            نفد
-          </span>
-        ) : null}
-
         <span
           className={
             isThumbnailView
-              ? "pos-product-card__thumb pos-product-card__thumb--thumbnail"
-              : "pos-product-card__thumb"
+              ? `pos-product-card__thumb pos-product-card__thumb--thumbnail pos-product-card__thumb--${categoryTone}`
+              : `pos-product-card__thumb pos-product-card__thumb--${categoryTone}`
           }
           aria-hidden="true"
         >
@@ -470,19 +498,11 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
 
         <span className="pos-product-card__info">
           <span className="pos-product-card__name">{product.name}</span>
-          {isThumbnailView ? (
-            stockState.tone === "low" ? (
-              <span
-                className={`pos-product-card__stock pos-product-card__stock--${stockState.tone}`}
-              >
-                {stockState.label}
-              </span>
-            ) : null
-          ) : (
+          {!isThumbnailView ? (
             <span className="pos-product-card__sku">
               {product.sku ? <bdi dir="ltr">{product.sku}</bdi> : "بدون SKU"}
             </span>
-          )}
+          ) : null}
         </span>
 
         <span
@@ -493,14 +513,17 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
           }
         >
           <span className="pos-product-card__price">{formatCurrency(product.sale_price)}</span>
-          {!isThumbnailView ? (
-            <span
-              className={`pos-product-card__stock pos-product-card__stock--${stockState.tone}`}
-            >
-              {stockState.label}
-            </span>
-          ) : null}
+          <span className={`pos-product-card__stock pos-product-card__stock--${stockState.tone}`}>
+            {stockState.tone === "low" ? <AlertTriangle size={12} /> : null}
+            {stockState.label}
+          </span>
         </span>
+
+        {isOutOfStock ? (
+          <span className="pos-product-card__overlay">
+            <span className="pos-product-card__badge pos-product-card__badge--out">نفد</span>
+          </span>
+        ) : null}
       </button>
     );
   }
@@ -617,21 +640,35 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
   useEffect(() => {
     if (typeof window.matchMedia !== "function") {
       setIsCompactViewport(false);
+      setIsMobileViewport(false);
       return;
     }
 
-    // Changed from (max-width: 767px) to (max-width: 1023px) to ensure sidebar is visible on laptop screens
     const compactQuery = window.matchMedia("(max-width: 1023px)");
+    const mobileQuery = window.matchMedia("(max-width: 767px)");
 
     const handleViewportChange = () => {
       setIsCompactViewport(compactQuery.matches);
+      setIsMobileViewport(mobileQuery.matches);
     };
 
     handleViewportChange();
     compactQuery.addEventListener("change", handleViewportChange);
+    mobileQuery.addEventListener("change", handleViewportChange);
 
     return () => {
       compactQuery.removeEventListener("change", handleViewportChange);
+      mobileQuery.removeEventListener("change", handleViewportChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setNow(new Date());
+    }, 30000);
+
+    return () => {
+      window.clearInterval(intervalId);
     };
   }, []);
 
@@ -684,7 +721,7 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
         }
 
         if (
-          isCompactViewport &&
+          isMobileViewport &&
           activeMobileTab === "checkout" &&
           panelState !== "success"
         ) {
@@ -765,7 +802,7 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
       if (event.key.toLowerCase() === "d") {
         event.preventDefault();
         setIsDiscountExpanded(true);
-        if (isCompactViewport) {
+        if (isMobileViewport) {
           setActiveMobileTab("checkout");
           setPanelState("checkout");
         }
@@ -780,8 +817,8 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
   }, [
     activeMobileTab,
     canCompleteSale,
-    isCompactViewport,
     isHeldCartsOpen,
+    isMobileViewport,
     isOffline,
     isSubmitting,
     items,
@@ -794,6 +831,21 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
     if (submissionErrorMessage) {
       setSubmissionErrorMessage(null);
     }
+  }
+
+  function handleSearchSubmit() {
+    const firstMatch = filterProductsByQuery(products, searchInput).find(
+      (product) => !(product.track_stock && product.stock_quantity <= 0)
+    );
+
+    if (!firstMatch) {
+      return;
+    }
+
+    handleAddProduct(firstMatch);
+    setSearchInput("");
+    setSearchQuery("");
+    searchRef.current?.focus();
   }
 
   function handleAddProduct(product: PosProduct) {
@@ -877,14 +929,14 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
     }
 
     setPanelState("checkout");
-    if (isCompactViewport) {
+    if (isMobileViewport) {
       setActiveMobileTab("checkout");
     }
   }
 
   function goBackToCart() {
     setPanelState("cart");
-    if (isCompactViewport) {
+    if (isMobileViewport) {
       setActiveMobileTab("cart");
     }
   }
@@ -1151,16 +1203,6 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
     }
   }
 
-  const cartSheetClassName = [
-    "transaction-stack",
-    "pos-cart-sheet",
-    "pos-cart-panel",
-    panelState === "cart" && !isCartSheetExpanded ? "pos-cart-sheet--collapsed" : "",
-    panelState === "cart" && isCartSheetExpanded ? "pos-cart-sheet--expanded" : "",
-    panelState !== "cart" ? "pos-cart-sheet--fullscreen" : ""
-  ]
-    .filter(Boolean)
-    .join(" ");
   const completedSaleFeeTotal = lastCompletedSale
     ? roundAmount(
         (lastCompletedSale.payments ?? []).reduce(
@@ -1190,7 +1232,7 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
       : `${formatCompactNumber(filteredProducts.length)} منتجًا`;
 
   return (
-    <section className="workspace-stack transaction-page">
+    <section className="pos-workspace">
       {isOffline ? (
         <StatusBanner
           variant="offline"
@@ -1227,41 +1269,95 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
         />
       ) : null}
 
-      <div className="pos-layout">
-        <div className="pos-products">
-          <div className="pos-topbar">
-            <div className="pos-topbar__identity">
-              <div className="pos-topbar__title-block">
-                <h1 className="pos-topbar__label">نقطة البيع</h1>
-                <span className="pos-topbar__account">
-                  {selectedAccount ? selectedAccount.name : "جاهز للبيع"}
-                </span>
-              </div>
-            </div>
-
-            <div className="pos-topbar__actions">
-              <button
-                type="button"
-                className="primary-button pos-topbar__primary-action"
-                onClick={handleTopbarNewSale}
-              >
-                <Plus size={16} />
-                بيع جديد
-              </button>
-              <button
-                type="button"
-                className="secondary-button pos-topbar__held-button"
-                onClick={() => setIsHeldCartsOpen((currentValue) => !currentValue)}
-              >
-                <span>السلال المعلقة</span>
-                <span className="product-pill product-pill--accent">
-                  {formatCompactNumber(heldCarts.length)}
-                </span>
-              </button>
+      <div className="pos-workspace__frame">
+        <header className="pos-topbar">
+          <div className="pos-topbar__identity">
+            <div className="pos-topbar__title-block">
+              <h1 className="pos-topbar__label">نقطة البيع</h1>
+              <span className="pos-topbar__account">
+                {selectedAccount ? selectedAccount.name : "جاهز للبيع"}
+              </span>
             </div>
           </div>
 
-          <div className="pos-products__content">
+          <div className="pos-topbar__actions">
+            <button
+              type="button"
+              className="primary-button pos-topbar__primary-action"
+              onClick={handleTopbarNewSale}
+            >
+              <Plus size={16} />
+              بيع جديد
+            </button>
+            <button
+              type="button"
+              className="secondary-button pos-topbar__held-button"
+              onClick={() => setIsHeldCartsOpen((currentValue) => !currentValue)}
+            >
+              <span>السلال المعلقة</span>
+              <span className="product-pill product-pill--accent">
+                {formatCompactNumber(heldCarts.length)}
+              </span>
+            </button>
+          </div>
+        </header>
+
+        {isMobileViewport ? (
+          <nav className="pos-mobile-tabs" aria-label="تبويبات نقطة البيع">
+            <button
+              type="button"
+              className={
+                activeMobileTab === "products"
+                  ? "pos-mobile-tabs__button is-active"
+                  : "pos-mobile-tabs__button"
+              }
+              onClick={() => setActiveMobileTab("products")}
+              aria-pressed={activeMobileTab === "products"}
+            >
+              <span>المنتجات</span>
+            </button>
+            <button
+              type="button"
+              className={
+                activeMobileTab === "cart"
+                  ? "pos-mobile-tabs__button pos-cart-sheet__summary is-active"
+                  : "pos-mobile-tabs__button pos-cart-sheet__summary"
+              }
+              onClick={() => {
+                setActiveMobileTab("cart");
+                setPanelState("cart");
+              }}
+              aria-pressed={activeMobileTab === "cart"}
+            >
+              <span>السلة</span>
+              <strong>
+                {formatCompactNumber(items.length)} • {formatCurrency(netTotal)}
+              </strong>
+            </button>
+            <button
+              type="button"
+              className={
+                activeMobileTab === "checkout"
+                  ? "pos-mobile-tabs__button is-active"
+                  : "pos-mobile-tabs__button"
+              }
+              onClick={openCheckout}
+              aria-pressed={activeMobileTab === "checkout"}
+            >
+              <span>الدفع</span>
+            </button>
+          </nav>
+        ) : null}
+
+        <div className="pos-layout">
+          <div
+            className={
+              isMobileViewport && activeMobileTab !== "products"
+                ? "pos-products is-hidden"
+                : "pos-products"
+            }
+          >
+            <div className="pos-products__content">
             <div className="transaction-stack pos-products-stack">
               <SectionCard
                 tone="accent"
@@ -1275,12 +1371,19 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
                       type="search"
                       autoFocus
                       placeholder="ابحث بالاسم أو رمز المنتج..."
+                      title="F1"
                       value={searchInput}
                       onChange={(event) => {
                         const nextValue = event.target.value;
                         startTransition(() => {
                           setSearchInput(nextValue);
                         });
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          handleSearchSubmit();
+                        }
                       }}
                     />
                     {searchInput.trim().length > 0 ? (
@@ -1452,52 +1555,13 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
           </div>
         </div>
 
-        <aside className={cartSheetClassName}>
-          <div className="pos-cart-sheet__bar">
-            <button
-              type="button"
-              className="pos-cart-sheet__summary"
-              onClick={() => {
-                if (panelState !== "cart") {
-                  return;
-                }
-
-                setIsCartSheetExpanded((currentValue) => !currentValue);
-              }}
-            >
-              <span className="pos-cart-sheet__summary-handle" aria-hidden="true">
-                <GripHorizontal size={18} />
-              </span>
-              <span>
-                {formatCompactNumber(items.length)} بنود — {formatCurrency(netTotal)}
-              </span>
-              <strong>{isCartSheetExpanded ? "إخفاء" : "إظهار"}</strong>
-            </button>
-            <button
-              type="button"
-              className={
-                canCreateDebt
-                  ? "pos-cart-sheet__confirm-cta btn btn--warning"
-                  : "pos-cart-sheet__confirm-cta btn btn--primary"
-              }
-              disabled={
-                panelState === "processing" ||
-                isSubmitting ||
-                !canConfirmSale ||
-                isOffline
-              }
-              onClick={() => {
-                startSubmission(() => {
-                  void submitSale();
-                });
-              }}
-            >
-              {panelState === "processing" || isSubmitting
-                ? "جارٍ التنفيذ..."
-                : "إتمام البيع"}
-            </button>
-          </div>
-
+        <aside
+          className={
+            isMobileViewport && activeMobileTab === "products"
+              ? "pos-cart-sheet is-hidden"
+              : "pos-cart-sheet"
+          }
+        >
           <SectionCard className="transaction-card transaction-card--checkout pos-cart-surface">
             {panelState === "success" && lastCompletedSale ? (
               <div className="cart-success-overlay pos-success-screen">
@@ -1590,22 +1654,13 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
                     onClick={() => setIsClearCartDialogOpen(true)}
                     disabled={items.length === 0}
                     aria-label="تفريغ السلة"
+                    title="Ctrl+Q"
                   >
                     <Trash2 size={16} />
                   </button>
                 </div>
 
                 <div className="cart-panel__actions pos-cart-card__toolbar">
-                  <button
-                    type="button"
-                    className="secondary-button cart-panel__header-button pos-cart-card__toggle"
-                    onClick={() =>
-                      setIsCartSheetExpanded((currentValue) => !currentValue)
-                    }
-                  >
-                    <GripHorizontal size={16} />
-                    {isCartSheetExpanded ? "إخفاء" : "إظهار"}
-                  </button>
                   <button
                     type="button"
                     className="secondary-button cart-panel__header-button"
@@ -1810,6 +1865,7 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
                       className="secondary-button btn btn--secondary transaction-checkout-button transaction-checkout-button--secondary"
                       disabled={items.length === 0}
                       onClick={openCheckout}
+                      title="F2"
                     >
                       مراجعة الدفع
                     </button>
@@ -1820,12 +1876,13 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
                           ? "primary-button btn btn--warning transaction-checkout-button transaction-checkout-button--primary"
                           : "primary-button btn btn--primary transaction-checkout-button transaction-checkout-button--primary"
                       }
-                      disabled={isSubmitting || !canConfirmSale || isOffline}
+                      disabled={isSubmitting || !canCompleteSale || isOffline}
                       onClick={() => {
                         startSubmission(() => {
                           void submitSale();
                         });
                       }}
+                      title="Ctrl+Enter"
                     >
                       {isSubmitting ? (
                         <>
@@ -1929,7 +1986,7 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
                           const parsedValue = parseAmount(rawValue);
                           setAmountReceived(rawValue === "" ? null : parsedValue);
                         }}
-                        placeholder="المبلغ المدفوع من العميل"
+                        placeholder="0.000"
                         disabled={panelState === "processing"}
                       />
                     </label>
@@ -2197,14 +2254,15 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
                         />
                       </label>
                     ) : (
-                      <button
-                        type="button"
-                        className="pos-optional-field-toggle"
-                        onClick={() => setIsDiscountExpanded(true)}
-                        disabled={panelState === "processing"}
-                      >
-                        ▸ إضافة خصم (اختياري)
-                      </button>
+                        <button
+                          type="button"
+                          className="pos-optional-field-toggle"
+                          onClick={() => setIsDiscountExpanded(true)}
+                          disabled={panelState === "processing"}
+                          title="d"
+                        >
+                          ▸ إضافة خصم (اختياري)
+                        </button>
                     )}
 
                     {isTerminalCodeExpanded ? (
@@ -2358,7 +2416,7 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
                     disabled={
                       panelState === "processing" ||
                       isSubmitting ||
-                      !canConfirmSale ||
+                      !canCompleteSale ||
                       isOffline
                     }
                     onClick={() => {
@@ -2366,6 +2424,7 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
                         void submitSale();
                       });
                     }}
+                    title="Ctrl+Enter"
                   >
                     {panelState === "processing" || isSubmitting ? (
                       <>
@@ -2383,6 +2442,22 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
             )}
           </SectionCard>
         </aside>
+      </div>
+
+        <footer className="pos-status-bar" data-compact={isCompactViewport ? "true" : "false"}>
+          <span className="pos-status-bar__item">
+            <GripHorizontal size={14} />
+            <strong>{posTerminalCode}</strong>
+          </span>
+          <span className="pos-status-bar__item">
+            <Search size={14} />
+            <span>{searchInput.trim() ? "وضع البحث" : "بحث بالباركود"}</span>
+          </span>
+          <span className="pos-status-bar__item">
+            <Clock3 size={14} />
+            <bdi dir="ltr">{formatStatusTime(now)}</bdi>
+          </span>
+        </footer>
       </div>
 
       <ConfirmationDialog

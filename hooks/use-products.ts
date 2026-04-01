@@ -2,32 +2,20 @@
 
 import { useEffect, useReducer, useRef, useState } from "react";
 import { getSafeArabicErrorMessage } from "@/lib/error-messages";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import type { PosProduct } from "@/lib/pos/types";
+import type { PosProduct, StandardEnvelope } from "@/lib/pos/types";
 import type { ProductCategory } from "@/lib/validations/products";
-
-const PRODUCT_COLUMNS = [
-  "id",
-  "name",
-  "category",
-  "sku",
-  "description",
-  "sale_price",
-  "stock_quantity",
-  "min_stock_level",
-  "track_stock",
-  "is_quick_add",
-  "is_active",
-  "created_at",
-  "updated_at",
-  "created_by"
-].join(", ");
 
 const PAGE_SIZE = 150;
 
 type UseProductsOptions = {
   searchQuery?: string;
   category?: string;
+};
+
+type ProductsResponseData = {
+  items: PosProduct[];
+  totalCount: number;
+  hasMore: boolean;
 };
 
 function sanitizeSearchTerm(value: string) {
@@ -81,23 +69,39 @@ export function useProducts({ searchQuery = "", category = "all" }: UseProductsO
         loadedCountRef.current = 0;
       }
 
-      const supabase = createSupabaseBrowserClient();
-      let query = supabase
-        .from("v_pos_products")
-        .select(PRODUCT_COLUMNS, { count: "exact" })
-        .order("is_quick_add", { ascending: false })
-        .order("name", { ascending: true });
+      const params = new URLSearchParams({
+        page: String(page)
+      });
 
       if (normalizedCategory) {
-        query = query.eq("category", normalizedCategory);
+        params.set("category", normalizedCategory);
       }
 
       if (normalizedSearchQuery.length > 0) {
-        const pattern = `%${normalizedSearchQuery}%`;
-        query = query.or(`name.ilike.${pattern},sku.ilike.${pattern}`);
+        params.set("q", normalizedSearchQuery);
       }
 
-      const { data, error, count } = await query.range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
+      let data: ProductsResponseData | undefined;
+      let error: Error | null = null;
+
+      try {
+        const response = await fetch(`/api/pos/products?${params.toString()}`, {
+          method: "GET",
+          cache: "no-store"
+        });
+        const envelope = (await response.json()) as StandardEnvelope<ProductsResponseData>;
+
+        if (!response.ok || !envelope.success || !envelope.data) {
+          error = new Error(envelope.error?.message ?? "تعذر جلب المنتجات الآن.");
+        } else {
+          data = envelope.data;
+        }
+      } catch (fetchError) {
+        error =
+          fetchError instanceof Error
+            ? fetchError
+            : new Error("تعذر جلب المنتجات الآن.");
+      }
 
       if (isCancelled) {
         return;
@@ -108,13 +112,13 @@ export function useProducts({ searchQuery = "", category = "all" }: UseProductsO
         setErrorMessage(getSafeArabicErrorMessage(error, "تعذر جلب المنتجات الآن."));
         setHasMore(false);
       } else {
-        const nextProducts = (data ?? []) as unknown as PosProduct[];
+        const nextProducts = data?.items ?? [];
         const nextCount = loadingMore ? loadedCountRef.current + nextProducts.length : nextProducts.length;
         loadedCountRef.current = nextCount;
 
         setProducts((current) => (page === 0 ? nextProducts : [...current, ...nextProducts]));
-        setTotalCount(typeof count === "number" ? count : nextCount);
-        setHasMore(typeof count === "number" ? nextCount < count : nextProducts.length === PAGE_SIZE);
+        setTotalCount(data?.totalCount ?? nextCount);
+        setHasMore(data?.hasMore ?? nextProducts.length === PAGE_SIZE);
         setErrorMessage(null);
       }
 
