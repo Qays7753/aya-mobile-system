@@ -13,8 +13,8 @@
 }
 
 .rootInCart {
-  border-color: color-mix(in srgb, var(--aya-primary) 36%, var(--aya-line));
-  background: color-mix(in srgb, var(--aya-panel) 92%, var(--aya-primary-soft) 8%);
+  border-color: color-mix(in srgb, var(--color-accent) 36%, var(--color-border));
+  background: color-mix(in srgb, var(--color-bg-surface) 92%, var(--color-accent-light) 8%);
 }
 
 .rootDisabled {
@@ -55,9 +55,9 @@
   align-items: center;
   gap: var(--sp-1);
   padding: 4px;
-  border: 1px solid color-mix(in srgb, var(--aya-primary) 18%, var(--aya-line));
+  border: 1px solid color-mix(in srgb, var(--color-accent) 18%, var(--color-border));
   border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.96);
+  background: var(--color-bg-surface);
   box-shadow: var(--shadow-sm);
 }
 
@@ -72,21 +72,21 @@
   padding: 0;
   border: 1px solid transparent;
   border-radius: 999px;
-  background: var(--aya-primary-soft);
-  color: var(--aya-primary);
+  background: var(--color-accent-light);
+  color: var(--color-accent);
   box-shadow: none;
 }
 
 .quantityButton:hover:not(:disabled) {
-  background: var(--aya-primary);
-  color: var(--aya-panel);
+  background: var(--color-accent);
+  color: var(--color-bg-surface);
 }
 
 .quantityValue {
   font-size: 14px;
   font-weight: 700;
   text-align: center;
-  color: var(--aya-ink);
+  color: var(--color-text-primary);
   font-variant-numeric: tabular-nums;
 }
 
@@ -97,6 +97,6 @@
   align-items: center;
   justify-content: center;
   border-radius: inherit;
-  background: rgba(255, 255, 255, 0.64);
+  background: color-mix(in srgb, var(--color-bg-surface) 64%, transparent);
   backdrop-filter: blur(1px);
 }

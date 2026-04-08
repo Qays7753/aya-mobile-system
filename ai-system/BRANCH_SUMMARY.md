@@ -16,7 +16,7 @@
 ```
 - Project phase: development
 - Last work done: Navigation architecture refactor — sidebar → Mega Popover (Task 2026-04-05-001 written, pending Codex execution)
-- Current priority: Gemini applies dark glassmorphism theme to the new nav popover (Task 2026-04-05-002).
+- Current priority: Design System finalized. Next step: apply new tokens to codebase starting from globals.css.
 ```
 
 ---
