@@ -476,9 +476,8 @@ export function SuppliersWorkspace({
               tabRefs.current[tab.key] = node;
             }}
             type="button"
-            role="tab"
             id={`suppliers-tab-${tab.key}`}
-            aria-selected={activeSection === tab.key}
+            aria-pressed={activeSection === tab.key}
             aria-controls={`suppliers-panel-${tab.key}`}
             className={`suppliers-page__tab ${activeSection === tab.key ? "is-active chip-button is-selected" : "chip-button"}`}
             onClick={() => setActiveSection(tab.key)}
@@ -492,7 +491,6 @@ export function SuppliersWorkspace({
       <section
         id="suppliers-panel-directory"
         className="suppliers-page__tab-panel"
-        role="tabpanel"
         aria-labelledby="suppliers-tab-directory"
         hidden={activeSection !== "directory"}
       >
@@ -701,7 +699,6 @@ export function SuppliersWorkspace({
       <section
         id="suppliers-panel-purchase"
         className="suppliers-page__tab-panel"
-        role="tabpanel"
         aria-labelledby="suppliers-tab-purchase"
         hidden={activeSection !== "purchase"}
       >
@@ -921,7 +918,6 @@ export function SuppliersWorkspace({
       <section
         id="suppliers-panel-payment"
         className="suppliers-page__tab-panel"
-        role="tabpanel"
         aria-labelledby="suppliers-tab-payment"
         hidden={activeSection !== "payment"}
       >
@@ -1029,7 +1025,6 @@ export function SuppliersWorkspace({
       <section
         id="suppliers-panel-history"
         className="suppliers-page__tab-panel"
-        role="tabpanel"
         aria-labelledby="suppliers-tab-history"
         hidden={activeSection !== "history"}
       >

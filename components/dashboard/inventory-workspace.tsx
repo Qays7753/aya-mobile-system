@@ -597,9 +597,8 @@ export function InventoryWorkspace({
               tabRefs.current[tab.key] = node;
             }}
             type="button"
-            role="tab"
             id={`inventory-tab-${tab.key}`}
-            aria-selected={activeSection === tab.key}
+            aria-pressed={activeSection === tab.key}
             aria-controls={`inventory-panel-${tab.key}`}
             className={`inventory-page__tab ${activeSection === tab.key ? "is-active chip-button is-selected" : "chip-button"}`}
             onClick={() => activateSection(tab.key)}
@@ -613,7 +612,6 @@ export function InventoryWorkspace({
       <section
         id="inventory-panel-create"
         className="inventory-page__tab-panel"
-        role="tabpanel"
         aria-labelledby="inventory-tab-create"
         hidden={activeSection !== "create"}
       >
@@ -722,7 +720,6 @@ export function InventoryWorkspace({
       <section
         id="inventory-panel-active"
         className="inventory-page__tab-panel"
-        role="tabpanel"
         aria-labelledby="inventory-tab-active"
         hidden={activeSection !== "active"}
       >
@@ -796,7 +793,6 @@ export function InventoryWorkspace({
       <section
         id="inventory-panel-reconcile"
         className="inventory-page__tab-panel"
-        role="tabpanel"
         aria-labelledby="inventory-tab-reconcile"
         hidden={activeSection !== "reconcile"}
       >
@@ -875,7 +871,6 @@ export function InventoryWorkspace({
       <section
         id="inventory-panel-history"
         className="inventory-page__tab-panel"
-        role="tabpanel"
         aria-labelledby="inventory-tab-history"
         hidden={activeSection !== "history"}
       >

@@ -330,3 +330,183 @@ Active item also gets: `border-inline-start: 2px solid var(--color-accent)`
 
 > Light warm neutral UI inspired by Claude.ai. Colors: `#F9F8F5` base, `#CF694A` accent.
 > Font: Tajawal. Flat cards with border only. Topbar + popover nav. Full RTL. Mobile-first responsive.
+
+---
+
+## 12. Surface Hierarchy
+
+Every visible layer in the UI belongs to exactly one surface level. Never mix levels on the same visual plane.
+
+```
+Level 0 — Base        background: var(--color-bg-base)      #F9F8F5
+Level 1 — Surface     background: var(--color-bg-surface)   #FFFFFF
+Level 2 — Raised      background: var(--color-bg-surface)   #FFFFFF  + border
+Level 3 — Overlay     background: var(--color-bg-surface)   #FFFFFF  + border + drop-shadow
+```
+
+### Where each level is used
+
+| Element | Level | CSS |
+|---------|-------|-----|
+| `dashboard-content` (page body) | 0 — Base | `background: var(--color-bg-base)` |
+| `dashboard-topbar` | 1 — Surface | `background: var(--color-bg-surface)` + `border-bottom` |
+| `section-card` (default) | 2 — Raised | `background: var(--color-bg-surface)` + `border: 1px solid var(--color-border)` |
+| `section-card--flat` | 0 — Base | `background: transparent` — no border, no shadow |
+| `section-card--inset` | 0 — Muted | `background: var(--color-bg-muted)` — no border, no shadow |
+| Dialogs / modals | 3 — Overlay | `background: var(--color-bg-surface)` + `border` + `box-shadow: 0 8px 32px rgba(24,23,21,0.12)` |
+| Popovers (nav, dropdowns) | 3 — Overlay | same as dialogs |
+
+### Rules
+
+```
+SH-RULE-01: dashboard-content is always Level 0 (bg-base). No gradient, no surface color.
+
+SH-RULE-02: dashboard-topbar is always Level 1. border-bottom only — no box-shadow.
+
+SH-RULE-03: Regular section-cards are Level 2. border only — no box-shadow (enforced by DS-RULE-02).
+
+SH-RULE-04: box-shadow is reserved for Level 3 (dialogs and popovers) only.
+            Never add box-shadow to a card that sits inside the page body.
+
+SH-RULE-05: Never place a Level 1 surface directly on a Level 1 surface.
+            A card (Level 2) must always sit on top of a base (Level 0) background.
+            If a card is nested inside another card, the inner element must use
+            section-card--inset (Level 0 muted) — never another raised card.
+```
+
+---
+
+## 13. Layout Constraints
+
+Global layout rules that apply to every page. Deviations require explicit justification.
+
+### Max-width
+
+```css
+/* Applied on .dashboard-main — enforced in globals.css */
+.dashboard-main {
+  width: 100%;
+  max-width: 1600px;
+  margin-inline: auto;
+}
+```
+
+**Exception — POS only:**
+```css
+/* POS needs the full viewport — no max-width */
+.dashboard-layout--pos .dashboard-main,
+.dashboard-shell--pos .dashboard-main {
+  max-width: none;
+  margin-inline: 0;
+}
+```
+
+### Rules
+
+```
+LC-RULE-01: max-width is set once on .dashboard-main — never repeated locally inside a page.
+            If a page sets its own max-width, it must be removed in favour of the global rule.
+
+LC-RULE-02: POS is the only page exempt from the global max-width.
+            It must carry the .dashboard-layout--pos modifier to opt out.
+
+LC-RULE-03: position: sticky is only valid when every ancestor in the scroll chain has
+            overflow: visible (the default).
+            Before using sticky, verify no ancestor has overflow: hidden, auto, or scroll.
+            If overflow is required on an ancestor, switch to position: fixed with
+            explicit inset values instead.
+
+LC-RULE-04: Avoid padding or margin on both a container and its direct child for the same axis.
+            Pick one — container owns horizontal padding, child owns vertical spacing.
+```
+
+### Sticky checklist (use before writing position: sticky)
+
+```
+□ No ancestor between the sticky element and the scroll container has overflow: hidden/auto/scroll
+□ The sticky element has a defined top / bottom / inset-block-start value
+□ The scroll container is the viewport or a known, single scrolling parent
+□ Tested on mobile Safari (WebKit sticky behaviour differs from Chromium)
+```
+
+---
+
+## 14. SectionCard Variants
+
+`SectionCard` accepts a `tone` prop. Each tone maps to a specific surface level and use case.
+Never use a heavier tone than necessary.
+
+| Tone | Surface Level | Background | Border | Shadow | Use Case |
+|------|--------------|-----------|--------|--------|----------|
+| `default` (raised) | Level 2 | `--color-bg-surface` | `1px solid --color-border` | none | Primary content blocks, main workspace sections |
+| `subtle` | Level 2 | `--color-bg-muted` | `1px solid --color-border` | none | Secondary info panels, metadata blocks |
+| `flat` | Level 0 | `transparent` | none | none | Sub-sections nested inside a raised card |
+| `inset` | Level 0 muted | `--color-bg-muted` | none | none | Input areas, content wells inside a card |
+| `accent` | Level 2 | `--color-accent-light` | `1px solid --color-accent` (0.3 opacity) | none | Highlighted CTAs, alert-level information |
+
+### Rules
+
+```
+SC-RULE-01: Never nest two raised (default) cards directly inside each other.
+            The inner element must use flat or inset instead.
+
+SC-RULE-02: flat and inset tones must not have padding: var(--sp-6).
+            Use padding: var(--sp-4) or no padding (layout decides).
+
+SC-RULE-03: accent tone is for one card per screen maximum.
+            Using it on multiple cards per view dilutes the visual signal.
+
+SC-RULE-04: All four tones share the same border-radius: var(--radius-lg).
+            Never override border-radius on a SectionCard.
+```
+
+---
+
+## 15. CSS Scoping Rules — globals.css vs Module CSS
+
+Two CSS systems exist in this project. Each has a strict domain. Never mix them.
+
+### globals.css — Shared design tokens and primitives
+
+Use for:
+- Design tokens (`--color-*`, `--sp-*`, `--radius-*`, etc.)
+- Shared primitives used in 2+ screens: `.section-card`, `.btn`, `.chip`, `.stat-card`
+- Shell layout: `.dashboard-topbar`, `.dashboard-content`, `.dashboard-main`
+- Shared interaction patterns: `:focus-visible`, hover states on shared classes
+
+Never use globals.css for:
+- Layout rules that only apply to one screen
+- CSS that references a class used in exactly one component
+- Overrides of module CSS classes
+
+### Module CSS (`.module.css`) — Screen-specific layout
+
+Use for:
+- Layout rules that only apply to one screen (e.g. `pos-view.module.css`)
+- Component-internal positioning (e.g. sticky toolbar inside POS)
+- Grid/flex templates unique to one screen
+
+Never use module CSS for:
+- Redefining tokens already in globals.css
+- Overriding shared primitives (`.btn`, `.chip`, `.section-card`)
+- Rules that duplicate something already in globals.css for the same element
+
+### Conflict resolution rule
+
+```
+MOD-RULE-01: If a CSS property is set in both globals.css AND a module CSS file
+             for the same element, the globals.css rule must be removed.
+             Module CSS wins for screen-specific layout.
+             globals.css wins for shared primitives.
+
+MOD-RULE-02: Before adding a rule to globals.css, search for the class name in
+             all .module.css files. If it exists there, edit the module file instead.
+
+MOD-RULE-03: Before adding a rule to a module CSS file, search globals.css for
+             the same class. If found, do not duplicate — extend via a modifier class.
+
+MOD-RULE-04: .operational-* classes (used in Inventory, Suppliers, Maintenance, Operations)
+             must always be scoped with a page-level parent selector.
+             ✅  .inventory-page .operational-list-card { ... }
+             ❌  .operational-list-card { ... }
+```

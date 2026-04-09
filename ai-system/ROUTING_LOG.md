@@ -15,6 +15,11 @@
 | 2026-04-04-001-R1 | bug-fix | Codex | PARTIAL | — | — | — | no | no |
 | 2026-04-04-002 | ui-change | Gemini | DONE | — | — | — | no | no |
 | 2026-04-04-003 | ui-change | Gemini | DONE | — | — | — | no | no |
+| 2026-04-06-TOKEN-MIGRATION | refactor | Codex | DONE | — | — | — | no | no |
+| 2026-04-06-SHELL-REFACTOR | refactor | Codex | DONE | — | — | — | no | no |
+| 2026-04-09-WAVE-2A-2B | restructure | Codex | DONE | — | — | — | no | no |
+| 2026-04-09-WAVE-3-4 | restructure | Codex | DONE | — | — | — | no | no |
+| 2026-04-09-AUTH-PERF | bug-fix | Claude | DONE | — | — | — | no | no |
 
 ## AGENT_PATTERNS (updated every 10 Tasks)
 

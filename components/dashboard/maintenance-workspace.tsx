@@ -590,9 +590,8 @@ export function MaintenanceWorkspace({
               tabRefs.current[tab.key] = node;
             }}
             type="button"
-            role="tab"
             id={`maintenance-tab-${tab.key}`}
-            aria-selected={activeSection === tab.key}
+            aria-pressed={activeSection === tab.key}
             aria-controls={`maintenance-panel-${tab.key}`}
             className={`maintenance-page__tab ${activeSection === tab.key ? "is-active chip-button is-selected" : "chip-button"}`}
             onClick={() => activateSection(tab.key)}
