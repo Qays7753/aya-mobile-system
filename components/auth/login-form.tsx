@@ -85,15 +85,29 @@ export function LoginForm() {
 
       let nextRoute = "/pos";
 
+      // Check role with 2-second timeout
       if (data.user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", data.user.id)
-          .maybeSingle<{ role: "admin" | "pos_staff" }>();
+        try {
+          const profilePromise = supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", data.user.id)
+            .maybeSingle<{ role: "admin" | "pos_staff" }>();
 
-        if (profile?.role === "admin") {
-          nextRoute = "/reports";
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("Timeout")), 2000)
+          );
+
+          const { data: profile } = await Promise.race([
+            profilePromise,
+            timeoutPromise
+          ]) as Awaited<typeof profilePromise>;
+
+          if (profile?.role === "admin") {
+            nextRoute = "/reports";
+          }
+        } catch {
+          // Timeout or error: use default route
         }
       }
 
