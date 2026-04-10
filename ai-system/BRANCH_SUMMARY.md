@@ -14,12 +14,12 @@
 ## CURRENT_STATE
 
 ```
-- Project phase: UI Restructuring — COMPLETE (Waves 1–5 done)
-- Last work done: Wave 5 — Loading Screen + A11y final pass + Regression hardening
-- Current priority: Wave 6A (Infrastructure: tokens → layout → surface → SectionCard)
-- Quality gates: build ✅ | tsc ✅ | vitest 205/207 ✅ | e2e 56 passed ✅
-- Known issues logged: ai-system/KNOWN_ISSUES.md (13 issues, Wave 6A/B/C scope)
-- Design system expanded: DESIGN_SYSTEM.md §12–15 added
+- Project phase: Wave 6A complete — Wave 6B next (POS structural fix)
+- Last work done: Wave 6A — G4+G2+G1+G3 infrastructure (tokens, layout, surface, SectionCard)
+- Current priority: Wave 6B (P3→P1→P2→P4: CSS cleanup, sticky fix, toolbar, max-width POS)
+- Quality gates: build ✅ | tsc ✅ | vitest 207/207 ✅ | e2e 55+1flaky ✅
+- Flaky test: px06-device-gate.spec.ts:159 (.pos-cart-sheet timing) — non-blocking, passes on retry
+- Known issues logged: ai-system/KNOWN_ISSUES.md (Wave 6B/C remaining)
 ```
 
 ---
@@ -34,6 +34,7 @@
 | 2026-04-09-WAVE-3-4 | Inventory/Maintenance/Notifications/Debts/Invoices/POS | Codex | DONE | 12 passed e2e (px13, px22, px23) |
 | 2026-04-09-AUTH-PERF | Login role-check timeout (2s Promise.race) | Claude | DONE | Fixes slow login; 5/5 login tests pass |
 | 2026-04-10-WAVE-5 | Loading Screen + A11y + Regression hardening | Codex | DONE | 56 e2e passed, tsc clean, build ok |
+| 2026-04-10-WAVE-6A | Token cleanup + max-width + surface + SectionCard | Codex | DONE | 207/207 vitest, 55 passed + 1 flaky e2e |
 
 ---
 
@@ -50,7 +51,7 @@
 ## NEXT_TASKS
 
 - [x] Wave 5 — DONE
-- [ ] Wave 6A — G4 (tokens) → G2 (max-width) → G1 (surface) → G3 (SectionCard)
+- [x] Wave 6A — DONE
 - [ ] Wave 6B — P3 (CSS cleanup) → P1 (sticky) → P2 (toolbar) → P4 (max-width POS)
 - [ ] Wave 6C — P5, R1, P6, R2, G5 (polish)
 
@@ -59,8 +60,8 @@
 ## META
 ```
 Last updated           : 2026-04-10
-Last TASK_ID           : 2026-04-10-WAVE-5
+Last TASK_ID           : 2026-04-10-WAVE-6A
 Last Agent             : Codex
-Total Tasks so far     : 12
-Current line count     : ~75 / 150
+Total Tasks so far     : 13
+Current line count     : ~80 / 150
 ```

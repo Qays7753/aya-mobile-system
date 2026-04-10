@@ -2832,5 +2832,37 @@ CONSTRAINTS (global):
   - POS pages must not be affected by max-width change
   - Single commit after all 4 steps pass verification
 
-═══ EXECUTION_RESULT ═══
-(Codex writes results here after execution)
+EXECUTION_RESULT
+
+- G4 completed in `app/globals.css` and `app/layout.tsx`.
+  - Removed all remaining `--aya-*` usage from `app/globals.css`.
+  - Migrated runtime font variables to `--font-primary` and `--font-mono`.
+  - Verification: `rg -- ''--aya-'' app/globals.css` returned no results.
+
+- G2 completed in `app/globals.css`.
+  - Added `width: 100%`, `max-width: 1600px`, and `margin-inline: auto` to `.dashboard-main`.
+  - Added POS override so `.dashboard-layout--pos .dashboard-main` and `.dashboard-shell--pos .dashboard-main` keep full width.
+
+- G1 completed in `app/globals.css`.
+  - Changed `.dashboard-content` background to `transparent`.
+  - Removed the base `box-shadow` from `.section-card`.
+  - Verification: `CI=1 npx playwright test tests/e2e/px18-visual-accessibility.spec.ts --workers=1` passed (`5 passed`).
+
+- G3 completed in `components/ui/section-card.tsx` and `app/globals.css`.
+  - Extended `SectionCardTone` to `default | accent | subtle | flat | inset`.
+  - Added `.section-card--flat` and `.section-card--inset` styles without changing existing tone behavior.
+
+- Infra note:
+  - During G1 verification, Playwright startup initially failed because `next start` hit stale `.next` server artifacts (`vendor-chunks/next.js` missing).
+  - Resolved by regenerating `.next` from scratch and rebuilding. No additional source change was needed beyond Wave 6A scope.
+
+- Final verification:
+  - `npx tsc --noEmit --pretty false`: passed with zero output.
+  - `npm run build`: passed.
+  - `npx vitest run`: passed, `207/207`.
+  - `CI=1 npx playwright test --workers=1`: exit `0`, `55 passed` and `1 flaky` retry.
+
+- Flaky test detail:
+  - `tests/e2e/px06-device-gate.spec.ts:159`
+- First attempt failed on laptop with `expect(locator('.pos-cart-sheet')).toBeVisible()` because the element was not found.
+  - Retry passed, so the full Playwright run completed successfully.
