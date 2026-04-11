@@ -18,7 +18,6 @@ type PosCheckoutPanelProps = {
   canCreateDebt: boolean;
   canHoldCart: boolean;
   changeToReturn: number | null;
-  checkoutOptionsToggleLabel: string;
   customerResults: CustomerSearchResult[];
   customerSearchInput: string;
   customersLoading: boolean;
@@ -30,16 +29,11 @@ type PosCheckoutPanelProps = {
   itemCount: number;
   invoiceDiscountAmount: number;
   invoiceDiscountPercentage: number;
-  isCheckoutOptionsOpen: boolean;
-  isCustomerExpanded: boolean;
-  isDiscountExpanded: boolean;
-  isNotesExpanded: boolean;
   isOffline: boolean;
   isPrimarySplitSelectorOpen: boolean;
   isProcessing: boolean;
   isSplitMode: boolean;
   isSubmitting: boolean;
-  isTerminalCodeExpanded: boolean;
   netTotal: number;
   notes: string;
   onAddSplitPayment: () => void;
@@ -52,10 +46,6 @@ type PosCheckoutPanelProps = {
   onHoldCart: () => void;
   onInvoiceDiscountChange: (value: string) => void;
   onNotesChange: (value: string) => void;
-  onOpenCustomer: () => void;
-  onOpenDiscount: () => void;
-  onOpenNotes: () => void;
-  onOpenTerminalCode: () => void;
   onPaymentAccountSelect: (accountId: string) => void;
   onPosTerminalCodeChange: (value: string) => void;
   onPrimarySplitAccountSelect: (accountId: string) => void;
@@ -66,7 +56,6 @@ type PosCheckoutPanelProps = {
   onSplitPaymentAccountChange: (index: number, accountId: string) => void;
   onSplitPaymentAmountChange: (index: number, value: string) => void;
   onTerminalCodeLockToggle: () => void;
-  onToggleCheckoutOptions: () => void;
   paymentRowCount: number;
   posTerminalCode: string;
   primarySplitAmount: number | null;
@@ -94,7 +83,6 @@ export function PosCheckoutPanel({
   canCreateDebt,
   canHoldCart,
   changeToReturn,
-  checkoutOptionsToggleLabel,
   customerResults,
   customerSearchInput,
   customersLoading,
@@ -106,16 +94,11 @@ export function PosCheckoutPanel({
   itemCount,
   invoiceDiscountAmount,
   invoiceDiscountPercentage,
-  isCheckoutOptionsOpen,
-  isCustomerExpanded,
-  isDiscountExpanded,
-  isNotesExpanded,
   isOffline,
   isPrimarySplitSelectorOpen,
   isProcessing,
   isSplitMode,
   isSubmitting,
-  isTerminalCodeExpanded,
   netTotal,
   notes,
   onAddSplitPayment,
@@ -128,10 +111,6 @@ export function PosCheckoutPanel({
   onHoldCart,
   onInvoiceDiscountChange,
   onNotesChange,
-  onOpenCustomer,
-  onOpenDiscount,
-  onOpenNotes,
-  onOpenTerminalCode,
   onPaymentAccountSelect,
   onPosTerminalCodeChange,
   onPrimarySplitAccountSelect,
@@ -142,7 +121,6 @@ export function PosCheckoutPanel({
   onSplitPaymentAccountChange,
   onSplitPaymentAmountChange,
   onTerminalCodeLockToggle,
-  onToggleCheckoutOptions,
   paymentRowCount,
   posTerminalCode,
   primarySplitAmount,
@@ -223,6 +201,7 @@ export function PosCheckoutPanel({
           <input
             className="field-input"
             type="number"
+            inputMode="decimal"
             min={0}
             step="0.001"
             value={amountReceived ?? ""}
@@ -257,6 +236,7 @@ export function PosCheckoutPanel({
               <input
                 className="field-input"
                 type="number"
+                inputMode="decimal"
                 min={0}
                 step="0.001"
                 value={primarySplitAmount ?? ""}
@@ -322,6 +302,7 @@ export function PosCheckoutPanel({
                   <input
                     className="field-input"
                     type="number"
+                    inputMode="decimal"
                     min={0}
                     step="0.001"
                     value={payment.amount}
@@ -355,45 +336,23 @@ export function PosCheckoutPanel({
         )}
       </div>
 
-      <button
-        type="button"
-        className={
-          canCreateDebt
-            ? "primary-button btn btn--warning transaction-checkout-button"
-            : "primary-button btn btn--primary transaction-checkout-button"
-        }
-        aria-label="إتمام البيع"
-        disabled={isProcessing || isSubmitting || !canCompleteSale || isOffline}
-        onClick={onConfirmSale}
-        title="Ctrl+Enter"
-      >
-        {isProcessing || isSubmitting ? (
-          <>
-            <Loader2 className="spin" size={16} />
-            جارٍ التنفيذ...
-          </>
-        ) : canCreateDebt ? (
-          `تسجيل دين • ${formatCurrency(netTotal)}`
-        ) : (
-          `تأكيد البيع • ${formatCurrency(netTotal)}`
-        )}
-      </button>
-
-
-      <div className="pos-checkout-options-toggle">
+      <div className="actions-row">
         <button
           type="button"
-          className="secondary-button pos-checkout-options-toggle__button"
-          onClick={onToggleCheckoutOptions}
+          className="secondary-button"
+          onClick={(event) => {
+            const paymentSurface = event.currentTarget
+              .closest(".pos-unified-checkout")
+              ?.querySelector<HTMLElement>(".pos-payment-chip-row, .pos-split-payments");
+            paymentSurface?.scrollIntoView({ block: "nearest" });
+          }}
         >
-          {checkoutOptionsToggleLabel}
+          مراجعة الدفع
         </button>
       </div>
 
-      {isCheckoutOptionsOpen ? (
-        <div className="pos-checkout-advanced">
-          {isCustomerExpanded ? (
-            <div className="stack-field customer-search-field">
+      <div className="pos-checkout-dense-grid">
+          <div className="stack-field customer-search-field">
               <span className="field-label">العميل</span>
               <input
                 className="field-input"
@@ -453,9 +412,7 @@ export function PosCheckoutPanel({
                 </div>
               ) : null}
             </div>
-          ) : null}
 
-          {isTerminalCodeExpanded ? (
             <label className="stack-field">
               <span className="field-label">رمز الطرفية</span>
               <div className="actions-row pos-terminal-code-row">
@@ -477,14 +434,13 @@ export function PosCheckoutPanel({
                 </button>
               </div>
             </label>
-          ) : null}
 
-          {isDiscountExpanded ? (
             <label className="stack-field">
               <span className="field-label">خصم الفاتورة</span>
               <input
                 className="field-input"
                 type="number"
+                inputMode="decimal"
                 min={0}
                 max={effectiveMaxDiscount}
                 value={invoiceDiscountPercentage}
@@ -492,9 +448,7 @@ export function PosCheckoutPanel({
                 disabled={isProcessing}
               />
             </label>
-          ) : null}
 
-          {isNotesExpanded ? (
             <div className="stack-field pos-notes-field">
               <span className="field-label">ملاحظات</span>
               <textarea
@@ -507,7 +461,6 @@ export function PosCheckoutPanel({
                 disabled={isProcessing}
               />
             </div>
-          ) : null}
 
           {shouldBlockForDebt ? (
             <p className="field-error pos-debt-block-message">
@@ -522,70 +475,33 @@ export function PosCheckoutPanel({
               {selectedCustomerName ? <span>على حساب: {selectedCustomerName}</span> : null}
             </div>
           ) : null}
-
-          <div className="pos-cart-actions-row">
-            <button
-              type="button"
-              className="chip pos-action-chip"
-              onClick={onAddSplitPayment}
-              disabled={isProcessing || splitPayments.length >= 2 || accounts.length <= paymentRowCount}
-            >
-              <Plus size={14} />
-              تمدد
-            </button>
-            <button
-              type="button"
-              className={
-                isDiscountExpanded
-                  ? "chip chip--active pos-action-chip"
-                  : "chip pos-action-chip"
-              }
-              onClick={onOpenDiscount}
-              disabled={isProcessing || isDiscountExpanded}
-            >
-              <Plus size={14} />
-              خصم
-            </button>
-            <button
-              type="button"
-              className={
-                isCustomerExpanded
-                  ? "chip chip--active pos-action-chip"
-                  : "chip pos-action-chip"
-              }
-              onClick={onOpenCustomer}
-              disabled={isProcessing || isCustomerExpanded}
-            >
-              <Plus size={14} />
-              عميل
-            </button>
-            <button
-              type="button"
-              className={
-                isNotesExpanded ? "chip chip--active pos-action-chip" : "chip pos-action-chip"
-              }
-              onClick={onOpenNotes}
-              disabled={isProcessing || isNotesExpanded}
-            >
-              <Plus size={14} />
-              ملاحظات
-            </button>
-            <button
-              type="button"
-              className={
-                isTerminalCodeExpanded
-                  ? "chip chip--active pos-action-chip"
-                  : "chip pos-action-chip"
-              }
-              onClick={onOpenTerminalCode}
-              disabled={isProcessing || isTerminalCodeExpanded}
-            >
-              <Plus size={14} />
-              رمز الطرفية
-            </button>
-          </div>
         </div>
-      ) : null}
+
+      <div className="pos-checkout-sticky-footer">
+        <button
+          type="button"
+          className={
+            canCreateDebt
+              ? "primary-button btn btn--warning transaction-checkout-button"
+              : "primary-button btn btn--primary transaction-checkout-button"
+          }
+          aria-label="إتمام البيع"
+          disabled={isProcessing || isSubmitting || !canCompleteSale || isOffline}
+          onClick={onConfirmSale}
+          title="Ctrl+Enter"
+        >
+          {isProcessing || isSubmitting ? (
+            <>
+              <Loader2 className="spin" size={16} />
+              جارٍ التنفيذ...
+            </>
+          ) : canCreateDebt ? (
+            `تسجيل دين • ${formatCurrency(netTotal)}`
+          ) : (
+            `تأكيد البيع • ${formatCurrency(netTotal)}`
+          )}
+        </button>
+      </div>
     </div>
   );
 }

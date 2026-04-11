@@ -326,12 +326,7 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
     null
   );
   const [primarySplitAmount, setPrimarySplitAmount] = useState<number | null>(null);
-  const [isCustomerExpanded, setIsCustomerExpanded] = useState(false);
-  const [isDiscountExpanded, setIsDiscountExpanded] = useState(false);
-  const [isTerminalCodeExpanded, setIsTerminalCodeExpanded] = useState(false);
-  const [isNotesExpanded, setIsNotesExpanded] = useState(false);
   const [isPrimarySplitSelectorOpen, setIsPrimarySplitSelectorOpen] = useState(false);
-  const [isCheckoutOptionsOpen, setIsCheckoutOptionsOpen] = useState(false);
   const [isClearCartDialogOpen, setIsClearCartDialogOpen] = useState(false);
   const [productView, setProductView] = useState<ProductViewMode>("thumbnail");
   const [isCompactViewport, setIsCompactViewport] = useState(false);
@@ -568,9 +563,7 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
   }, [customerResults, selectedCustomerId]);
 
   useEffect(() => {
-    if (selectedCustomerId) {
-      setIsCustomerExpanded(true);
-    }
+    // Selection handled natively without state expansion
   }, [selectedCustomerId]);
 
   useEffect(() => {
@@ -661,6 +654,9 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
     previousItemCountRef.current = items.length;
   }, [activeMobileTab, cartHydrated, items.length, panelState]);
 
+  const barcodeBuffer = useRef("");
+  const barcodeTimeout = useRef<number | null>(null);
+
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       const activeElement = document.activeElement;
@@ -706,6 +702,27 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
           setIsClearCartDialogOpen(true);
         }
         return;
+      }
+
+      if (!isTypingField) {
+        if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
+          barcodeBuffer.current += event.key;
+          if (barcodeTimeout.current) window.clearTimeout(barcodeTimeout.current);
+          barcodeTimeout.current = window.setTimeout(() => {
+            barcodeBuffer.current = "";
+          }, 50);
+        } else if (event.key === "Enter" && barcodeBuffer.current.length >= 3) {
+          const scannedCode = barcodeBuffer.current;
+          barcodeBuffer.current = "";
+          const matched = products.find(
+            (p) => p.sku?.toLowerCase() === scannedCode.toLowerCase()
+          );
+          if (matched && (!matched.track_stock || matched.stock_quantity > 0)) {
+            event.preventDefault();
+            handleAddProduct(matched);
+            return;
+          }
+        }
       }
 
       if (isTypingField) {
@@ -757,7 +774,6 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
 
       if (event.key.toLowerCase() === "d") {
         event.preventDefault();
-        setIsDiscountExpanded(true);
         openCheckout();
       }
     }
@@ -860,12 +876,7 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
     setSelectedCustomerPhone(null);
     setIsHeldCartsOpen(false);
     setPrimarySplitAmount(null);
-    setIsCustomerExpanded(false);
-    setIsDiscountExpanded(false);
-    setIsTerminalCodeExpanded(false);
-    setIsNotesExpanded(false);
     setIsPrimarySplitSelectorOpen(false);
-    setIsCheckoutOptionsOpen(false);
   }
 
   function handleTopbarNewSale() {
@@ -1143,10 +1154,6 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
         payments: paymentRows
       });
 
-      setIsCustomerExpanded(false);
-      setIsDiscountExpanded(false);
-      setIsTerminalCodeExpanded(false);
-      setIsNotesExpanded(false);
       setIsPrimarySplitSelectorOpen(false);
       setPanelState("success");
       setActiveMobileTab("cart");
@@ -1193,9 +1200,7 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
   const customerSummaryLabel = selectedCustomerName
     ? `العميل: ${selectedCustomerName}`
     : "العميل: ضيف جديد";
-  const checkoutOptionsToggleLabel = isCheckoutOptionsOpen
-    ? "إخفاء الخيارات"
-    : "مراجعة الدفع";
+  
 
   function handleCartLineRemove(item: (typeof items)[number]) {
     clearSubmissionFeedback();
@@ -1413,7 +1418,6 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
               canCreateDebt={canCreateDebt}
               canHoldCart={canHoldCart}
               changeToReturn={changeToReturn}
-              checkoutOptionsToggleLabel={checkoutOptionsToggleLabel}
               customerResults={customerResults}
               customerSearchInput={customerSearchInput}
               customersLoading={customersLoading}
@@ -1425,16 +1429,11 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
               itemCount={items.length}
               invoiceDiscountAmount={invoiceDiscountAmount}
               invoiceDiscountPercentage={invoiceDiscountPercentage}
-              isCheckoutOptionsOpen={isCheckoutOptionsOpen}
-              isCustomerExpanded={isCustomerExpanded}
-              isDiscountExpanded={isDiscountExpanded}
-              isNotesExpanded={isNotesExpanded}
               isOffline={isOffline}
               isPrimarySplitSelectorOpen={isPrimarySplitSelectorOpen}
               isProcessing={panelState === "processing"}
               isSplitMode={isSplitMode}
               isSubmitting={isSubmitting}
-              isTerminalCodeExpanded={isTerminalCodeExpanded}
               netTotal={netTotal}
               notes={notes}
               onAddSplitPayment={handleAddSplitPayment}
@@ -1469,10 +1468,6 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
                 clearSubmissionFeedback();
                 setNotes(value);
               }}
-              onOpenCustomer={() => setIsCustomerExpanded(true)}
-              onOpenDiscount={() => setIsDiscountExpanded(true)}
-              onOpenNotes={() => setIsNotesExpanded(true)}
-              onOpenTerminalCode={() => setIsTerminalCodeExpanded(true)}
               onPaymentAccountSelect={(accountId) => {
                 clearSubmissionFeedback();
                 setSelectedAccountId(accountId);
@@ -1511,9 +1506,6 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
 
                 lockTerminalCode();
               }}
-              onToggleCheckoutOptions={() =>
-                setIsCheckoutOptionsOpen((currentValue) => !currentValue)
-              }
               paymentRowCount={paymentRows.length}
               posTerminalCode={posTerminalCode}
               primarySplitAmount={primarySplitAmount}
