@@ -60,7 +60,7 @@ export function PosToolbar({
 
       (search.inputRef as React.MutableRefObject<HTMLInputElement | null>).current = node;
     },
-    [search.inputRef]
+    [search]
   );
 
   React.useLayoutEffect(() => {
