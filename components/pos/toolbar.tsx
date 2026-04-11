@@ -43,6 +43,34 @@ export function PosToolbar({
   onProductViewChange,
   showViewToggle = true
 }: PosToolbarProps) {
+  const inputElementRef = React.useRef<HTMLInputElement | null>(null);
+
+  const setInputRef = React.useCallback(
+    (node: HTMLInputElement | null) => {
+      inputElementRef.current = node;
+
+      if (!search.inputRef) {
+        return;
+      }
+
+      if (typeof search.inputRef === "function") {
+        search.inputRef(node);
+        return;
+      }
+
+      (search.inputRef as React.MutableRefObject<HTMLInputElement | null>).current = node;
+    },
+    [search.inputRef]
+  );
+
+  React.useLayoutEffect(() => {
+    const hydratedInputValue = inputElementRef.current?.value ?? "";
+
+    if (hydratedInputValue && hydratedInputValue !== search.value) {
+      search.onChange(hydratedInputValue);
+    }
+  }, [search]);
+
   return (
     <div
       data-primitive="pos-toolbar"
@@ -54,7 +82,7 @@ export function PosToolbar({
         >
           <Search size={18} className={`${styles.searchIcon} pos-search-field__icon`} />
           <input
-            ref={search.inputRef}
+            ref={setInputRef}
             type="search"
             autoFocus
             className={`${styles.searchInput} pos-search-field__input`}
