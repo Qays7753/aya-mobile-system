@@ -30,10 +30,9 @@ import { toast } from "sonner";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { SectionCard } from "@/components/ui/section-card";
 import { StatusBanner } from "@/components/ui/status-banner";
-import { PosToolbar } from "@/components/pos/toolbar";
 import { PosCartRail } from "@/components/pos/view/pos-cart-rail";
 import { PosCheckoutPanel } from "@/components/pos/view/pos-checkout-panel";
-import { PosProductGrid } from "@/components/pos/view/pos-product-grid";
+import { ProductSelectionView } from "@/components/pos/view/product-selection-view";
 import { PosSuccessState } from "@/components/pos/view/pos-success-state";
 import { PosSurfaceShell } from "@/components/pos/view/pos-surface-shell";
 import { useCustomerSearch } from "@/hooks/use-customer-search";
@@ -1251,7 +1250,7 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
   const customerSummaryLabel = selectedCustomerName
     ? `العميل: ${selectedCustomerName}`
     : "العميل: ضيف جديد";
-  
+
 
   function handleCartLineRemove(item: (typeof items)[number]) {
     clearSubmissionFeedback();
@@ -1380,48 +1379,43 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
   );
 
   const productsSurface = (
-    <div className="transaction-stack pos-products-stack">
-      <PosToolbar
-        search={{
-          value: searchInput,
-          onChange: (nextValue) => {
-            startTransition(() => {
-              setSearchInput(nextValue);
-            });
-          },
-          placeholder: "ابحث بالاسم أو رمز المنتج...",
-          onClear: () => {
-            setSearchInput("");
-            setSearchQuery("");
-            searchRef.current?.focus();
-          },
-          onSubmit: handleSearchSubmit,
-          inputRef: searchRef
-        }}
-        categories={toolbarCategories}
-        onCategorySelect={setActiveCategory}
-        heldCartsCount={heldCarts.length}
-        onHeldCartsOpen={handleOpenHeldCarts}
-        showHeldCartsButton={!isMobileViewport}
-        onRefreshProducts={refreshProducts}
-        showRefreshButton={!isMobileViewport}
-        productView={productView}
-        onProductViewChange={setProductView}
-        showViewToggle={!isMobileViewport}
-      />
-      <PosProductGrid
-        onClearSearch={() => setSearchInput("")}
-        onLoadMore={loadMoreProducts}
-        productResultsLabel={productResultsLabel}
-        productView={productView}
-        products={filteredProducts}
-        productsHasMore={productsHasMore}
-        productsLoading={productsLoading}
-        productsLoadingMore={productsLoadingMore}
-        searchInput={searchInput}
-        showEmptySearchState={filteredProducts.length === 0 && normalizedQuery.length > 0}
-      />
-    </div>
+    <ProductSelectionView
+      search={{
+        value: searchInput,
+        onChange: (nextValue) => {
+          startTransition(() => {
+            setSearchInput(nextValue);
+          });
+        },
+        placeholder: "ابحث بالاسم أو رمز المنتج...",
+        onClear: () => {
+          setSearchInput("");
+          setSearchQuery("");
+          searchRef.current?.focus();
+        },
+        onSubmit: handleSearchSubmit,
+        inputRef: searchRef
+      }}
+      categories={toolbarCategories}
+      onCategorySelect={setActiveCategory}
+      heldCartsCount={heldCarts.length}
+      onHeldCartsOpen={handleOpenHeldCarts}
+      showHeldCartsButton={!isMobileViewport}
+      onRefreshProducts={refreshProducts}
+      showRefreshButton={!isMobileViewport}
+      productView={productView}
+      onProductViewChange={setProductView}
+      showViewToggle={!isMobileViewport}
+      onClearSearch={() => setSearchInput("")}
+      onLoadMore={loadMoreProducts}
+      productResultsLabel={productResultsLabel}
+      products={filteredProducts}
+      productsHasMore={productsHasMore}
+      productsLoading={productsLoading}
+      productsLoadingMore={productsLoadingMore}
+      searchInput={searchInput}
+      showEmptySearchState={filteredProducts.length === 0 && normalizedQuery.length > 0}
+    />
   );
 
   const cartSurface = (
