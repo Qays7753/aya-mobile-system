@@ -271,43 +271,16 @@ export function ReportsOverview({ filters, users, terminals, reportBaseline }: R
         }
       />
 
-      <div className="reports-page__tabs" role="tablist" aria-label="تبويبات شاشة التقارير">
-        {REPORT_TABS.map((tab) => (
-          <button
-            key={tab.key}
-            ref={(node) => {
-              tabRefs.current[tab.key] = node;
-            }}
-            type="button"
-            id={`reports-tab-${tab.key}`}
-            role="tab"
-            tabIndex={activeTab === tab.key ? 0 : -1}
-            aria-selected={activeTab === tab.key}
-            aria-controls={`reports-panel-${tab.key}`}
-            className={`reports-page__tab ${activeTab === tab.key ? "is-active" : ""}`}
-            onClick={() => setActiveTab(tab.key)}
-            onKeyDown={(event) => handleTabKeyDown(event, tab.key)}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      <nav className="analytical-section-nav reports-page__sections" aria-label="التنقل داخل أقسام التقارير">
-        {visibleSections.map((section) => (
-          <a key={section.href} href={section.href} className="chip" onClick={() => handleSectionClick(section.tab)}>
-            {section.label}
-          </a>
-        ))}
-      </nav>
-
       <SectionCard
         id="reports-filters"
         title="نطاق التقرير"
         tone="subtle"
-        className="analytical-card analytical-card--filters reports-page__filters reports-page__filter-block"
+        className="analytical-card analytical-card--filters reports-page__filters reports-page__filter-block reports-page__command-bar"
         actions={
           <div className="action-row">
+            <button type="submit" form="reports-filters-form" className="primary-button">
+              تطبيق الفلاتر
+            </button>
             <button
               type="button"
               className="secondary-button reports-page__filter-collapse"
@@ -325,12 +298,49 @@ export function ReportsOverview({ filters, users, terminals, reportBaseline }: R
                 className={`reports-page__filter-icon ${expandedFilters[activeTab] ? "is-rotated" : ""}`}
               />
             </button>
-            <Link href="/reports" className="secondary-button">
-              إعادة ضبط
-            </Link>
           </div>
         }
       >
+        <div className="reports-page__command-primary">
+          <div className="reports-page__tabs" role="tablist" aria-label="تبويبات شاشة التقارير">
+            {REPORT_TABS.map((tab) => (
+              <button
+                key={tab.key}
+                ref={(node) => {
+                  tabRefs.current[tab.key] = node;
+                }}
+                type="button"
+                id={`reports-tab-${tab.key}`}
+                role="tab"
+                tabIndex={activeTab === tab.key ? 0 : -1}
+                aria-selected={activeTab === tab.key}
+                aria-controls={`reports-panel-${tab.key}`}
+                className={`reports-page__tab ${activeTab === tab.key ? "is-active" : ""}`}
+                onClick={() => setActiveTab(tab.key)}
+                onKeyDown={(event) => handleTabKeyDown(event, tab.key)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          <nav
+            className="analytical-section-nav reports-page__sections"
+            aria-label="التنقل داخل أقسام التقارير"
+          >
+            {visibleSections.map((section) => (
+              <a
+                key={section.href}
+                href={section.href}
+                className="chip"
+                onClick={() => handleSectionClick(section.tab)}
+              >
+                {section.label}
+              </a>
+            ))}
+          </nav>
+        </div>
+
         {renderFilterSummaryRow()}
 
         <div
@@ -340,6 +350,7 @@ export function ReportsOverview({ filters, users, terminals, reportBaseline }: R
           aria-hidden={!expandedFilters[activeTab]}
         >
           <form
+            id="reports-filters-form"
             className="filters-grid"
             method="GET"
             onSubmit={() => setExpandedFilters((current) => ({ ...current, [activeTab]: false }))}
@@ -411,11 +422,6 @@ export function ReportsOverview({ filters, users, terminals, reportBaseline }: R
                 <option value="maintenance_status">حالة الصيانة</option>
               </select>
             </label>
-            <div className="action-row action-row--end">
-              <button type="submit" className="primary-button">
-                تطبيق الفلاتر
-              </button>
-            </div>
           </form>
         </div>
       </SectionCard>

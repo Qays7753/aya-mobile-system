@@ -5751,6 +5751,11 @@ h3 {
   gap: var(--sp-4);
 }
 
+.reports-page__command-primary {
+  display: grid;
+  gap: var(--sp-3);
+}
+
 .reports-page__filter-collapse {
   display: inline-flex;
   align-items: center;
