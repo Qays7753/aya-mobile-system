@@ -20,7 +20,7 @@
   --sidebar-collapsed: 56px;
   --topbar-height: 56px;
 
-  /* Archetype width hierarchy (AYA 08 §4) */
+  /* Archetype width hierarchy (AYA 08 Â§4) */
   --width-operational: none;
   --width-analytical: 1400px;
   --width-management: 1600px;
@@ -81,7 +81,7 @@
   --z-toast: 300;
   --z-dialog: 400;
 
-  /* Semantic aliases for z-index roles (AYA 03 §10, DESIGN_SYSTEM §10) */
+  /* Semantic aliases for z-index roles (AYA 03 Â§10, DESIGN_SYSTEM Â§10) */
   --z-sticky: var(--z-cart-sheet);
   --z-floating: var(--z-bottom-bar);
   --z-drawer: var(--z-nav-popover);
@@ -2004,10 +2004,12 @@ a:focus-visible {
 }
 
 .analytical-page {
+  display: grid;
   gap: var(--sp-5);
 }
 
 .configuration-page {
+  display: grid;
   gap: 1.25rem;
 }
 
@@ -2375,7 +2377,7 @@ section[id] {
   }
 }
 
-/* â”€â”€ Landing v2 â”€â”€ */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Landing v2 Ã¢â€â‚¬Ã¢â€â‚¬ */
 .lp-hero {
   display: grid;
   grid-template-columns: 1.15fr 0.85fr;
@@ -2631,7 +2633,7 @@ section[id] {
   color: white;
 }
 
-/* â”€â”€ Login Visual â”€â”€ */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Login Visual Ã¢â€â‚¬Ã¢â€â‚¬ */
 .login-visual-stack {
   display: grid;
   gap: 2rem;
@@ -2825,7 +2827,7 @@ section[id] {
   color: white;
 }
 
-/* â”€â”€ Login Visual â”€â”€ */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Login Visual Ã¢â€â‚¬Ã¢â€â‚¬ */
 .login-visual-stack {
   display: grid;
   gap: 2rem;
@@ -6565,7 +6567,7 @@ h3 {
   color: var(--color-text-secondary);
 }
 
-/* Responsive Density: Topbar at Tablet (768â€“1199px) */
+/* Responsive Density: Topbar at Tablet (768Ã¢â‚¬â€œ1199px) */
 @media (max-width: 1199px) {
   .dashboard-topbar {
     gap: var(--sp-3);
@@ -6955,7 +6957,7 @@ h3 {
 }
 
 .dashboard-nav-popover--dropdown {
-  /* inherits base .dashboard-nav-popover styles â€” no override needed */
+  /* inherits base .dashboard-nav-popover styles Ã¢â‚¬â€ no override needed */
 }
 
 .pos-layout {

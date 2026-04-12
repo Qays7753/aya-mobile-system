@@ -243,7 +243,7 @@ export function ReportsOverview({ filters, users, terminals, reportBaseline }: R
   }
 
   return (
-    <section className="workspace-stack analytical-page reports-page">
+    <section className="analytical-page reports-page">
       <PageHeader
         title="التقارير"
         meta={

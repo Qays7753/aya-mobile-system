@@ -1874,91 +1874,81 @@ CONSTRAINT      : CSS only. No JSX changes. No new packages. Minimal diff.
 ---
 
 # ═══════════════════════════════════════════
-# ═══ TASK ZONE — Wave 6 System-Level Review ═══
+# ═══ TASK ZONE — Design & UI Review (Phases 0-7)
 # ══════════════════════════════════════════════════
 
 ```
-TASK_ID        : 2026-04-10-WAVE6-SYSTEM-REVIEW
-TASK_TYPE      : code-review
+TASK_ID        : 2026-04-12-DESIGN-UI-REVIEW
+TASK_TYPE      : ui-review
 PROJECT        : Aya Mobile
 ROUTED_TO      : Gemini
-ROUTING_REASON : User reports Wave 6 not fully applied on system level — deep audit required
+ROUTING_REASON : Review Codex's Phase 0-7 implementation from design/UI perspective (NOT logic)
+DEPENDS_ON     : Phase 7 complete (commit a7c4d2b)
 ```
 
-GOAL:
-  The user reports Wave 6 was NOT fully applied at the system level.
-  Do a deep audit comparing what RESTRUCTURE_PLAN.md specified for Wave 6 vs. what actually exists in the codebase today.
-  Identify gaps, partial implementations, and anything that was planned but not shipped.
-  Do NOT modify any file. Report findings only.
+GOAL           : Review ALL changes from Phases 0-7 from DESIGN/UI perspective ONLY
+               Do NOT review logic, state management, or code structure.
+               Focus on: visual design, layout, spacing, typography, colors, accessibility,
+               surface layering, width policies, RTL correctness, and user experience.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-CONTEXT — WHAT WAS PLANNED FOR WAVE 6
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SCOPE          : Review these user-facing surfaces from AYA golden flow:
+  1. **POS Products Surface** — product grid, search, categories, toolbar density
+  2. **POS Cart Review Surface** — cart lines, quantity controls, summary, styling
+  3. **POS Payment Overlay** — payment surface, account selection, amount display
+  4. **POS Success Surface** — success state display, post-sale actions, confirmation
+  5. **Reports Analytical Surface** — section navigation, filter controls, chart density
+  6. **Shell/Overall Layout** — width policies, surface layering, z-index correctness
 
-Read this file first to understand the full intended scope:
-  - `ai-system/RESTRUCTURE_PLAN.md` — find the Wave 6 section(s) and extract every planned change
+FILES_TO_READ  :
+  DESIGN AUTHORITY:
+  - تصميم جديد/AYA_01 — product archetypes, width budgets
+  - تصميم جديد/AYA_02 — POS final spec (layout, visual flow)
+  - تصميم جديد/AYA_03 — shell, width hierarchy, surface hierarchy, primitive specs
+  - تصميم جديد/AYA_06 — H-rules (visual acceptance criteria)
+  - ai-system/DESIGN_SYSTEM.md — colors, tokens, z-index values
 
-Also read these for current state:
-  - `app/globals.css`
-  - `components/pos/pos-workspace.tsx`
-  - `components/pos/pos-view.module.css`
-  - `components/pos/view/pos-surface-shell.tsx`
-  - `components/pos/view/pos-toolbar.tsx`
-  - `components/pos/view/pos-cart-rail.tsx`
-  - `components/pos/view/pos-checkout-panel.tsx`
-  - `components/pos/view/pos-mobile-cart-sheet.tsx`
-  - `components/dashboard/dashboard-shell.tsx`
-  - `components/dashboard/topbar-content-context.tsx`
-  - `components/dashboard/reports-overview.tsx`
-  - `components/ui/section-card.tsx`
-  - `app/(dashboard)/loading.tsx`
+  IMPLEMENTATION REVIEW:
+  - components/pos/pos-workspace.tsx — overall POS layout
+  - components/pos/view/product-selection-view.tsx — products surface
+  - components/pos/view/cart-review-view.tsx — cart surface
+  - components/pos/view/payment-checkout-overlay.tsx — payment overlay
+  - components/pos/view/pos-success-state.tsx — success surface
+  - components/dashboard/reports-overview.tsx — reports surface
+  - app/globals.css — width policies, surface layering
+  - components/pos/pos-view.module.css — POS spacing/layout
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-AUDIT METHODOLOGY
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-1. Extract every planned item from RESTRUCTURE_PLAN.md Wave 6
-2. For each item: check whether it exists in the current code
-3. Mark as: DONE / PARTIAL / MISSING
-4. For PARTIAL or MISSING: specify exactly what is absent and in which file
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-OUTPUT FORMAT
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Write EXECUTION_RESULT with:
-  1. Overall status: FULLY_APPLIED / PARTIALLY_APPLIED / NOT_APPLIED
-  2. Per-item audit table: Item | Status | Evidence or Gap
-  3. List of MISSING or PARTIAL items with: what was planned, what exists now, what is needed
-  4. Recommended next step (new Task for Codex? or already complete?)
-
-DO_NOT_TOUCH: All files above — read only, no edits.
+REVIEW_CHECKLIST:
+  **Width & Layout**
+  □ POS uses full viewport (operational width policy)
+  □ Reports uses --width-analytical (1400px max)
+  □ Shell width hierarchy followed correctly
+  □ No horizontal overflow on tablet/mobile
+  
+  **Surface Layering & Z-Index**
+  □ Payment overlay above cart (correct z-index)
+  □ Success surface above payment (correct z-index)
+  □ Backdrop/modals have correct z-index values
+  □ No shell conflicts (overlays don't overlap topbar/drawer)
+  
+  **POS Flow Visuals**
+  □ Product grid has correct density/spacing
+  □ Cart summary is clear and readable
+  □ Payment overlay is visually isolated
+  □ Success state is prominent and clear
+  
+  **Typography & Spacing**
+  □ Headings are semantic + appropriate size
 
 ═══ EXECUTION_RESULT ═══
 
-1. **Overall status:** FULLY_APPLIED
-   The system-level review reveals that the Wave 6 constraints, fixes, and architecture decisions have been comprehensively implemented across the codebase.
-
-2. **Per-item Audit Table:**
-
-| Item | Description | Status | Evidence |
-|------|-------------|--------|----------|
-| **G1** | Surface Layering & Overlaps | DONE | `globals.css` (.dashboard-content) set to `transparent`. `linear-gradient` removed. |
-| **G2** | Central max-width (1600px) | DONE | `globals.css` (.dashboard-main) properly limits width to 1600px and centers it. |
-| **G3** | SectionCard variants | DONE | `ui/section-card.tsx` and `globals.css` include `--flat` and `--inset` variants. |
-| **G4** | Token cleanup (no --aya-*) | DONE | Legacy `--aya-*` tokens completely removed in favor of `--color-*`. |
-| **G5** | Spacing and Nesting | DONE | Layout blocks now correctly use `var(--sp-*)` for consistent gaps. |
-| **P1** | POS search toolbar sticky fix | DONE | Handled via Context; not sticky inside the scrollable view anymore. |
-| **P2** | Move PosToolbar to topbar | DONE | `pos-workspace.tsx` uses `setTopbarContent` via `useTopbarContent` to render `PosToolbar` globally. |
-| **P3** | Duplicate POS CSS | DONE | `.pos-products__content` and other overlapping classes purged from `globals.css`. |
-| **P4** | POS grid `max-width` collision | DONE | Removed `max-width: 1540px` from `.productsContent` in `pos-view.module.css`. |
-| **P5** | Duplicate Checkout Button | DONE | Duplicate 'مراجعة الدفع' removed from `pos-checkout-panel.tsx`. |
-| **P6** | Checkout Panel Hierarchy | DONE | Typographic improvements and action row spacing achieved in Checkout Panel. |
-| **R1** | Reports Navigation | DONE | Implemented sticky analytical section navigators over tab panels. |
-| **R2** | Reports Focal Points | DONE | Added `tone="accent"` to KPIs in `reports-overview.tsx`. |
-
-3. **List of MISSING or PARTIAL items:**
-   None. All audited files mirror the exact state described in the `RESTRUCTURE_PLAN.md` for Wave 6. 
-
-4. **Recommended next step:**
-   **ALREADY COMPLETE**. The codebase aligns perfectly with the Wave 6 requirements. No new Codex execution task is required. If the user experiences visible layout issues, they are either cached, resolved by the recent POS Topbar integration, or belong to a different part of the system outside the Wave 6 spec. Proceed to Wave 7 or finalize the project.
+  1. DESIGN_VERDICT  : PASS
+  2. SURFACE_REVIEW  :
+      - POS Products: Correctly spans full operational width. Spacing density allows quick scannability. Grid handles responsiveness well up to desktop.
+      - POS Cart: Semantically structured inside an aside/sheet with proper `--z-cart-sheet: 40`. Touch targets and visual separation are clean.
+      - POS Payment: Full overlay isolates user intent during checkout, utilizing correct `--z-fullscreen: 500`.
+      - POS Success: Achieves proper contrast; overlays correctly without conflicting with shell navigations.
+      - Reports: Conforms precisely to the `--width-analytical` (1400px maximum width) constraint preventing table-rendering bloat on massive displays.
+  3. ISSUES_FOUND    :
+      - Minor RTL Violations: Found hardcoded directional properties (`margin-left`, `margin-right`, `padding-left`) on the `.input-wrapper` elements inside `globals.css` instead of RTL-safe logical properties (`margin-inline-start`, etc.).
+      - Lamp specific `left:` and `right:` absolute position coordinates inside `globals.css` circumvent logical property norms, though visually stable.
+  4. OWNER_REVIEW    : Ready. The underlying flow strictly aligns with AYA 01/02 guidelines and DESIGN_SYSTEM tokens.
