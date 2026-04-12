@@ -281,7 +281,7 @@
   .mobileCartAccess {
     display: block;
     position: sticky;
-    inset-block-end: 0;
+    inset-block-end: calc(64px + var(--safe-area-bottom));
     z-index: 2;
     padding: var(--sp-3);
     background:

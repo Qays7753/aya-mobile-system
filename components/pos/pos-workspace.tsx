@@ -31,7 +31,7 @@ import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { StatusBanner } from "@/components/ui/status-banner";
 import { CartReviewView } from "@/components/pos/view/cart-review-view";
 import { PaymentCheckoutOverlay } from "@/components/pos/view/payment-checkout-overlay";
-import { PosCheckoutPanel } from "@/components/pos/view/pos-checkout-panel";
+import { PosSuccessState } from "@/components/pos/view/pos-success-state";
 import { ProductSelectionView } from "@/components/pos/view/product-selection-view";
 import { PosSurfaceShell } from "@/components/pos/view/pos-surface-shell";
 import { useCustomerSearch } from "@/hooks/use-customer-search";
@@ -1559,6 +1559,49 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
     />
   );
 
+  const successSurface =
+    panelState === "success" && lastCompletedSale ? (
+      <div
+        className="pos-success-surface"
+        style={{
+          alignItems: "center",
+          background: "rgba(24, 23, 21, 0.26)",
+          display: "flex",
+          inset: 0,
+          justifyContent: "center",
+          padding: isMobileViewport ? "16px" : "24px",
+          position: "fixed",
+          zIndex: "var(--z-fullscreen)"
+        }}
+      >
+        <div
+          className="transaction-card transaction-card--checkout pos-cart-surface"
+          role="dialog"
+          aria-modal="true"
+          aria-label="تم إتمام البيع بنجاح"
+          style={{
+            background: "var(--color-bg-surface)",
+            maxHeight: "min(100%, 720px)",
+            overflowY: "auto",
+            width: isMobileViewport ? "100%" : "min(100%, 520px)"
+          }}
+        >
+          <PosSuccessState
+            completedSaleFeeTotal={completedSaleFeeTotal}
+            lastCompletedSale={lastCompletedSale}
+            onNewSale={handleStartNewSale}
+            onPrint={() => {
+              window.open(
+                `/invoices/${lastCompletedSale.invoice_id}?print=1`,
+                "_blank",
+                "noopener,noreferrer"
+              );
+            }}
+          />
+        </div>
+      </div>
+    ) : null;
+
   const cartSurface = (
     <CartReviewView
       canHoldCart={canHoldCart}
@@ -1571,7 +1614,6 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
       isHeldCartsOpen={isHeldCartsOpen}
       isReviewPaymentDisabled={items.length === 0 || panelState === "processing"}
       items={items}
-      lastCompletedSale={lastCompletedSale}
       onClearCartRequest={() => setIsClearCartDialogOpen(true)}
       onDecreaseItem={handleCartLineDecrease}
       onDiscardHeldCart={handleDiscardHeldCart}
@@ -1580,23 +1622,9 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
       onIncreaseItem={handleCartLineIncrease}
       onNewSale={handleTopbarNewSale}
       onOpenCheckout={openPaymentOverlay}
-      onPrint={() => {
-        if (!lastCompletedSale) {
-          return;
-        }
-
-        window.open(
-          `/invoices/${lastCompletedSale.invoice_id}?print=1`,
-          "_blank",
-          "noopener,noreferrer"
-        );
-      }}
       onRemoveItem={handleCartLineRemove}
       onRestoreHeldCart={handleRestoreHeldCart}
-      onStartNewSale={handleStartNewSale}
       onToggleHeldCarts={() => setIsHeldCartsOpen((currentValue) => !currentValue)}
-      panelState={panelState}
-      completedSaleFeeTotal={completedSaleFeeTotal}
     />
   );
 
@@ -1648,6 +1676,7 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
       />
 
       {paymentOverlay}
+      {successSurface}
 
       {isMobileViewport && activeMobileTab === "products" && panelState !== "success" ? (
         <PosMobileCartSheet
