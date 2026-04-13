@@ -31,6 +31,7 @@ import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { StatusBanner } from "@/components/ui/status-banner";
 import { CartReviewView } from "@/components/pos/view/cart-review-view";
 import { PaymentCheckoutOverlay } from "@/components/pos/view/payment-checkout-overlay";
+import { PosCartRail } from "@/components/pos/view/pos-cart-rail";
 import { PosSuccessState } from "@/components/pos/view/pos-success-state";
 import { ProductSelectionView } from "@/components/pos/view/product-selection-view";
 import { PosSurfaceShell } from "@/components/pos/view/pos-surface-shell";
@@ -63,6 +64,10 @@ type PosWorkspaceProps = {
 type CartPanelState = "cart" | "payment" | "processing" | "success";
 type MobileTab = "products" | "cart";
 type ProductViewMode = "text" | "thumbnail";
+type LastTouchedCartLine = {
+  id: string;
+  revision: number;
+};
 
 type CustomerSearchResult = {
   id: string;
@@ -268,6 +273,15 @@ function getInitialMobileViewportState() {
     window.matchMedia("(max-width: 767px)").matches;
 }
 
+function supportsContainerQueries() {
+  return (
+    typeof window !== "undefined" &&
+    typeof window.CSS !== "undefined" &&
+    typeof window.CSS.supports === "function" &&
+    window.CSS.supports("container-type: inline-size")
+  );
+}
+
 declare global {
   interface Window {
     __ayaPosSalesWarmupDone__?: boolean;
@@ -343,9 +357,14 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
   const [primarySplitAmount, setPrimarySplitAmount] = useState<number | null>(null);
   const [isPrimarySplitSelectorOpen, setIsPrimarySplitSelectorOpen] = useState(false);
   const [isClearCartDialogOpen, setIsClearCartDialogOpen] = useState(false);
+  const [lastTouchedCartLine, setLastTouchedCartLine] =
+    useState<LastTouchedCartLine | null>(null);
   const [productView, setProductView] = useState<ProductViewMode>("thumbnail");
   const [isCompactViewport, setIsCompactViewport] = useState(getInitialCompactViewportState);
   const [isMobileViewport, setIsMobileViewport] = useState(getInitialMobileViewportState);
+  const [hasContainerQuerySupport, setHasContainerQuerySupport] = useState(
+    supportsContainerQueries
+  );
   const [now, setNow] = useState<Date | null>(null);
   const [, startTransition] = useTransition();
   const [isSubmitting, startSubmission] = useTransition();
@@ -639,6 +658,10 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
   }, []);
 
   useEffect(() => {
+    setHasContainerQuerySupport(supportsContainerQueries());
+  }, []);
+
+  useEffect(() => {
     setNow(new Date());
     const intervalId = window.setInterval(() => {
       setNow(new Date());
@@ -849,6 +872,13 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
     }
   }
 
+  function markLastTouchedCartLine(productId: string) {
+    setLastTouchedCartLine((currentValue) => ({
+      id: productId,
+      revision: (currentValue?.revision ?? 0) + 1
+    }));
+  }
+
   function handleSearchSubmit() {
     const firstMatch = filterProductsByQuery(products, searchInput).find(
       (product) => !(product.track_stock && product.stock_quantity <= 0)
@@ -906,6 +936,7 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
       return;
     }
 
+    markLastTouchedCartLine(lastItem.product_id);
     setQuantity(lastItem.product_id, lastItem.quantity + delta);
   }
 
@@ -924,6 +955,7 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
     setIsHeldCartsOpen(false);
     setPrimarySplitAmount(null);
     setIsPrimarySplitSelectorOpen(false);
+    setLastTouchedCartLine(null);
   }
 
   function handleTopbarNewSale() {
@@ -1277,6 +1309,7 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
 
   function handleCartLineRemove(item: (typeof items)[number]) {
     clearSubmissionFeedback();
+    setLastTouchedCartLine(null);
     removeItem(item.product_id);
   }
 
@@ -1284,20 +1317,24 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
     clearSubmissionFeedback();
 
     if (item.quantity <= 1) {
+      setLastTouchedCartLine(null);
       removeItem(item.product_id);
       return;
     }
 
+    markLastTouchedCartLine(item.product_id);
     setQuantity(item.product_id, item.quantity - 1);
   }
 
   function handleCartLineIncrease(item: (typeof items)[number]) {
     clearSubmissionFeedback();
+    markLastTouchedCartLine(item.product_id);
     setQuantity(item.product_id, item.quantity + 1);
   }
 
   function handleCartLineDiscountChange(item: (typeof items)[number], rawValue: number) {
     clearSubmissionFeedback();
+    setLastTouchedCartLine(null);
     const clampedValue = Number.isNaN(rawValue) ? 0 : Math.min(rawValue, effectiveMaxDiscount);
     setDiscountPercentage(item.product_id, clampedValue);
   }
@@ -1602,30 +1639,57 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
       </div>
     ) : null;
 
+  const cartRailProps = {
+    canHoldCart,
+    cartHydrated,
+    cartOverviewLabel,
+    customerSummaryLabel,
+    effectiveMaxDiscount,
+    getHeldCartAge,
+    heldCarts,
+    isHeldCartsOpen,
+    isReviewPaymentDisabled: items.length === 0 || panelState === "processing",
+    items,
+    lastTouchedLine: lastTouchedCartLine,
+    onClearCartRequest: () => setIsClearCartDialogOpen(true),
+    onDecreaseItem: handleCartLineDecrease,
+    onDiscardHeldCart: handleDiscardHeldCart,
+    onDiscountChange: handleCartLineDiscountChange,
+    onHoldCart: handleHoldCart,
+    onIncreaseItem: handleCartLineIncrease,
+    onNewSale: handleTopbarNewSale,
+    onOpenCheckout: openPaymentOverlay,
+    onRemoveItem: handleCartLineRemove,
+    onRestoreHeldCart: handleRestoreHeldCart,
+    onToggleHeldCarts: () => setIsHeldCartsOpen((currentValue) => !currentValue)
+  } satisfies React.ComponentProps<typeof PosCartRail>;
+
   const cartSurface = (
-    <CartReviewView
-      canHoldCart={canHoldCart}
-      cartHydrated={cartHydrated}
-      cartOverviewLabel={cartOverviewLabel}
-      customerSummaryLabel={customerSummaryLabel}
-      effectiveMaxDiscount={effectiveMaxDiscount}
-      getHeldCartAge={getHeldCartAge}
-      heldCarts={heldCarts}
-      isHeldCartsOpen={isHeldCartsOpen}
-      isReviewPaymentDisabled={items.length === 0 || panelState === "processing"}
-      items={items}
-      onClearCartRequest={() => setIsClearCartDialogOpen(true)}
-      onDecreaseItem={handleCartLineDecrease}
-      onDiscardHeldCart={handleDiscardHeldCart}
-      onDiscountChange={handleCartLineDiscountChange}
-      onHoldCart={handleHoldCart}
-      onIncreaseItem={handleCartLineIncrease}
-      onNewSale={handleTopbarNewSale}
-      onOpenCheckout={openPaymentOverlay}
-      onRemoveItem={handleCartLineRemove}
-      onRestoreHeldCart={handleRestoreHeldCart}
-      onToggleHeldCarts={() => setIsHeldCartsOpen((currentValue) => !currentValue)}
-    />
+    hasContainerQuerySupport ? (
+      <>
+        <div className="pos-cart-rail-shell">
+          <PosCartRail {...cartRailProps} layout="inline" />
+        </div>
+
+        <div className="pos-cart-review-shell">
+          <CartReviewView
+            {...cartRailProps}
+            layout="review"
+          />
+        </div>
+      </>
+    ) : isMobileViewport ? (
+      <div className="pos-cart-review-shell">
+        <CartReviewView
+          {...cartRailProps}
+          layout="review"
+        />
+      </div>
+    ) : (
+      <div className="pos-cart-rail-shell">
+        <PosCartRail {...cartRailProps} layout="inline" />
+      </div>
+    )
   );
 
   return (

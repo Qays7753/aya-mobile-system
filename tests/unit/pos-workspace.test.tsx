@@ -225,7 +225,7 @@ describe("PosWorkspace", () => {
 
     expect(screen.getByText("المنتجات")).toBeVisible();
     expect(screen.getByText("العميل: ضيف جديد")).toBeVisible();
-    expect(await screen.findByRole("button", { name: "مراجعة الدفع" })).toBeVisible();
+    expect(await screen.findByText("ابدأ بإضافة منتج")).toBeVisible();
     expect(screen.queryByText(/Ø|Ã|Ù/)).not.toBeInTheDocument();
   });
 });
