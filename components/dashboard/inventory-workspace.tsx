@@ -106,7 +106,7 @@ export function InventoryWorkspace({
   const router = useRouter();
   const [countType, setCountType] = useState<"daily" | "weekly" | "monthly">("daily");
   const [scope, setScope] = useState<"all" | "selected">("all");
-  const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
+  const [selectedProductIds, setSelectedProductIds] = useState<Set<string>>(new Set());
   const [countNotes, setCountNotes] = useState("");
   const [selectedCountId, setSelectedCountId] = useState(inProgressCounts[0]?.id ?? "");
   const [selectedAccountId, setSelectedAccountId] = useState(accounts[0]?.id ?? "");
@@ -217,9 +217,15 @@ export function InventoryWorkspace({
   }
 
   function toggleProductSelection(productId: string) {
-    setSelectedProductIds((current) =>
-      current.includes(productId) ? current.filter((id) => id !== productId) : [...current, productId]
-    );
+    setSelectedProductIds((current) => {
+      const next = new Set(current);
+      if (next.has(productId)) {
+        next.delete(productId);
+      } else {
+        next.add(productId);
+      }
+      return next;
+    });
   }
 
   function handleCreateCount() {
@@ -232,7 +238,7 @@ export function InventoryWorkspace({
           body: JSON.stringify({
             count_type: countType,
             scope,
-            product_ids: scope === "selected" ? selectedProductIds : undefined,
+            product_ids: scope === "selected" ? Array.from(selectedProductIds) : undefined,
             notes: countNotes || undefined
           })
         });
@@ -245,7 +251,7 @@ export function InventoryWorkspace({
 
         setCreateResult(envelope.data);
         setCountNotes("");
-        setSelectedProductIds([]);
+        setSelectedProductIds(new Set());
         setProductSearchTerm("");
         setRetryAction(null);
         toast.success("تم بدء عملية الجرد وتحميل البنود المطلوبة.");
@@ -671,7 +677,7 @@ export function InventoryWorkspace({
                         <label key={product.id} className="selection-chip">
                           <input
                             type="checkbox"
-                            checked={selectedProductIds.includes(product.id)}
+                            checked={selectedProductIds.has(product.id)}
                             onChange={() => toggleProductSelection(product.id)}
                           />
                           <span>
@@ -699,7 +705,7 @@ export function InventoryWorkspace({
               <button
                 type="button"
                 className="primary-button"
-                disabled={isPending || (scope === "selected" && selectedProductIds.length === 0)}
+                disabled={isPending || (scope === "selected" && selectedProductIds.size === 0)}
                 onClick={handleCreateCount}
               >
                 {isPending ? <Loader2 className="spin" size={16} /> : "بدء الجرد"}
