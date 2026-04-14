@@ -111,39 +111,6 @@ export function internalErrorResponse(error: unknown, options?: { context?: stri
   return errorResponse("ERR_API_INTERNAL", meta.message, meta.status);
 }
 
-export async function getAuthenticatedUser(serverClient: Awaited<ReturnType<typeof createSupabaseServerClient>>) {
-  const authClient = serverClient.auth as ServerAuthClient;
-
-  if (typeof authClient.getUser === "function") {
-    const {
-      data: { user },
-      error
-    } = await authClient.getUser();
-
-    return {
-      user,
-      error
-    };
-  }
-
-  if (typeof authClient.getSession === "function") {
-    const {
-      data: { session },
-      error
-    } = await authClient.getSession();
-
-    return {
-      user: session?.user ?? null,
-      error
-    };
-  }
-
-  return {
-    user: null,
-    error: new Error("ERR_API_SESSION_INVALID")
-  };
-}
-
 export async function parseAndValidate<T>(
   request: Request,
   schema: z.Schema<T>,
@@ -218,7 +185,22 @@ export async function authorizeRequest(
   }
 ): Promise<AuthorizationResult> {
   const serverClient = await createSupabaseServerClient();
-  const { user, error: userError } = await getAuthenticatedUser(serverClient);
+  const authClient = serverClient.auth as ServerAuthClient;
+
+  let user = null;
+  let userError = null;
+
+  if (typeof authClient.getUser === "function") {
+    const { data, error } = await authClient.getUser();
+    user = data.user;
+    userError = error;
+  } else if (typeof authClient.getSession === "function") {
+    const { data, error } = await authClient.getSession();
+    user = data.session?.user ?? null;
+    userError = error;
+  } else {
+    userError = new Error("ERR_API_SESSION_INVALID");
+  }
 
   if (userError || !user) {
     const meta = getApiErrorMeta("ERR_API_SESSION_INVALID");
