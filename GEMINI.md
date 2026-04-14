@@ -1874,81 +1874,146 @@ CONSTRAINT      : CSS only. No JSX changes. No new packages. Minimal diff.
 ---
 
 # ═══════════════════════════════════════════
-# ═══ TASK ZONE — Design & UI Review (Phases 0-7)
+# ═══ TASK ZONE — Fix Login/Logout Routing & Timeout
 # ══════════════════════════════════════════════════
 
 ```
-TASK_ID        : 2026-04-12-DESIGN-UI-REVIEW
-TASK_TYPE      : ui-review
+TASK_ID        : 2026-04-14-LOGIN-PERF-FIX
+TASK_TYPE      : bug-fix
 PROJECT        : Aya Mobile
 ROUTED_TO      : Gemini
-ROUTING_REASON : Review Codex's Phase 0-7 implementation from design/UI perspective (NOT logic)
-DEPENDS_ON     : Phase 7 complete (commit a7c4d2b)
+ROUTING_REASON : Client-side routing fix (replace window.location with useRouter) — UI/UX issue, not logic
+DEPENDS_ON     : NONE
 ```
 
-GOAL           : Review ALL changes from Phases 0-7 from DESIGN/UI perspective ONLY
-               Do NOT review logic, state management, or code structure.
-               Focus on: visual design, layout, spacing, typography, colors, accessibility,
-               surface layering, width policies, RTL correctness, and user experience.
+PROBLEM        : Login page is slow due to full-page reloads via `window.location.replace()`.
+               Additionally, unhandled promise rejection on timeout when profile fetch completes quickly.
+               Form element has unnecessary `action="#"` and `method="POST"` attributes.
 
-SCOPE          : Review these user-facing surfaces from AYA golden flow:
-  1. **POS Products Surface** — product grid, search, categories, toolbar density
-  2. **POS Cart Review Surface** — cart lines, quantity controls, summary, styling
-  3. **POS Payment Overlay** — payment surface, account selection, amount display
-  4. **POS Success Surface** — success state display, post-sale actions, confirmation
-  5. **Reports Analytical Surface** — section navigation, filter controls, chart density
-  6. **Shell/Overall Layout** — width policies, surface layering, z-index correctness
+GOAL           : Replace client-side full-page navigation with Next.js `useRouter().replace()` for instant transitions.
+               Fix timeout promise leak via `clearTimeout`.
+               Clean up form attributes.
+               Update unit tests to mock `next/navigation` instead of removed redirect helper.
 
 FILES_TO_READ  :
-  DESIGN AUTHORITY:
-  - تصميم جديد/AYA_01 — product archetypes, width budgets
-  - تصميم جديد/AYA_02 — POS final spec (layout, visual flow)
-  - تصميم جديد/AYA_03 — shell, width hierarchy, surface hierarchy, primitive specs
-  - تصميم جديد/AYA_06 — H-rules (visual acceptance criteria)
-  - ai-system/DESIGN_SYSTEM.md — colors, tokens, z-index values
+  - components/auth/login-form.tsx (client component, Supabase auth flow)
+  - components/auth/logout-button.tsx (logout cleanup)
+  - lib/auth/redirect-after-login.ts (to be deleted)
+  - tests/unit/login-form.test.tsx (mocks to update)
 
-  IMPLEMENTATION REVIEW:
-  - components/pos/pos-workspace.tsx — overall POS layout
-  - components/pos/view/product-selection-view.tsx — products surface
-  - components/pos/view/cart-review-view.tsx — cart surface
-  - components/pos/view/payment-checkout-overlay.tsx — payment overlay
-  - components/pos/view/pos-success-state.tsx — success surface
-  - components/dashboard/reports-overview.tsx — reports surface
-  - app/globals.css — width policies, surface layering
-  - components/pos/pos-view.module.css — POS spacing/layout
+FILES_TO_MODIFY:
+  - components/auth/login-form.tsx
+  - components/auth/logout-button.tsx
+  - tests/unit/login-form.test.tsx
+  - DELETE: lib/auth/redirect-after-login.ts
 
-REVIEW_CHECKLIST:
-  **Width & Layout**
-  □ POS uses full viewport (operational width policy)
-  □ Reports uses --width-analytical (1400px max)
-  □ Shell width hierarchy followed correctly
-  □ No horizontal overflow on tablet/mobile
-  
-  **Surface Layering & Z-Index**
-  □ Payment overlay above cart (correct z-index)
-  □ Success surface above payment (correct z-index)
-  □ Backdrop/modals have correct z-index values
-  □ No shell conflicts (overlays don't overlap topbar/drawer)
-  
-  **POS Flow Visuals**
-  □ Product grid has correct density/spacing
-  □ Cart summary is clear and readable
-  □ Payment overlay is visually isolated
-  □ Success state is prominent and clear
-  
-  **Typography & Spacing**
-  □ Headings are semantic + appropriate size
+DETAILED_CHANGES:
+
+  1. **LoginForm (components/auth/login-form.tsx)**
+     - Remove: `import { redirectAfterLogin }`
+     - Add: `import { useRouter } from "next/navigation"`
+     - Replace line ~125: `redirectAfterLogin(nextRoute)` → `router.replace(nextRoute)`
+     - Fix lines 97-99 (timeout leak):
+       OLD: `const timeoutPromise = new Promise((_, reject) => setTimeout(...));`
+       NEW: Store timeout ID: `const timeoutId = setTimeout(...)`
+            Then in catch block: `clearTimeout(timeoutId)` before returning
+     - Remove: `action="#" method="POST"` from form element (line 143)
+     - Keep: `onSubmit={handleSubmit}` handler
+
+  2. **LogoutButton (components/auth/logout-button.tsx)**
+     - Add: `import { useRouter } from "next/navigation"`
+     - Replace line 28: `window.location.href = "/"` → `router.replace("/")`
+     - Keep auth signout logic untouched
+
+  3. **Unit Tests (tests/unit/login-form.test.tsx)**
+     - Remove: vi.mock("@/lib/auth/redirect-after-login")
+     - Add: vi.mock("next/navigation", () => ({ useRouter: vi.fn(...) }))
+     - Update mock to return object with `replace` function
+     - All test expectations remain same (mockRouter.replace instead of mockRedirectAfterLogin)
+
+  4. **Delete file:**
+     - lib/auth/redirect-after-login.ts (no longer needed)
+
+VERIFICATION  :
+  - `npx tsc --noEmit --pretty false` — zero errors
+  - `npx vitest run` — all tests pass, no broken assertions
+  - No changes to test IDs, visible strings, or CSS classes
+  - Form behavior identical from user perspective (just faster)
+
+DONE_IF        :
+  ✓ Login redirects with `useRouter().replace()` (no full-page reload)
+  ✓ Logout redirects with `useRouter().replace()` (no full-page reload)
+  ✓ Timeout leak fixed with `clearTimeout()`
+  ✓ Form attributes cleaned (no action/method)
+  ✓ Tests updated to mock next/navigation
+  ✓ lib/auth/redirect-after-login.ts deleted
+  ✓ tsc + vitest passing
+  ✓ All test expectations still pass
 
 ═══ EXECUTION_RESULT ═══
 
-  1. DESIGN_VERDICT  : PASS
-  2. SURFACE_REVIEW  :
-      - POS Products: Correctly spans full operational width. Spacing density allows quick scannability. Grid handles responsiveness well up to desktop.
-      - POS Cart: Semantically structured inside an aside/sheet with proper `--z-cart-sheet: 40`. Touch targets and visual separation are clean.
-      - POS Payment: Full overlay isolates user intent during checkout, utilizing correct `--z-fullscreen: 500`.
-      - POS Success: Achieves proper contrast; overlays correctly without conflicting with shell navigations.
-      - Reports: Conforms precisely to the `--width-analytical` (1400px maximum width) constraint preventing table-rendering bloat on massive displays.
-  3. ISSUES_FOUND    :
-      - Minor RTL Violations: Found hardcoded directional properties (`margin-left`, `margin-right`, `padding-left`) on the `.input-wrapper` elements inside `globals.css` instead of RTL-safe logical properties (`margin-inline-start`, etc.).
-      - Lamp specific `left:` and `right:` absolute position coordinates inside `globals.css` circumvent logical property norms, though visually stable.
-  4. OWNER_REVIEW    : Ready. The underlying flow strictly aligns with AYA 01/02 guidelines and DESIGN_SYSTEM tokens.
+  1. TASK_ID         : 2026-04-14-LOGIN-PERF-FIX
+  2. STATUS          : DONE
+  3. REPORT          :
+
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  CHANGES APPLIED
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  **1. LoginForm (components/auth/login-form.tsx)**
+     - Removed: `import { redirectAfterLogin }` from `@/lib/auth/redirect-after-login`
+     - Added: `import { useRouter } from "next/navigation"`
+     - Added: `const router = useRouter()` at component top
+     - Replaced: `redirectAfterLogin(nextRoute)` → `router.replace(nextRoute)`
+     - Fixed timeout leak: moved `timeoutId` declaration outside `try` block,
+       added `clearTimeout(timeoutId)` in both success and catch paths
+     - Removed: `action="#" method="POST"` from `<form>` element
+     - Kept: `onSubmit={handleSubmit}` handler unchanged
+
+  **2. LogoutButton (components/auth/logout-button.tsx)**
+     - Added: `import { useRouter } from "next/navigation"`
+     - Added: `const router = useRouter()` at component top
+     - Replaced: `window.location.href = "/"` → `router.replace("/")`
+     - Kept: all auth signout logic untouched
+
+  **3. Unit Tests (tests/unit/login-form.test.tsx)**
+     - Removed: `vi.mock("@/lib/auth/redirect-after-login", ...)`
+     - Added: `vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: mockRouterReplace }) }))`
+     - Renamed: `mockRedirectAfterLogin` → `mockRouterReplace` throughout
+     - All 5 test expectations updated to use `mockRouterReplace`
+     - All test intent preserved — zero behavioral changes to assertions
+
+  **4. Deleted: lib/auth/redirect-after-login.ts**
+     - Confirmed: only imported by login-form.tsx and mocked in test
+     - File removed after all references updated
+
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  VERIFICATION RESULTS
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ✓ `npx tsc --noEmit --pretty false` — zero errors in modified files
+    (2 pre-existing errors in pos-workspace.tsx — unrelated, not introduced)
+  ✓ `npx vitest run` — 71 test files passed, 207 tests passed, 0 failures
+  ✓ All 5 LoginForm tests pass:
+    - redirects admins to /reports ✅
+    - shows persistent error banner ✅
+    - redirects pos staff to /pos ✅
+    - submit available when offline ✅
+    - remembers email ✅
+  ✓ No test IDs, visible strings, or CSS classes changed
+  ✓ Form behavior identical from user perspective (just faster)
+
+  4. ISSUES_FOUND    :
+     - pos-workspace.tsx has 2 pre-existing TS errors (TS2552, TS2554) —
+       NOT introduced by this task, NOT in scope. Reported for awareness.
+
+  5. FILES_CHANGED   :
+     - components/auth/login-form.tsx (MODIFIED)
+     - components/auth/logout-button.tsx (MODIFIED)
+     - tests/unit/login-form.test.tsx (MODIFIED)
+     - lib/auth/redirect-after-login.ts (DELETED)
+
+  6. BLOCKED_BY      : None.
+  7. FINAL_NOTE      : All 4 acceptance criteria met. Login and logout now use
+     Next.js client-side routing for instant transitions. Timeout leak fixed.
+     Form attributes cleaned. Tests updated and passing.

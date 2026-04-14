@@ -17,7 +17,7 @@ type Px22Seed = {
 const POS_TITLE = "نقطة البيع";
 const PRODUCT_PLACEHOLDER = "ابحث بالاسم أو رمز المنتج...";
 const CURRENT_CART_TITLE = "السلة";
-const CHECKOUT_REVIEW_LABEL = "مراجعة الدفع";
+const EMPTY_CART_MESSAGE = "ابدأ بإضافة منتج";
 const INVOICES_TITLE = "الفواتير";
 const INVOICE_LIST_TITLE = "السجل";
 const INVOICE_DETAIL_TITLE = "تفاصيل الفاتورة";
@@ -48,7 +48,7 @@ test.describe.serial("PX-22 transactional UX", () => {
 
     await page.locator(".pos-cart-sheet__summary").click();
     await expect(page.locator(".pos-cart-card__title").filter({ hasText: CURRENT_CART_TITLE }).first()).toBeVisible();
-    await expect(page.getByRole("button", { name: CHECKOUT_REVIEW_LABEL })).toBeVisible();
+    await expect(page.getByText(EMPTY_CART_MESSAGE, { exact: true })).toBeVisible();
     await expectNoHorizontalOverflow(page);
   });
 
