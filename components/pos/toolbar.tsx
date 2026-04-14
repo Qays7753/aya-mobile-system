@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Archive, ImageIcon, List, RefreshCcw, Search, X } from "lucide-react";
+import { Archive, ImageIcon, List, RefreshCcw, Search, Settings, X } from "lucide-react";
 import styles from "@/components/pos/pos-view.module.css";
 import { formatCompactNumber } from "@/lib/utils/formatters";
 
@@ -28,6 +28,7 @@ type PosToolbarProps = {
   productView?: "text" | "thumbnail";
   onProductViewChange?: (view: "text" | "thumbnail") => void;
   showViewToggle?: boolean;
+  onSettingsOpen?: () => void;
 };
 
 export function PosToolbar({
@@ -41,7 +42,8 @@ export function PosToolbar({
   showRefreshButton = true,
   productView,
   onProductViewChange,
-  showViewToggle = true
+  showViewToggle = true,
+  onSettingsOpen
 }: PosToolbarProps) {
   const inputElementRef = React.useRef<HTMLInputElement | null>(null);
 
@@ -110,6 +112,18 @@ export function PosToolbar({
         </label>
 
         <div className={`${styles.toolbarActions} pos-toolbar__actions`}>
+          {onSettingsOpen ? (
+            <button
+              type="button"
+              className={`${styles.iconButton} icon-button pos-toolbar__settings-button`}
+              onClick={onSettingsOpen}
+              aria-label="إعدادات الواجهة"
+              title="إعدادات الواجهة"
+            >
+              <Settings size={18} />
+            </button>
+          ) : null}
+
           {showHeldCartsButton ? (
             <button
               type="button"

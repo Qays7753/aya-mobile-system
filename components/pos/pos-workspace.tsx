@@ -48,6 +48,8 @@ import type {
   StandardEnvelope
 } from "@/lib/pos/types";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { PosSettingsModal } from "@/components/pos/pos-settings-modal";
+import { usePosSettings } from "@/hooks/use-pos-settings";
 import { PRODUCT_CATEGORY_VALUES } from "@/lib/validations/products";
 import { formatCompactNumber, formatCurrency } from "@/lib/utils/formatters";
 import {
@@ -346,6 +348,8 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
 
   const [panelState, setPanelState] = useState<CartPanelState>("products");
   const [cartHydrated, setCartHydrated] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const { settings } = usePosSettings();
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [customerSearchInput, setCustomerSearchInput] = useState("");
@@ -1694,6 +1698,7 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
       productView={productView}
       onProductViewChange={setProductView}
       showViewToggle={!isMobileViewport}
+      onSettingsOpen={() => setIsSettingsOpen(true)}
       onClearSearch={() => setSearchInput("")}
       onLoadMore={loadMoreProducts}
       productResultsLabel={productResultsLabel}
@@ -1932,6 +1937,7 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
 
   return (
     <section className="pos-workspace">
+      <PosSettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
       {isOffline ? (
         <StatusBanner
           variant="offline"

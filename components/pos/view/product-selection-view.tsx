@@ -26,6 +26,7 @@ type ProductSelectionViewProps = {
   productView: "text" | "thumbnail";
   onProductViewChange: (view: "text" | "thumbnail") => void;
   showViewToggle: boolean;
+  onSettingsOpen?: () => void;
   onClearSearch: () => void;
   onLoadMore: () => void;
   productResultsLabel: string;
@@ -49,6 +50,7 @@ export function ProductSelectionView({
   productView,
   onProductViewChange,
   showViewToggle,
+  onSettingsOpen,
   onClearSearch,
   onLoadMore,
   productResultsLabel,
@@ -73,6 +75,7 @@ export function ProductSelectionView({
         productView={productView}
         onProductViewChange={onProductViewChange}
         showViewToggle={showViewToggle}
+        onSettingsOpen={onSettingsOpen}
       />
       <PosProductGrid
         onClearSearch={onClearSearch}
