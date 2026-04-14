@@ -454,8 +454,11 @@ BEGIN
   END IF;
   IF v_invoice.status <> 'active' THEN RAISE EXCEPTION 'ERR_CANCEL_ALREADY'; END IF;
 
-  -- Fix #2: منع إلغاء الفاتورة إذا كان دينها مسدد جزئياً لمنع تلف الديون
-  IF v_invoice.debt_amount > 0 AND EXISTS (SELECT 1 FROM debt_entries WHERE invoice_id = p_invoice_id AND paid_amount > 0) THEN
+  -- منع إلغاء الفاتورة إذا كان دينها مسدد جزئياً لمنع تلف الديون
+  IF v_invoice.debt_amount > 0 AND EXISTS (
+    SELECT 1 FROM debt_entries
+    WHERE invoice_id = p_invoice_id AND entry_type = 'from_invoice' AND paid_amount > 0
+  ) THEN
     RAISE EXCEPTION 'ERR_CANNOT_CANCEL_PAID_DEBT';
   END IF;
 
