@@ -1,22 +1,24 @@
 "use client";
 
 import * as React from "react";
-import { useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState, useTransition } from "react";
 import {
-  AlertTriangle,
-  ArrowRight,
+  useDeferredValue,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition
+} from "react";
+import {
   Banknote,
   Clock3,
   CreditCard,
   GripHorizontal,
-  Loader2,
-  Minus,
   Plus,
   Printer,
   Search,
-  ShieldCheck,
-  Trash2,
-  X
+  ShieldCheck
 } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
@@ -254,15 +256,19 @@ function formatStatusTime(value: Date) {
 }
 
 function getInitialCompactViewportState() {
-  return typeof window !== "undefined" &&
+  return (
+    typeof window !== "undefined" &&
     typeof window.matchMedia === "function" &&
-    window.matchMedia("(max-width: 1023px)").matches;
+    window.matchMedia("(max-width: 1023px)").matches
+  );
 }
 
 function getInitialMobileViewportState() {
-  return typeof window !== "undefined" &&
+  return (
+    typeof window !== "undefined" &&
     typeof window.matchMedia === "function" &&
-    window.matchMedia("(max-width: 767px)").matches;
+    window.matchMedia("(max-width: 767px)").matches
+  );
 }
 
 function supportsContainerQueries() {
@@ -360,7 +366,9 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
   const [lastTouchedCartLine, setLastTouchedCartLine] =
     useState<LastTouchedCartLine | null>(null);
   const [productView, setProductView] = useState<ProductViewMode>("thumbnail");
-  const [isCompactViewport, setIsCompactViewport] = useState(getInitialCompactViewportState);
+  const [isCompactViewport, setIsCompactViewport] = useState(
+    getInitialCompactViewportState
+  );
   const [isMobileViewport, setIsMobileViewport] = useState(getInitialMobileViewportState);
   const [hasContainerQuerySupport, setHasContainerQuerySupport] = useState(false);
   const [hasHydratedLastPaymentMethod, setHasHydratedLastPaymentMethod] = useState(false);
@@ -558,7 +566,10 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
       return;
     }
 
-    if (selectedAccountId && accounts.some((account) => account.id === selectedAccountId)) {
+    if (
+      selectedAccountId &&
+      accounts.some((account) => account.id === selectedAccountId)
+    ) {
       return;
     }
 
@@ -974,7 +985,9 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
   }
 
   function setProductsPanelState() {
-    setPanelState((currentValue) => (currentValue === "success" ? currentValue : "products"));
+    setPanelState((currentValue) =>
+      currentValue === "success" ? currentValue : "products"
+    );
   }
 
   function setCartPanelState() {
@@ -1021,9 +1034,11 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
   }
 
   function isMobileCartViewport() {
-    return typeof window !== "undefined" &&
+    return (
+      typeof window !== "undefined" &&
       typeof window.matchMedia === "function" &&
-      window.matchMedia("(max-width: 767px)").matches;
+      window.matchMedia("(max-width: 767px)").matches
+    );
   }
 
   function openCheckout() {
@@ -1201,23 +1216,24 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
       return [];
     }
 
-    const payments = effectiveSplitPayments.length > 0
-      ? [
-          {
-            account_id: effectiveSelectedAccountId,
-            amount: roundAmount(primarySplitAmount ?? 0)
-          },
-          ...effectiveSplitPayments.map((payment) => ({
-            account_id: payment.accountId,
-            amount: roundAmount(payment.amount)
-          }))
-        ]
-      : [
-          {
-            account_id: effectiveSelectedAccountId,
-            amount: effectivePrimaryPaymentAmount
-          }
-        ];
+    const payments =
+      effectiveSplitPayments.length > 0
+        ? [
+            {
+              account_id: effectiveSelectedAccountId,
+              amount: roundAmount(primarySplitAmount ?? 0)
+            },
+            ...effectiveSplitPayments.map((payment) => ({
+              account_id: payment.accountId,
+              amount: roundAmount(payment.amount)
+            }))
+          ]
+        : [
+            {
+              account_id: effectiveSelectedAccountId,
+              amount: effectivePrimaryPaymentAmount
+            }
+          ];
 
     if (netTotal === 0) {
       return payments.slice(0, 1);
@@ -1253,7 +1269,8 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
               amount: effectivePrimaryPaymentAmount,
               fee_percentage: effectiveSelectedAccount.fee_percentage,
               fee_amount: roundAmount(
-                (effectivePrimaryPaymentAmount * effectiveSelectedAccount.fee_percentage) /
+                (effectivePrimaryPaymentAmount *
+                  effectiveSelectedAccount.fee_percentage) /
                   100
               )
             }
@@ -1502,7 +1519,6 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
     ? `العميل: ${selectedCustomerName}`
     : "العميل: ضيف جديد";
 
-
   const smartPaymentActionLabel = selectedAccount
     ? `دفع ${getAccountChipLabel(selectedAccount)}`
     : "دفع";
@@ -1549,7 +1565,9 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
   function handleCartLineDiscountChange(item: (typeof items)[number], rawValue: number) {
     clearSubmissionFeedback();
     setLastTouchedCartLine(null);
-    const clampedValue = Number.isNaN(rawValue) ? 0 : Math.min(rawValue, effectiveMaxDiscount);
+    const clampedValue = Number.isNaN(rawValue)
+      ? 0
+      : Math.min(rawValue, effectiveMaxDiscount);
     setDiscountPercentage(item.product_id, clampedValue);
   }
 
@@ -1615,12 +1633,14 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
           </button>
         </nav>
       ) : null}
-
     </>
   );
 
   const footerSlot = (
-    <footer className="pos-status-bar" data-compact={isCompactViewport ? "true" : "false"}>
+    <footer
+      className="pos-status-bar"
+      data-compact={isCompactViewport ? "true" : "false"}
+    >
       <span className="pos-status-bar__item">
         <GripHorizontal size={14} />
         <strong>{posTerminalCode}</strong>
@@ -1744,7 +1764,9 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
         clearSubmissionFeedback();
         const rawValue = Number(value);
         setInvoiceDiscountPercentage(
-          Number.isNaN(rawValue) ? 0 : Math.min(Math.max(rawValue, 0), effectiveMaxDiscount)
+          Number.isNaN(rawValue)
+            ? 0
+            : Math.min(Math.max(rawValue, 0), effectiveMaxDiscount)
         );
       }}
       onNotesChange={(value) => {
@@ -1789,7 +1811,9 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
 
         lockTerminalCode();
       }}
-      open={panelState === "payment" || (panelState === "processing" && !isSmartSubmitting)}
+      open={
+        panelState === "payment" || (panelState === "processing" && !isSmartSubmitting)
+      }
       paymentRowCount={paymentRows.length}
       posTerminalCode={posTerminalCode}
       primarySplitAmount={primarySplitAmount}
@@ -1885,34 +1909,26 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
     smartPaymentSubmitDisabled: !canUseSmartPayment
   } satisfies React.ComponentProps<typeof PosCartRail>;
 
-  const cartSurface = (
-    hasContainerQuerySupport ? (
-      <>
-        {!isMobileViewport ? (
-          <div className="pos-cart-rail-shell">
-            <PosCartRail {...cartRailProps} layout="inline" />
-          </div>
-        ) : null}
-
-        <div className="pos-cart-review-shell">
-          <CartReviewView
-            {...cartRailProps}
-            layout="review"
-          />
+  const cartSurface = hasContainerQuerySupport ? (
+    <>
+      {!isMobileViewport ? (
+        <div className="pos-cart-rail-shell">
+          <PosCartRail {...cartRailProps} layout="inline" />
         </div>
-      </>
-    ) : isMobileViewport ? (
+      ) : null}
+
       <div className="pos-cart-review-shell">
-        <CartReviewView
-          {...cartRailProps}
-          layout="review"
-        />
+        <CartReviewView {...cartRailProps} layout="review" />
       </div>
-    ) : (
-      <div className="pos-cart-rail-shell">
-        <PosCartRail {...cartRailProps} layout="inline" />
-      </div>
-    )
+    </>
+  ) : isMobileViewport ? (
+    <div className="pos-cart-review-shell">
+      <CartReviewView {...cartRailProps} layout="review" />
+    </div>
+  ) : (
+    <div className="pos-cart-rail-shell">
+      <PosCartRail {...cartRailProps} layout="inline" />
+    </div>
   );
 
   return (
@@ -1973,7 +1989,6 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
         />
       ) : null}
 
-      
       <ConfirmationDialog
         open={isClearCartDialogOpen}
         title="تفريغ السلة الحالية"
