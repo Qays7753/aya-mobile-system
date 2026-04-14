@@ -326,7 +326,12 @@ BEGIN
   WHERE id = v_invoice_id;
 
   -- ═══ إنشاء المدفوعات + قيود محاسبية ═══
-  FOR v_payment IN SELECT * FROM jsonb_array_elements(p_payments) LOOP
+  FOR v_payment IN
+    SELECT el.value
+    FROM jsonb_array_elements(p_payments) AS el(value)
+    LEFT JOIN accounts a ON a.id = (el.value->>'account_id')::UUID
+    ORDER BY CASE WHEN a.type = 'cash' THEN 1 ELSE 2 END
+  LOOP
     SELECT id, fee_percentage INTO v_account
       FROM accounts WHERE id = (v_payment->>'account_id')::UUID;
 
