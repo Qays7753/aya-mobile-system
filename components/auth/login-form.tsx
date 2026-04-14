@@ -100,21 +100,18 @@ export function LoginForm() {
             timeoutId = setTimeout(() => reject(new Error("Timeout")), 2000);
           });
 
-          // Prevent unhandled promise rejection if profile resolves before timeout
-          timeoutPromise.catch(() => {});
-
           const { data: profile } = await Promise.race([
             profilePromise,
             timeoutPromise
           ]) as Awaited<typeof profilePromise>;
 
-          clearTimeout(timeoutId);
           if (profile?.role === "admin") {
             nextRoute = "/reports";
           }
         } catch {
-          clearTimeout(timeoutId);
           // Timeout or error: use default route
+        } finally {
+          clearTimeout(timeoutId);
         }
       }
 
