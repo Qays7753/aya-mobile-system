@@ -1323,11 +1323,11 @@ BEGIN
   END IF;
 
   -- Fix #4: تضمين المرتجعة جزئياً لعدم مسح المبيعات السليمة المتبقية من اللقطة
-  SELECT COALESCE(SUM(i.total_amount), 0), COALESCE(COUNT(DISTINCT i.id), 0), COALESCE(SUM(ii.quantity * ii.cost_price_at_time), 0) 
+  SELECT COALESCE(SUM(i.total_amount), 0), COALESCE(COUNT(DISTINCT i.id), 0), COALESCE(SUM((ii.quantity - ii.returned_quantity) * ii.cost_price_at_time), 0)
     INTO v_sales, v_inv_count, v_cost
     FROM invoices i
     LEFT JOIN invoice_items ii ON i.id = ii.invoice_id
-    WHERE i.invoice_date = p_snapshot_date AND i.status IN ('active', 'partially_returned');
+    WHERE i.invoice_date = p_snapshot_date AND i.status IN ('active', 'partially_returned', 'returned');
 
   SELECT COALESCE(SUM(total_amount), 0), COALESCE(COUNT(*), 0) INTO v_returns, v_ret_count
     FROM returns WHERE return_date = p_snapshot_date;
