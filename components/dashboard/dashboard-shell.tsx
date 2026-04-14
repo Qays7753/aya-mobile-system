@@ -59,7 +59,9 @@ const PRIMARY_BOTTOM_NAV_HREFS = [
   "/inventory"
 ] as const;
 
-const BOTTOM_BAR_LABELS: Partial<Record<(typeof PRIMARY_BOTTOM_NAV_HREFS)[number], string>> = {
+const BOTTOM_BAR_LABELS: Partial<
+  Record<(typeof PRIMARY_BOTTOM_NAV_HREFS)[number], string>
+> = {
   "/pos": "البيع",
   "/inventory": "الجرد"
 };
@@ -219,9 +221,7 @@ export function DashboardShell({
     const focusableSelector =
       'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
     const focusNavItem = window.requestAnimationFrame(() => {
-      navPopoverRef.current
-        ?.querySelector<HTMLElement>(".dashboard-nav__item")
-        ?.focus();
+      navPopoverRef.current?.querySelector<HTMLElement>(".dashboard-nav__item")?.focus();
     });
 
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -249,10 +249,14 @@ export function DashboardShell({
         return;
       }
 
-      const navItems = Array.from(popover.querySelectorAll(".dashboard-nav__item")) as HTMLElement[];
+      const navItems = Array.from(
+        popover.querySelectorAll(".dashboard-nav__item")
+      ) as HTMLElement[];
 
       if (e.key === "Tab") {
-        const currentIndex = tabbableElements.indexOf(document.activeElement as HTMLElement);
+        const currentIndex = tabbableElements.indexOf(
+          document.activeElement as HTMLElement
+        );
 
         if (currentIndex === -1) {
           e.preventDefault();
@@ -365,7 +369,8 @@ export function DashboardShell({
             const Icon = getIcon(item.icon);
             const isActive = isPathActive(pathname, item.href);
             const compactLabel =
-              BOTTOM_BAR_LABELS[item.href as keyof typeof BOTTOM_BAR_LABELS] ?? item.label;
+              BOTTOM_BAR_LABELS[item.href as keyof typeof BOTTOM_BAR_LABELS] ??
+              item.label;
 
             return (
               <Link
@@ -473,55 +478,62 @@ export function DashboardShell({
                       className="dashboard-nav-popover__nav"
                       aria-label="التنقل داخل مساحات التشغيل"
                     >
-                      {(Object.keys(groupedNavigation) as DashboardNavGroup[]).map((groupKey) =>
-                        groupedNavigation[groupKey].length > 0 ? (
-                          <section
-                            key={groupKey}
-                            className={`dashboard-nav-group dashboard-nav-group--${groupKey}`}
-                          >
-                            <div className="dashboard-nav-group__items">
-                              {groupedNavigation[groupKey].map((item) => {
-                                const isActive = isPathActive(pathname, item.href);
-                                const Icon = getIcon(item.icon);
+                      {(Object.keys(groupedNavigation) as DashboardNavGroup[]).map(
+                        (groupKey) =>
+                          groupedNavigation[groupKey].length > 0 ? (
+                            <section
+                              key={groupKey}
+                              className={`dashboard-nav-group dashboard-nav-group--${groupKey}`}
+                            >
+                              <div className="dashboard-nav-group__items">
+                                {groupedNavigation[groupKey].map((item) => {
+                                  const isActive = isPathActive(pathname, item.href);
+                                  const Icon = getIcon(item.icon);
 
-                                return (
-                                  <Link
-                                    key={item.href}
-                                    href={item.href}
-                                    className={
-                                      isActive
-                                        ? "dashboard-nav__item is-active"
-                                        : "dashboard-nav__item"
-                                    }
-                                    aria-current={isActive ? "page" : undefined}
-                                    onClick={() => closeMenu({ restoreFocus: false })}
-                                  >
-                                    <span className="dashboard-nav__icon">
-                                      <Icon size={18} />
-                                    </span>
-                                    <span className="dashboard-nav__label">
-                                      {item.label}
-                                      {item.href === "/notifications" &&
-                                      unreadNotifications > 0 ? (
-                                        <span className="dashboard-nav__badge">
-                                          {unreadNotifications}
-                                        </span>
-                                      ) : null}
-                                    </span>
-                                  </Link>
-                                );
-                              })}
-                            </div>
-                          </section>
-                        ) : null
+                                  return (
+                                    <Link
+                                      key={item.href}
+                                      href={item.href}
+                                      className={
+                                        isActive
+                                          ? "dashboard-nav__item is-active"
+                                          : "dashboard-nav__item"
+                                      }
+                                      aria-current={isActive ? "page" : undefined}
+                                      onClick={() => closeMenu({ restoreFocus: false })}
+                                    >
+                                      <span className="dashboard-nav__icon">
+                                        <Icon size={18} />
+                                      </span>
+                                      <span className="dashboard-nav__label">
+                                        {item.label}
+                                        {item.href === "/notifications" &&
+                                        unreadNotifications > 0 ? (
+                                          <span className="dashboard-nav__badge">
+                                            {unreadNotifications}
+                                          </span>
+                                        ) : null}
+                                      </span>
+                                    </Link>
+                                  );
+                                })}
+                              </div>
+                            </section>
+                          ) : null
                       )}
                     </nav>
 
                     <div className="dashboard-nav-popover__footer">
                       {isAuthenticated ? (
                         <>
-                          <div className="dashboard-sidebar__account" title={accountLabel}>
-                            <span className="dashboard-sidebar__account-avatar" aria-hidden="true">
+                          <div
+                            className="dashboard-sidebar__account"
+                            title={accountLabel}
+                          >
+                            <span
+                              className="dashboard-sidebar__account-avatar"
+                              aria-hidden="true"
+                            >
                               {accountInitials}
                             </span>
                             <span className="dashboard-sidebar__account-copy">
