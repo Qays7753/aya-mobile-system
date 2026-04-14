@@ -203,8 +203,9 @@ export function InvoiceDetail({ role, invoice, accounts }: InvoiceDetailProps) {
   }
 
   function buildReturnItems() {
+    const selectedSet = new Set(selectedReturnItemIds);
     return returnableItems
-      .filter((item) => selectedReturnItemIds.includes(item.id))
+      .filter((item) => selectedSet.has(item.id))
       .map((item) => ({
         invoice_item_id: item.id,
         quantity:
