@@ -15,8 +15,7 @@ import {
   Printer,
   Search,
   ShieldCheck,
-  Trash2,
-  X
+  Trash2
 } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
