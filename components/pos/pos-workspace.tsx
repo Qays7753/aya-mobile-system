@@ -4,7 +4,6 @@ import * as React from "react";
 import { useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState, useTransition } from "react";
 import {
   AlertTriangle,
-  ArrowRight,
   Banknote,
   Clock3,
   CreditCard,
