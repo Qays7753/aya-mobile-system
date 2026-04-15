@@ -985,3 +985,231 @@ DONE_IF        :
   7. FINAL_NOTE      : All 4 acceptance criteria met. Login and logout now use
      Next.js client-side routing for instant transitions. Timeout leak fixed.
      Form attributes cleaned. Tests updated and passing.
+
+---
+
+# ═══════════════════════════════════════════════════════════════════════════
+# TASK ZONE — 2026-04-16-POS-FIXES-VERIFICATION
+# ═══════════════════════════════════════════════════════════════════════════
+
+```
+TASK_ID        : 2026-04-16-POS-FIXES-VERIFICATION
+TASK_TYPE      : code-review (comprehensive verification of Codex fix work)
+PROJECT        : Aya Mobile
+ROUTED_TO      : Gemini
+ROUTING_REASON : Codex claimed fixes were complete but work may be incomplete.
+                 Gemini must verify all three issues are truly resolved,
+                 no regressions introduced, and all user requirements met.
+DEPENDS_ON     : Commits 44d83ae + 81bff23 on main branch
+```
+
+## Context
+
+Codex was tasked to fix three critical POS issues (2026-04-16-POS-FIXES):
+1. Amount entry field missing from payment overlay
+2. CliQ wallets display (only Orange showing)
+3. Cart product sizes too large
+
+Codex reported completion with:
+- All 209 tests passing (71 files)
+- `npx tsc` zero errors
+- Changes committed as 44d83ae
+- AGENTS.md updated with execution result
+
+**User concern:** "كودكس نفذ بشكل غير مكتمل" (Codex executed incompletely)
+
+## Your Verification Task
+
+Review Codex's work comprehensively to confirm:
+1. All claimed fixes are actually implemented and visible in code
+2. No regressions introduced to existing features
+3. All three issues resolve user's original complaints
+4. Code quality and style meet project standards
+5. Test coverage is appropriate for changes made
+
+## FILES_TO_READ
+
+Read these files completely and verify the fixes:
+
+- `components/pos/view/payment-amount-confirmation.tsx` (verify amount field)
+- `components/pos/view/pos-checkout-panel.tsx` (verify amount field integration)
+- `components/pos/view/pos-cart-rail.tsx` (verify product display hasn't regressed)
+- `app/api/pos/accounts/route.ts` (verify module_scope filter)
+- `app/globals.css` (verify cart sizing reductions)
+- `components/pos/pos-workspace.tsx` (verify no breaking changes)
+
+## Review Checklist
+
+### ISSUE 1 VERIFICATION: Amount Entry Field
+
+**Requirement from FIX_TASK.md:**
+- When cashier selects a payment method in the overlay, numeric input field labeled
+  "المبلغ المستلم" must appear in the SAME overlay
+- Input should accept numeric keyboard input
+- Remainder should display as "الباقي: X د.أ" and update live
+- Confirm button disabled if amount < total, enabled if amount >= total
+- Error message shown: "يجب الدفع كامل المبلغ"
+- Cancel button works (returns to method selection)
+
+**Check:**
+- [ ] Component `PaymentAmountConfirmation` exists and has correct label "المبلغ المستلم"
+- [ ] Component has `aria-label` for accessibility
+- [ ] Input type is "number" with `inputMode="numeric"`
+- [ ] Remainder calculation correct: `totalAmount - amountPaid`
+- [ ] Remainder displays with formatting "الباقي: X د.أ"
+- [ ] Confirm button has `disabled={isUnderpaid}` logic
+- [ ] Error message conditionally renders when underpaid
+- [ ] Cancel button callback clears amount and returns to method-select state
+- [ ] Component is imported and rendered in pos-checkout-panel.tsx
+- [ ] Component renders inside the same overlay surface (not a separate overlay)
+- [ ] paymentStep state transitions correctly:
+  - Starts as "method-select"
+  - Changes to "amount-confirmation" when account selected
+  - Returns to "method-select" when cancel clicked
+
+### ISSUE 2 VERIFICATION: CliQ Wallets / Module Scope Filter
+
+**Requirement from FIX_TASK.md:**
+- /api/pos/accounts endpoint should return ALL active core-scoped accounts
+- Should NOT filter by wallet provider (no Orange-specific logic)
+- Maintenance-scoped accounts must NOT appear in sales POS surface
+
+**Check:**
+- [ ] `/api/pos/accounts` route has `.eq("module_scope", "core")` filter
+- [ ] Filter appears in the query chain (not commented out)
+- [ ] No wallet-provider-specific filtering logic exists (no `.eq("provider", "orange")` etc)
+- [ ] Accounts query filters by `is_active = true` AND `module_scope = 'core'`
+- [ ] Response returns correct accounts for POS surface
+- [ ] pos-workspace.tsx uses this endpoint correctly
+- [ ] No hardcoded account lists or provider filters in UI code
+- [ ] getAccountChipLabel or similar label resolution doesn't collapse distinct accounts into one display name
+
+### ISSUE 3 VERIFICATION: Cart Product Sizing
+
+**Requirement from FIX_TASK.md:**
+- Reduce cart product dimensions proportionally
+- More products should fit without scroll
+- Text must remain readable
+- Hit targets (buttons) must stay ≥44px
+- Proportional reduction without breaking layout
+
+**Check:**
+- [ ] `.pos-cart-card__title` font size reduced (18px → 16px or similar decrease)
+- [ ] `.pos-cart-card__summary` font size reduced
+- [ ] `.pos-cart-card__body` gap reduced (sp-3 → sp-2 or similar)
+- [ ] `.cart-line-list` gap reduced
+- [ ] `.cart-line-card` padding reduced
+- [ ] `.cart-line-card__copy strong` font size reduced
+- [ ] `.cart-line-card__copy p` font size reduced
+- [ ] `.cart-line-card__line-total` font size reduced
+- [ ] `.cart-line-card__controls` gap reduced
+- [ ] `.cart-line-card__quantity-button` height remains ≥44px
+- [ ] `.cart-line-card__discount` sizing adjusted proportionally
+- [ ] No CSS layout breaks (grid, flexbox still working)
+- [ ] RTL not broken (no hardcoded left/right)
+- [ ] POS settings scope (--pos-density-scale etc) still applies correctly
+
+## REGRESSION TESTING
+
+Verify no existing features broken:
+
+**Smart Rail Button (inline payment shortcut):**
+- [ ] Smart cash button still shows correct label ("دفع كاش" not "دفع الصندوق")
+- [ ] Smart cash rail payment flow unchanged
+- [ ] Unit test "submits the smart rail payment inline and persists the successful method" passes
+
+**Settings Modal:**
+- [ ] POS settings modal still renders correctly
+- [ ] Slider still appears with correct range (1-100)
+- [ ] Contrast controls still work (radio buttons unchanged)
+- [ ] CSS scale variables still cascade correctly
+- [ ] Modal inside pos-settings-scope applies variables
+
+**General POS Surface:**
+- [ ] Product grid still interactive
+- [ ] Product search still works
+- [ ] Category filters still work
+- [ ] Cart operations (add, remove, qty adjust) unchanged
+- [ ] Discount calculations unchanged
+- [ ] Customer selection unchanged
+
+## Code Quality Check
+
+**Style & Standards:**
+- [ ] No TODO/FIXME comments left incomplete
+- [ ] No console.log or debug code left behind
+- [ ] No commented-out code blocks
+- [ ] Naming conventions consistent (camelCase for vars, PascalCase for components)
+- [ ] No unused imports
+- [ ] Type safety maintained (no `any` added)
+- [ ] Comments present only where code is not self-explanatory
+
+**Accessibility:**
+- [ ] All interactive elements have `aria-label` or accessible name
+- [ ] Form inputs have proper `<label>` association
+- [ ] Error messages announced (aria-live or role)
+- [ ] Color contrast maintained
+- [ ] Keyboard navigation not broken
+
+**Performance:**
+- [ ] No unnecessary re-renders added
+- [ ] No new N+1 query patterns
+- [ ] No new bundle size bloat
+
+## OUTPUT REQUIREMENTS
+
+Write a detailed EXECUTION_RESULT covering:
+
+1. **VERIFICATION SUMMARY** — Pass/Fail for each of the 3 issues
+2. **ISSUE 1 FINDINGS** — Amount field: what works, what doesn't
+3. **ISSUE 2 FINDINGS** — CliQ wallets: filter verified, no provider restrictions
+4. **ISSUE 3 FINDINGS** — Cart sizing: reductions documented, readability assessed
+5. **REGRESSION RESULTS** — Any broken features?
+6. **CODE QUALITY** — Style, accessibility, performance issues if any
+7. **BLOCKERS** — Any incomplete or missing work?
+8. **RECOMMENDATIONS** — What, if anything, still needs fixing?
+9. **FINAL VERDICT** — Is Codex's work truly complete? Percentage done?
+
+## EXECUTION_RESULT FORMAT
+
+```
+═══ EXECUTION_RESULT ═══
+
+VERIFICATION_SUMMARY:
+  Issue 1 (Amount Field):       [✓ PASS / ✗ FAIL] — [brief reason]
+  Issue 2 (CliQ Wallets):       [✓ PASS / ✗ FAIL] — [brief reason]
+  Issue 3 (Cart Sizing):        [✓ PASS / ✗ FAIL] — [brief reason]
+  Regressions:                  [✓ NONE / ✗ FOUND X issues]
+  Code Quality:                 [✓ GOOD / ⚠ WARNINGS]
+  Overall:                      [COMPLETE / INCOMPLETE / BLOCKED]
+
+ISSUE 1 — Amount Entry Field:
+  [Detail findings]
+
+ISSUE 2 — CliQ Wallets / Scope Filter:
+  [Detail findings]
+
+ISSUE 3 — Cart Product Sizing:
+  [Detail findings]
+
+REGRESSION CHECK:
+  [What still works, what broke if anything]
+
+CODE QUALITY:
+  [Style, accessibility, performance notes]
+
+BLOCKERS:
+  [List any incomplete work, missing parts, show-stoppers]
+
+RECOMMENDATIONS:
+  [What needs to be done next, if anything]
+
+FINAL_VERDICT:
+  [Summary: Is the work truly complete? Percentage estimate?]
+```
+
+After writing EXECUTION_RESULT, reply with exactly:
+  "Operation POS fixes verification complete, ready for review."
+
+═══ END_OF_TASK ═══
+
