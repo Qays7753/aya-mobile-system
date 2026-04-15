@@ -3640,3 +3640,537 @@ DONE — All three issues resolved, committed locally with:
 Commit Hash: 44d83ae
 Commit Message: fix(pos): restore amount field visibility, filter wallets by scope, reduce cart item sizes
 
+---
+
+# Task 1: POS Cart Payment Swap (In-place content swap)
+# TASK_ID: 2026-04-16-POS-CART-PAYMENT-SWAP
+
+Problem: Payment overlay is full-screen and separate. User wants payment in the same cart container.
+
+Current: Click "خيارات دفع أخرى" → full-screen overlay appears
+Desired: Payment method + amount input appear IN the same cart container (content swap)
+
+Solution: Transform pos-checkout-panel to use state machine:
+- "display" state: show cart items (default)
+- "payment" state: show payment methods + amount input in same space
+
+What to change:
+
+1. In pos-checkout-panel.tsx:
+   - Find: `const [paymentStep, setPaymentStep] = React.useState<PaymentStep>(...)`
+   - Replace with: `const [cartDisplayMode, setCartDisplayMode] = React.useState<"display" | "payment">(...)`
+   - Initialize to "display"
+
+2. Update the JSX rendering logic:
+   - If cartDisplayMode === "display": show cart items + amount field + payment method chips
+   - If cartDisplayMode === "payment": show ONLY payment method selection + amount confirmation
+   - (Hide cart items when in payment mode - content swap)
+
+3. Add "رجوع" button:
+   - When cartDisplayMode === "payment", show back button
+   - onClick={() => setCartDisplayMode("display")} to return to cart
+
+4. Update button handlers:
+   - When user clicks payment method chip: NO state change (amount already visible)
+   - When user clicks "خيارات دفع أخرى": setCartDisplayMode("payment")
+   - When user clicks cancel in payment mode: setCartDisplayMode("display")
+   - When user confirms payment: call onConfirmSale(amountPaid)
+
+5. Update tests:
+   - tests/unit/pos-workspace.test.tsx: replace paymentStep refs with cartDisplayMode
+   - tests/e2e/device-qa.spec.ts: verify no UI change (same assertions should pass)
+
+Example JSX structure (pseudo-code):
+```typescript
+return (
+  <div className="pos-unified-checkout">
+    <CartSummary ... />
+    
+    {cartDisplayMode === "display" ? (
+      <>
+        {/* Amount field visible here */}
+        <AmountField ... />
+        {/* Cart items visible here */}
+        <CartItems ... />
+        {/* Payment methods visible here */}
+        <PaymentMethods ... />
+      </>
+    ) : cartDisplayMode === "payment" ? (
+      <>
+        {/* Back button visible here */}
+        <button onClick={() => setCartDisplayMode("display")}>رجوع</button>
+        {/* Amount confirmation visible here */}
+        <PaymentAmountConfirmation ... />
+      </>
+    ) : null}
+  </div>
+);
+```
+
+Files to modify:
+- components/pos/view/pos-checkout-panel.tsx (state + rendering)
+- tests/unit/pos-workspace.test.tsx (update state references)
+- tests/e2e/device-qa.spec.ts (verify no regression)
+
+Acceptance:
+- Amount field visible in display mode (same container as payment methods)
+- Clicking payment method enters "payment" mode
+- Back button in payment mode returns to "display"
+- Cart items NOT visible during payment mode (content swap)
+- All tests pass (209/209)
+- Zero TypeScript errors
+
+---
+
+# Task 2: CliQ Wallet Plurality (Multiple wallet providers)
+# TASK_ID: 2026-04-16-POS-CLIQ-WALLET-PLURALITY
+
+Problem: Code hardcodes type === "cliq" but schema doesn't have "cliq" enum.
+Wallets are type = "wallet" with provider name in the name field.
+
+Current code fails if you add more wallet providers (Zain, etc).
+
+Solution: Remove hardcoded "cliq" check, show wallet provider name directly.
+
+What to change:
+In components/pos/pos-workspace.tsx, function getAccountChipLabel:
+
+OLD:
+  account.type === "cliq" ? "CliQ" : account.name
+
+NEW:
+  account.type === "wallet" ? account.name : account.name
+
+(Removes the hardcoded "CliQ" string, uses provider name from database)
+
+Files to modify:
+- components/pos/pos-workspace.tsx (2-3 line change)
+
+Acceptance:
+- account.type === "cliq" removed
+- account.type === "wallet" shows account.name
+- No hardcoded provider strings
+- Multiple wallets can be added without code changes
+- All tests pass (209/209)
+- Zero TypeScript errors
+
+Execute Task 2 first (quick), then Task 1 (larger refactor).
+
+
+---
+
+# Task 3: Amount Field in Main Cart + Grid Layout for Products
+# TASK_ID: 2026-04-16-POS-CART-AMOUNT-FIELD
+
+Problem:
+1. Amount field "المبلغ المستلم" only appears in payment overlay, not in main cart
+2. Cart products take up too much space (1 product per row)
+   User wants: 2 products side-by-side in the same row to fit more items
+
+Solution:
+
+## Part A: Move Amount Input to Main Cart Display
+
+Currently: amount field only shows when user enters "payment" mode
+Desired: amount field visible in main cart display (always visible in the cart)
+
+Cart Layout After Change:
+```
+┌─ Cart Summary ─────────────────┐
+│ Subtotal: X د.أ              │
+└────────────────────────────────┘
+┌─ Amount Received Field ────────┐  ← NEW: visible in "display" mode
+│ Label: "المبلغ المستلم"       │
+│ Input: [_______________]       │
+│ Remainder: "الباقي: X د.أ"    │
+└────────────────────────────────┘
+┌─ Cart Items (2 columns) ───────┐
+│ [Product 1] [Product 2]        │
+│ [Product 3] [Product 4]        │
+└────────────────────────────────┘
+┌─ Payment Methods ──────────────┐
+│ [Cash] [Card] [Orange]         │
+└────────────────────────────────┘
+```
+
+What to change in pos-checkout-panel.tsx:
+
+In the JSX return statement, find the section that shows cart items (display mode).
+BEFORE the payment method chips section, add this:
+
+```typescript
+{!isSplitMode ? (
+  <div className="stack-field">
+    {/* NEW: Amount Input Section */}
+    <label className="stack-field">
+      <span className="field-label">المبلغ المستلم</span>
+      <input
+        className="field-input"
+        type="number"
+        inputMode="numeric"
+        min={0}
+        step="0.01"
+        value={amountReceived ?? ""}
+        onChange={(e) => onAmountReceivedChange(e.target.value)}
+        placeholder="0.00"
+        disabled={isProcessing}
+        aria-label="المبلغ المستلم"
+      />
+    </label>
+
+    {/* Remainder Display */}
+    {amountReceived !== null && (
+      <div className="pos-remaining-balance">
+        <strong>
+          الباقي: {formatCurrency(Math.abs((amountReceived ?? 0) - netTotal))}
+        </strong>
+      </div>
+    )}
+
+    {/* Payment Methods Section */}
+    <span className="field-label">طريقة الدفع</span>
+    <div className="chip-row pos-payment-chip-row">
+      {/* ... existing payment method chips ... */}
+    </div>
+  </div>
+) : null}
+```
+
+Key details:
+- Use the same `amountReceived` state that's already in props
+- Call `onAmountReceivedChange` to update the amount (already exists as callback)
+- Remainder calculation: netTotal - amountReceived
+- Input remains in display mode (not hidden in payment mode)
+- Value persists when user clicks "خيارات دفع أخرى" and enters payment mode
+- Confirm button only in payment mode (when payment method is selected)
+
+Files to modify:
+- components/pos/view/pos-checkout-panel.tsx (add amount field to display mode rendering)
+
+## Part B: Cart Products Grid Layout (2 Columns)
+
+Currently: .cart-line-list renders products in single column (1 per row)
+Desired: 2 products per row (2-column grid layout)
+
+Current CSS:
+```css
+.cart-line-list {
+  display: grid;
+  max-height: min(65vh, 56rem);
+  gap: var(--sp-1);
+  overflow: auto;
+  padding-inline-end: 0;
+}
+
+.cart-line-card {
+  display: grid;
+  gap: var(--sp-2);
+  margin: 0;
+  padding: var(--sp-2);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-surface);
+  box-shadow: none;
+}
+```
+
+New CSS:
+```css
+.cart-line-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;  /* ← 2 equal columns */
+  max-height: min(65vh, 56rem);
+  gap: var(--sp-1);
+  overflow: auto;
+  padding-inline-end: 0;
+}
+
+.cart-line-card {
+  display: grid;
+  gap: var(--sp-2);
+  margin: 0;
+  padding: var(--sp-2);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-surface);
+  box-shadow: none;
+  /* Cards auto-adjust to fit 2-column layout */
+}
+```
+
+RTL Consideration:
+- grid-template-columns: 1fr 1fr works with RTL naturally
+- No left/right hardcoding needed
+- Content inside cards already RTL-safe
+
+Responsive Behavior:
+- Current breakpoints should NOT change this (tablet landscape 1080×810+ minimum)
+- 2 columns should stay on tablet and up
+- On phone? Check viewport and decide:
+  Option A: Stay 2 columns (users can scroll horizontally)
+  Option B: Single column on phone (hide second column)
+  User didn't specify, so recommend Option A (2 columns always)
+
+What to change:
+In app/globals.css, find .cart-line-list and add:
+  grid-template-columns: 1fr 1fr;
+
+Files to modify:
+- app/globals.css (.cart-line-list CSS only)
+
+Acceptance for Part A (Amount Field in Main Cart):
+- "المبلغ المستلم" input visible in main cart display
+- Remainder updates live as user types
+- Input appears BEFORE payment method selection
+- Confirm button only appears in payment mode (not in main cart)
+- Amount value persists when switching between modes
+
+Acceptance for Part B (2-Column Grid):
+- Cart products display in 2-column grid (2 side-by-side)
+- All products remain fully interactive (quantity, discount, remove)
+- RTL layout correct (no broken alignment)
+- Grid spacing balanced (gap: var(--sp-1))
+- Scrolling still works (max-height: min(65vh, 56rem))
+- All tests pass (209/209)
+- Zero TypeScript errors
+
+Combined Acceptance:
+- User sees amount field in main cart
+- User sees 2 products per row (fits more items)
+- Clicking "خيارات دفع أخرى" enters payment mode
+- Amount already filled from main cart field
+- Payment methods show
+- User confirms or goes back
+- All tests pass
+
+
+---
+
+EXECUTION ORDER (MUST FOLLOW THIS SEQUENCE):
+
+1. Task 2 (CliQ Wallet Plurality) — 2-3 minutes
+   - Simple: 2 line change in getAccountChipLabel
+   - No state changes, no JSX changes
+   - Just swap: type === "cliq" → type === "wallet"
+
+2. Task 3 (Amount Field in Main Cart + 2-Column Grid) — 20-30 minutes
+   - Part A: Add amount input to pos-checkout-panel display mode
+   - Part B: Add grid-template-columns: 1fr 1fr to .cart-line-list CSS
+   - Tests: verify no regression
+
+3. Task 1 (Cart Payment Swap - State Machine) — 45-60 minutes
+   - Larger refactor: rename paymentStep → cartDisplayMode
+   - Update JSX conditional rendering
+   - Update test references
+   - Verify content swap works (cart → payment → back to cart)
+
+4. Task 4 (Discount Model Change: Percentage → Fixed Amount) — 120+ minutes
+   - MAJOR REFACTOR affecting entire system (DB, API, POS, Reports)
+   - Database migration: convert percentage → amounts
+   - API: discount_percentage → discount_amount
+   - POS: input field changes, calculations updated
+   - Reports: display format changes
+   - Tests: all discount logic updated
+   - HIGHEST COMPLEXITY — do LAST and SEPARATELY
+
+After each task, write EXECUTION_RESULT with:
+- What changed
+- Tests status (tsc + vitest)
+- Any issues encountered
+- Acceptance criteria met (Y/N)
+
+IMPORTANT NOTE:
+- Do Tasks 2, 3, 1 together in ONE session (stable system after)
+- Do Task 4 SEPARATELY in a NEW session after Tasks 1-3 are done
+- Task 4 is major change — only execute after full verification of Tasks 1-3
+
+
+---
+
+# Task 4: Change Discount Model from Percentage to Fixed Amount
+# TASK_ID: 2026-04-16-POS-DISCOUNT-MODEL-CHANGE
+
+Problem:
+Current system uses discount_percentage (0-100%) on line items.
+User wants: discount as fixed amount (د.أ) instead of percentage.
+
+Example:
+OLD: Apply 10% discount to a 100 د.أ item = 10 د.أ discount
+NEW: Apply 25 د.أ discount directly to any item
+
+This change affects the ENTIRE system (POS, invoices, returns, reports, permissions).
+
+---
+
+## SCOPE OF CHANGE
+
+Database Schema Changes:
+1. invoice_items table:
+   - discount_percentage (DECIMAL(5,2)) — DELETE (not used)
+   - discount_amount (DECIMAL(12,3)) — KEEP (already exists, currently calculated)
+   - NEW: Rename column or add new logic to store FIXED amount (not calculated)
+
+2. invoices table:
+   - discount_amount — KEEP (total discount on invoice)
+   - invoice_discount_percentage — DELETE or rename? (currently just on invoice level)
+
+3. permission_bundles table:
+   - max_discount_percentage — RENAME to max_discount_amount or DELETE?
+
+4. system_settings table:
+   - max_pos_discount_percentage — CHANGE to max_pos_discount_amount
+   - discount_warning_threshold — CHANGE to discount_warning_threshold_amount
+
+API Changes:
+1. app/api/sales/route.ts
+   - Input: discount_percentage → discount_amount (fixed د.أ)
+   - Validation: discount_amount <= max_pos_discount_amount
+   - Calculation: no % math, just subtract the amount
+
+2. app/api/invoices/cancel/route.ts
+   - Handle fixed discount amounts on cancel
+
+POS Store Changes:
+1. stores/pos-cart.ts
+   - setDiscountPercentage → setDiscountAmount
+   - Remove: lineSubtotal * (item.discount_percentage / 100)
+   - Change to: item.discount_amount (direct deduction)
+
+Component Changes:
+1. POS Cart (pos-cart-rail.tsx):
+   - Input field: "نسبة الخصم (%)" → "مبلغ الخصم (د.أ)"
+   - Input type: number (0 to max_pos_discount_amount)
+   - Display: "الخصم: 25 د.أ" (not "الخصم: 10%")
+
+2. POS Workspace (pos-workspace.tsx):
+   - Discount calculation logic updated
+   - Max discount validation updated
+   - Display formatting updated
+
+3. Invoices Detail (invoice-detail.tsx):
+   - Show discount as "25 د.أ" not "10%"
+
+4. Reports (all discount-related displays):
+   - Update discount columns to show amounts, not percentages
+
+Test Updates:
+1. tests/unit/pos-cart.test.ts
+   - Update discount calculation tests
+   - Remove percentage math tests
+
+2. tests/e2e/device-qa.spec.ts
+   - Update discount entry tests (amount instead of %)
+   - Update assertion messages
+
+3. API Tests:
+   - Update sales/route tests
+   - Update validation tests
+
+---
+
+## MIGRATION STRATEGY
+
+WARNING: This is a BREAKING CHANGE affecting data and calculations.
+
+Option A (Data Preservation):
+1. Migrate existing percentage discounts to fixed amounts:
+   - FOR EACH invoice_item:
+     discount_amount = (unit_price * quantity) * (discount_percentage / 100)
+   - Store calculated amount, keep audit trail
+
+2. Create migration SQL:
+   ```sql
+   UPDATE invoice_items
+   SET discount_amount = ROUND((unit_price * quantity) * (discount_percentage / 100), 3)
+   WHERE discount_percentage > 0 AND discount_amount = 0;
+   
+   ALTER TABLE invoice_items DROP COLUMN discount_percentage;
+   ```
+
+3. Update system_settings:
+   ```sql
+   UPDATE system_settings 
+   SET key = 'max_pos_discount_amount', value = '50'
+   WHERE key = 'max_pos_discount_percentage';
+   ```
+
+Option B (Simple - Start Fresh):
+1. Add migration that:
+   - Clears all draft invoices (ones not yet finalized)
+   - Converts finalized invoice percentages to amounts
+   - Deletes discount_percentage column
+   - No production impact (historical data preserved in amount field)
+
+**Recommendation: Option A** (preserve all existing discount data)
+
+---
+
+## ACCEPTANCE CRITERIA
+
+Core Functionality:
+- [ ] Discount input is "fixed amount in د.أ" (not %)
+- [ ] Max discount validation uses amount (not %)
+- [ ] Discount display shows "X د.أ" (not "X%")
+- [ ] Calculation is direct subtraction (no % math)
+- [ ] System-wide (POS, invoices, returns, reports, permissions)
+
+Database:
+- [ ] invoice_items.discount_percentage removed (or deprecated)
+- [ ] invoice_items.discount_amount used for fixed amounts
+- [ ] system_settings updated (max_pos_discount_amount not percentage)
+- [ ] Migration preserves existing discount data
+
+Tests:
+- [ ] All 209 tests pass
+- [ ] Discount calculation tests updated
+- [ ] Discount validation tests updated
+- [ ] Zero TypeScript errors
+
+UI/UX:
+- [ ] POS cart shows "مبلغ الخصم: 25 د.أ" not "نسبة: 10%"
+- [ ] Input field shows numeric keyboard
+- [ ] Max discount enforced (no amount > 100 د.أ if that's the max)
+- [ ] Reports show discounts in amounts, not percentages
+
+---
+
+## FILES TO MODIFY
+
+Schema/Database:
+- supabase/migrations/ (NEW migration file to convert percentage → amount)
+
+API:
+- app/api/sales/route.ts (discount input/validation)
+- app/api/invoices/cancel/route.ts (discount handling)
+
+Stores:
+- stores/pos-cart.ts (discount calculations)
+
+Components:
+- components/pos/view/pos-cart-rail.tsx (discount input field)
+- components/pos/pos-workspace.tsx (discount calculations + display)
+- components/dashboard/invoice-detail.tsx (discount display)
+- All report components (discount display)
+
+Tests:
+- tests/unit/pos-cart.test.ts
+- tests/e2e/device-qa.spec.ts
+- API route tests
+
+Validations:
+- lib/validations/sales.ts (discount_amount validation)
+
+Types:
+- lib/pos/types.ts (PosCartItem.discount_amount vs discount_percentage)
+
+---
+
+## NOTES
+
+- This is a major refactor touching core domain logic
+- Coordinate with backend/API team if separate
+- Database migration is REQUIRED (cannot skip)
+- All existing invoices must have discounts converted to amounts
+- Test coverage is critical (discount math affects revenue)
+- Consider soft-launching with 0 max_discount_amount to verify logic
+
