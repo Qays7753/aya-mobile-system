@@ -2,7 +2,12 @@
 
 import * as React from "react";
 import { X } from "lucide-react";
-import type { PosContrast, PosDensity, PosFontSize } from "@/stores/pos-settings";
+import {
+  POS_DISPLAY_SIZE_MAX,
+  POS_DISPLAY_SIZE_MIN,
+  POS_DISPLAY_SIZE_STEP,
+  type PosContrast
+} from "@/stores/pos-settings";
 
 const FOCUSABLE_SELECTOR = [
   "button:not([disabled])",
@@ -15,31 +20,16 @@ const FOCUSABLE_SELECTOR = [
 
 type PosSettingsModalProps = {
   open: boolean;
-  density: PosDensity;
-  fontSize: PosFontSize;
+  displaySize: number;
   contrast: PosContrast;
   onClose: () => void;
   onChange: (next: {
-    density?: PosDensity;
-    fontSize?: PosFontSize;
+    displaySize?: number;
     contrast?: PosContrast;
   }) => void;
   onReset: () => void;
   triggerRef: React.RefObject<HTMLButtonElement | null>;
 };
-
-const DENSITY_OPTIONS: Array<{ value: PosDensity; label: string }> = [
-  { value: "compact", label: "مضغوط" },
-  { value: "comfortable", label: "مريح" },
-  { value: "spacious", label: "واسع" }
-];
-
-const FONT_SIZE_OPTIONS: Array<{ value: PosFontSize; label: string }> = [
-  { value: "sm", label: "صغير" },
-  { value: "md", label: "متوسط" },
-  { value: "lg", label: "كبير" },
-  { value: "xl", label: "كبير جدًا" }
-];
 
 const CONTRAST_OPTIONS: Array<{ value: PosContrast; label: string }> = [
   { value: "off", label: "افتراضي" },
@@ -47,40 +37,15 @@ const CONTRAST_OPTIONS: Array<{ value: PosContrast; label: string }> = [
   { value: "strong", label: "قوي" }
 ];
 
-const PRESETS = [
-  {
-    id: "default",
-    label: "افتراضي",
-    values: {
-      density: "comfortable" as PosDensity,
-      fontSize: "md" as PosFontSize,
-      contrast: "off" as PosContrast
-    }
-  },
-  {
-    id: "day",
-    label: "نهاري",
-    values: {
-      density: "comfortable" as PosDensity,
-      fontSize: "md" as PosFontSize,
-      contrast: "soft" as PosContrast
-    }
-  },
-  {
-    id: "night",
-    label: "مسائي",
-    values: {
-      density: "spacious" as PosDensity,
-      fontSize: "lg" as PosFontSize,
-      contrast: "strong" as PosContrast
-    }
-  }
+const DISPLAY_SIZE_PRESETS = [
+  { id: "small", label: "صغير", value: 25 },
+  { id: "normal", label: "طبيعي", value: 50 },
+  { id: "large", label: "كبير", value: 75 }
 ] as const;
 
 export function PosSettingsModal({
   open,
-  density,
-  fontSize,
+  displaySize,
   contrast,
   onClose,
   onChange,
@@ -94,6 +59,7 @@ export function PosSettingsModal({
       return;
     }
 
+    const triggerElement = triggerRef.current;
     const previousOverflow = document.body.style.overflow;
 
     function getFocusableElements() {
@@ -148,7 +114,7 @@ export function PosSettingsModal({
       window.cancelAnimationFrame(frameHandle);
       document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", handleKeyDown);
-      triggerRef.current?.focus();
+      triggerElement?.focus();
     };
   }, [onClose, open, triggerRef]);
 
@@ -193,54 +159,43 @@ export function PosSettingsModal({
             هذه الإعدادات تُحفظ على هذا الجهاز فقط
           </p>
 
-          <div className="pos-settings-modal__presets" aria-label="الإعدادات">
-            {PRESETS.map((preset) => (
-              <button
-                key={preset.id}
-                type="button"
-                className="secondary-button pos-settings-modal__preset"
-                onClick={() => onChange(preset.values)}
-              >
-                {preset.label}
-              </button>
-            ))}
-          </div>
+          <section className="pos-settings-modal__fieldset" aria-label="حجم العرض">
+            <div className="pos-settings-modal__slider-header">
+              <h3 className="pos-settings-modal__legend">حجم العرض</h3>
+              <output className="pos-settings-modal__readout" aria-live="polite">
+                {displaySize}
+              </output>
+            </div>
 
-          <fieldset className="pos-settings-modal__fieldset">
-            <legend className="pos-settings-modal__legend">الكثافة</legend>
-            <div className="pos-settings-modal__options">
-              {DENSITY_OPTIONS.map((option) => (
-                <label key={option.value} className="pos-settings-modal__option">
-                  <input
-                    type="radio"
-                    name="pos-density"
-                    value={option.value}
-                    checked={density === option.value}
-                    onChange={() => onChange({ density: option.value })}
-                  />
-                  <span>{option.label}</span>
-                </label>
+            <input
+              className="pos-settings-modal__slider"
+              type="range"
+              min={POS_DISPLAY_SIZE_MIN}
+              max={POS_DISPLAY_SIZE_MAX}
+              step={POS_DISPLAY_SIZE_STEP}
+              value={displaySize}
+              onChange={(event) => onChange({ displaySize: Number(event.target.value) })}
+              aria-label="حجم العرض"
+              aria-valuemin={POS_DISPLAY_SIZE_MIN}
+              aria-valuemax={POS_DISPLAY_SIZE_MAX}
+              aria-valuenow={displaySize}
+            />
+
+            <div className="pos-settings-modal__presets" aria-label="أحجام العرض">
+              {DISPLAY_SIZE_PRESETS.map((preset) => (
+                <button
+                  key={preset.id}
+                  type="button"
+                  className="secondary-button pos-settings-modal__preset"
+                  onClick={() => onChange({ displaySize: preset.value })}
+                >
+                  {preset.label}
+                </button>
               ))}
             </div>
-          </fieldset>
+          </section>
 
-          <fieldset className="pos-settings-modal__fieldset">
-            <legend className="pos-settings-modal__legend">حجم الخط</legend>
-            <div className="pos-settings-modal__options">
-              {FONT_SIZE_OPTIONS.map((option) => (
-                <label key={option.value} className="pos-settings-modal__option">
-                  <input
-                    type="radio"
-                    name="pos-font-size"
-                    value={option.value}
-                    checked={fontSize === option.value}
-                    onChange={() => onChange({ fontSize: option.value })}
-                  />
-                  <span>{option.label}</span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
+          <hr className="pos-settings-modal__separator" />
 
           <fieldset className="pos-settings-modal__fieldset">
             <legend className="pos-settings-modal__legend">التباين</legend>

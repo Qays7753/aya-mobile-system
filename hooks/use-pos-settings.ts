@@ -4,8 +4,7 @@ import * as React from "react";
 import { POS_SETTINGS_DEFAULTS, usePosSettingsStore } from "@/stores/pos-settings";
 
 export function usePosSettings() {
-  const density = usePosSettingsStore((state) => state.density);
-  const fontSize = usePosSettingsStore((state) => state.fontSize);
+  const displaySize = usePosSettingsStore((state) => state.displaySize);
   const contrast = usePosSettingsStore((state) => state.contrast);
   const hydrated = usePosSettingsStore((state) => state.hydrated);
   const set = usePosSettingsStore((state) => state.set);
@@ -18,8 +17,7 @@ export function usePosSettings() {
   }, []);
 
   return {
-    density: hydrated ? density : POS_SETTINGS_DEFAULTS.density,
-    fontSize: hydrated ? fontSize : POS_SETTINGS_DEFAULTS.fontSize,
+    displaySize: hydrated ? displaySize : POS_SETTINGS_DEFAULTS.displaySize,
     contrast: hydrated ? contrast : POS_SETTINGS_DEFAULTS.contrast,
     hydrated,
     set,

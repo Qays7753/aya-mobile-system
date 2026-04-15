@@ -373,6 +373,13 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
   const [isSubmitting, startSubmission] = useTransition();
   const settingsTriggerRef = useRef<HTMLButtonElement | null>(null);
   const posSettings = usePosSettings();
+  const displaySizeProgress = posSettings.displaySize / 100;
+  const posSettingsScaleStyle = {
+    "--pos-font-scale": String(Number((0.85 + displaySizeProgress * 0.5).toFixed(3))),
+    "--pos-density-scale": String(Number((0.92 + displaySizeProgress * 0.3).toFixed(3))),
+    "--pos-icon-scale": String(Number((0.95 + displaySizeProgress * 0.15).toFixed(3))),
+    "--pos-radius-scale": "1"
+  } as React.CSSProperties;
 
   const normalizedQuery = normalizeArabic(searchQuery);
   const categoryFilter = activeCategory === "all" ? "all" : activeCategory;
@@ -1931,9 +1938,9 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
     <>
       <section
         className="pos-workspace pos-settings-scope"
-        data-pos-density={posSettings.density}
-        data-pos-font-size={posSettings.fontSize}
+        data-pos-display-size={posSettings.displaySize}
         data-pos-contrast={posSettings.contrast}
+        style={posSettingsScaleStyle}
       >
       {isOffline ? (
         <StatusBanner
@@ -2009,8 +2016,7 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
 
       <PosSettingsModal
         open={isSettingsOpen}
-        density={posSettings.density}
-        fontSize={posSettings.fontSize}
+        displaySize={posSettings.displaySize}
         contrast={posSettings.contrast}
         onChange={posSettings.set}
         onReset={posSettings.reset}
