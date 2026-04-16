@@ -23,7 +23,7 @@ type ProfileAccessRow = {
   is_active: boolean;
 };
 
-export const getWorkspaceAccess = cache(async function getWorkspaceAccess(): Promise<WorkspaceAccessResult> {
+export async function resolveWorkspaceAccess(): Promise<WorkspaceAccessResult> {
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -62,4 +62,6 @@ export const getWorkspaceAccess = cache(async function getWorkspaceAccess(): Pro
     maxDiscountAmount: permissionContext.maxDiscountAmount,
     discountRequiresApproval: permissionContext.discountRequiresApproval
   };
-});
+}
+
+export const getWorkspaceAccess = cache(resolveWorkspaceAccess);

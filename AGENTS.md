@@ -4251,3 +4251,90 @@ Types:
 - RESULT:
   POS صار amount-based على مستوى الواجهة والعقد الأمامي والـ permissions والعرض التقاريري، مع طبقة توافق backend تمنع كسر RPC الحالي إلى أن تُستبدل دوال SQL legacy بالكامل.
 
+═══ EXECUTION_RESULT — 2026-04-15-POS-TRIPLE-SEQUENCE ═══
+
+STEP1_PRE_FLIGHT:
+- `git status --porcelain` output:
+  ` M app/(dashboard)/access.ts`
+  ` M app/globals.css`
+  ` M components/auth/login-form.tsx`
+  ` M components/dashboard/dashboard-shell.tsx`
+  ` M components/dashboard/reports-advanced-charts.tsx`
+  ` M components/dashboard/reports-overview.tsx`
+  ` M tests/e2e/helpers/local-runtime.ts`
+  ` M tests/e2e/px11-reports.spec.ts`
+  ` M tests/e2e/px16-navigation-ia.spec.ts`
+  ` M tests/e2e/px24-analytical-config.spec.ts`
+  ` M tests/unit/login-form.test.tsx`
+  `?? QUICK_FIX_CHECKLIST.md`
+  `?? VERCEL_INTEGRATION_AUDIT.md`
+  `?? VERCEL_SYNC_GUIDE.md`
+  `?? app/auth/`
+- Confirmation that the expected 9-path set matches: no.
+- Expected Step 1 dirty set was:
+  `M AGENTS.md`
+  `M app/globals.css`
+  `M components/pos/pos-workspace.tsx`
+  `M components/pos/toolbar.tsx`
+  `M components/pos/view/product-selection-view.tsx`
+  `?? components/pos/pos-settings-button.tsx`
+  `?? components/pos/pos-settings-modal.tsx`
+  `?? hooks/use-pos-settings.ts`
+  `?? stores/pos-settings.ts`
+- Delta vs expected:
+  - Required POS settings files are absent from the current status.
+  - Unexpected modified files exist in auth, access, reports, tests, and shell.
+  - Unexpected untracked files exist outside the allowlist of safe scratch/log paths.
+- Any unexpected entries: present; see list above.
+
+STEP1_BLOCKERS:
+- The working tree does not satisfy the mandatory Step 1 pre-flight contract, so Step 1 cannot stage or commit safely.
+- Current dirty files include non-Step-1 changes under reports, auth, access, and tests.
+- The greenfield POS settings file set that Step 1 is supposed to capture is not present in the current status.
+- Per task instructions, execution stopped here. No staging, no commit, and no verification commands were run.
+
+STEP1_COMMIT:
+- n/a
+
+STEP1_VERIFY:
+- n/a
+
+STEP1_FAILURE:
+- blocked at pre-flight; Step 1 did not start because the working tree did not match the required file set.
+
+STEP2_PRE_FLIGHT:
+- n/a; Step 2 is gated on a successful Step 1 commit and clean base.
+
+STEP2_DIFFS:
+- n/a
+
+STEP2_VERIFY:
+- n/a
+
+STEP2_COMMIT:
+- n/a
+
+STEP2_FAILURE:
+- n/a
+
+STEP3_PRE_FLIGHT:
+- n/a; Step 3 is gated on a successful Step 2 completion.
+
+STEP3_DIFFS:
+- n/a
+
+STEP3_VERIFY:
+- n/a
+
+STEP3_COMMIT:
+- n/a
+
+STEP3_FAILURE:
+- n/a
+
+SELF_REVIEW:
+- H-rules check across all three steps: no implementation work was performed because Step 1 failed pre-flight.
+- Did the fast cash rail button stay untouched? yes
+- Did you push? no
+- Did you touch AGENTS.md yourself? no; only this EXECUTION_RESULT block was appended as explicitly allowed
+

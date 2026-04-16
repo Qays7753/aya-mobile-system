@@ -18,9 +18,7 @@ type ReportsOverviewProps = {
   reportBaseline: ReportBaseline;
 };
 
-type ReportTab = "overview" | "sales-returns" | "accounts-operations";
-type ExpandedFiltersState = Record<ReportTab, boolean>;
-type ReportSectionLink = { href: string; label: string; tab: ReportTab | "shared" };
+type ReportDetailTab = "sales" | "finance" | "inventory" | "maintenance";
 
 const STATUS_LABELS: Record<string, string> = {
   active: "نشطة",
@@ -33,27 +31,12 @@ const STATUS_LABELS: Record<string, string> = {
   delivered: "مسلّمة"
 };
 
-const REPORT_SECTIONS: ReportSectionLink[] = [
-  { href: "#reports-filters", label: "الفلاتر", tab: "shared" },
-  { href: "#reports-compare", label: "المقارنة", tab: "overview" },
-  { href: "#reports-baseline", label: "لوحة المؤشرات", tab: "overview" },
-  { href: "#reports-sales", label: "المبيعات", tab: "sales-returns" },
-  { href: "#reports-returns", label: "المرتجعات", tab: "sales-returns" },
-  { href: "#reports-movements", label: "الحسابات", tab: "accounts-operations" },
-  { href: "#reports-maintenance", label: "الصيانة", tab: "accounts-operations" }
-];
-
-const REPORT_TABS = [
-  { key: "overview", label: "نظرة عامة" },
-  { key: "sales-returns", label: "المبيعات والمرتجعات" },
-  { key: "accounts-operations", label: "الحسابات والعمليات" }
-] as const satisfies ReadonlyArray<{ key: ReportTab; label: string }>;
-
-const INITIAL_FILTERS_STATE: ExpandedFiltersState = {
-  overview: true,
-  "sales-returns": false,
-  "accounts-operations": false
-};
+const REPORT_DETAIL_TABS = [
+  { key: "sales", label: "المبيعات" },
+  { key: "finance", label: "المالية" },
+  { key: "inventory", label: "المخزون" },
+  { key: "maintenance", label: "الصيانة" }
+] as const satisfies ReadonlyArray<{ key: ReportDetailTab; label: string }>;
 
 function getStatusLabel(status: string) {
   return STATUS_LABELS[status] ?? status;
@@ -87,12 +70,16 @@ function getGroupByLabel(groupBy: SalesHistoryFilters["groupBy"]) {
   }
 }
 
-function normalizeReportTab(tab: string | null): ReportTab {
-  if (tab === "sales-returns" || tab === "accounts-operations") {
-    return tab;
+function normalizeReportTab(tab: string | null): ReportDetailTab {
+  switch (tab) {
+    case "finance":
+    case "inventory":
+    case "maintenance":
+      return tab;
+    case "sales":
+    default:
+      return "sales";
   }
-
-  return "overview";
 }
 
 function buildExportHref(filters: SalesHistoryFilters) {
@@ -149,39 +136,87 @@ function buildFilterSummary(filters: SalesHistoryFilters, users: WorkspaceUserOp
   return chips;
 }
 
+function getComparisonPercentage(currentValue: number, compareValue?: number | null) {
+  if (compareValue == null || compareValue === 0) {
+    return null;
+  }
+
+  return ((currentValue - compareValue) / compareValue) * 100;
+}
+
+function formatSignedPercent(value: number | null) {
+  if (value == null) {
+    return "بدون مقارنة";
+  }
+
+  const formatter = new Intl.NumberFormat("en-US", {
+    signDisplay: "exceptZero",
+    minimumFractionDigits: Math.abs(value) < 10 ? 1 : 0,
+    maximumFractionDigits: 1
+  });
+
+  return `${formatter.format(value)}%`;
+}
+
+function getComparisonHint(value: number | null) {
+  if (value == null) {
+    return "أضف فترة مقارنة لقياس التغير";
+  }
+
+  if (value > 0) {
+    return "أعلى من الفترة المقارنة";
+  }
+
+  if (value < 0) {
+    return "أقل من الفترة المقارنة";
+  }
+
+  return "مماثل للفترة المقارنة";
+}
+
+function getComparisonTone(value: number | null) {
+  if (value == null) {
+    return "neutral";
+  }
+
+  if (value > 0) {
+    return "positive";
+  }
+
+  if (value < 0) {
+    return "negative";
+  }
+
+  return "neutral";
+}
+
 export function ReportsOverview({ filters, users, terminals, reportBaseline }: ReportsOverviewProps) {
   const searchParams = useSearchParams();
   const reportTabParam = searchParams.get("report_tab");
   const exportHref = buildExportHref(filters);
   const filterSummary = buildFilterSummary(filters, users);
   const { advancedReport } = reportBaseline;
-  const [activeTab, setActiveTab] = useState<ReportTab>(() => normalizeReportTab(reportTabParam));
-  const [expandedFilters, setExpandedFilters] = useState<ExpandedFiltersState>(INITIAL_FILTERS_STATE);
-  const tabRefs = useRef<Record<ReportTab, HTMLButtonElement | null>>({
-    overview: null,
-    "sales-returns": null,
-    "accounts-operations": null
+  const [activeTab, setActiveTab] = useState<ReportDetailTab>(() => normalizeReportTab(reportTabParam));
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const tabRefs = useRef<Record<ReportDetailTab, HTMLButtonElement | null>>({
+    sales: null,
+    finance: null,
+    inventory: null,
+    maintenance: null
   });
-  const visibleSections = REPORT_SECTIONS.filter(
-    (section) => section.tab === "shared" || section.tab === activeTab
-  );
 
   useEffect(() => {
     setActiveTab(normalizeReportTab(reportTabParam));
   }, [reportTabParam]);
 
-  function toggleFilter(tab: ReportTab) {
-    setExpandedFilters((current) => ({ ...current, [tab]: !current[tab] }));
-  }
-
-  function handleTabKeyDown(event: KeyboardEvent<HTMLButtonElement>, currentTab: ReportTab) {
-    const currentIndex = REPORT_TABS.findIndex((tab) => tab.key === currentTab);
+  function handleTabKeyDown(event: KeyboardEvent<HTMLButtonElement>, currentTab: ReportDetailTab) {
+    const currentIndex = REPORT_DETAIL_TABS.findIndex((tab) => tab.key === currentTab);
     if (currentIndex === -1) {
       return;
     }
 
     const focusTab = (index: number) => {
-      const nextTab = REPORT_TABS[index]?.key;
+      const nextTab = REPORT_DETAIL_TABS[index]?.key;
       if (nextTab) {
         tabRefs.current[nextTab]?.focus();
       }
@@ -191,12 +226,12 @@ export function ReportsOverview({ filters, users, terminals, reportBaseline }: R
       case "ArrowRight":
       case "ArrowDown":
         event.preventDefault();
-        focusTab((currentIndex + 1) % REPORT_TABS.length);
+        focusTab((currentIndex + 1) % REPORT_DETAIL_TABS.length);
         break;
       case "ArrowLeft":
       case "ArrowUp":
         event.preventDefault();
-        focusTab((currentIndex - 1 + REPORT_TABS.length) % REPORT_TABS.length);
+        focusTab((currentIndex - 1 + REPORT_DETAIL_TABS.length) % REPORT_DETAIL_TABS.length);
         break;
       case "Home":
         event.preventDefault();
@@ -204,7 +239,7 @@ export function ReportsOverview({ filters, users, terminals, reportBaseline }: R
         break;
       case "End":
         event.preventDefault();
-        focusTab(REPORT_TABS.length - 1);
+        focusTab(REPORT_DETAIL_TABS.length - 1);
         break;
       case "Enter":
       case " ":
@@ -213,12 +248,6 @@ export function ReportsOverview({ filters, users, terminals, reportBaseline }: R
         break;
       default:
         break;
-    }
-  }
-
-  function handleSectionClick(tab: ReportSectionLink["tab"]) {
-    if (tab !== "shared") {
-      setActiveTab(tab);
     }
   }
 
@@ -242,335 +271,58 @@ export function ReportsOverview({ filters, users, terminals, reportBaseline }: R
     );
   }
 
-  return (
-    <section className="analytical-page reports-page">
-      <PageHeader
-        title="التقارير"
-        meta={
-          <>
-            <span className="status-pill badge badge--neutral">
-              {filters.fromDate} - {filters.toDate}
-            </span>
-            <span className="status-pill badge badge--neutral">
-              {formatCompactNumber(reportBaseline.salesHistory.total_count)} فاتورة
-            </span>
-            <span className="status-pill badge badge--neutral">
-              فرق الربح {formatCurrency(advancedReport.delta.net_profit)}
-            </span>
-          </>
-        }
-        actions={
-          <div className="action-row">
-            <a href={exportHref} className="primary-button">
-              تصدير Excel
-            </a>
-            <Link href="/reports" className="secondary-button">
-              إعادة ضبط
-            </Link>
-          </div>
-        }
-      />
+  function renderSignalsGrid() {
+    const signals = [
+      {
+        key: "finance",
+        label: "الديون الحالية",
+        value: formatCurrency(reportBaseline.debtReport.total_outstanding),
+        hint: `${formatCompactNumber(reportBaseline.debtReport.customers.length)} عميلًا بحاجة إلى متابعة`
+      },
+      {
+        key: "inventory",
+        label: "المخزون المنخفض",
+        value: formatCompactNumber(reportBaseline.inventoryReport.low_stock_count),
+        hint: "عدد المنتجات عند حد التنبيه أو أقل"
+      },
+      {
+        key: "sales",
+        label: "المرتجعات",
+        value: formatCurrency(reportBaseline.profitReport.return_total),
+        hint: `${formatCompactNumber(reportBaseline.returnsReport.entries.length)} عملية مرتجع ضمن النطاق الحالي`
+      },
+      {
+        key: "maintenance",
+        label: "الصيانة",
+        value: formatCurrency(reportBaseline.maintenanceReport.delivered_revenue),
+        hint: `${formatCompactNumber(reportBaseline.maintenanceReport.delivered_count)} أمرًا مسلّمًا`
+      }
+    ] satisfies Array<{ key: ReportDetailTab; label: string; value: string; hint: string }>;
 
-      <SectionCard
-        id="reports-filters"
-        title="نطاق التقرير"
-        tone="subtle"
-        className="analytical-card analytical-card--filters reports-page__filters reports-page__filter-block reports-page__command-bar"
-        actions={
-          <div className="action-row">
-            <button type="submit" form="reports-filters-form" className="primary-button">
-              تطبيق الفلاتر
-            </button>
+    return (
+      <SectionCard title="إشارات تحتاج متابعة" tone="subtle" className="analytical-card">
+        <div className="reports-page__signals-grid">
+          {signals.map((signal) => (
             <button
+              key={signal.label}
               type="button"
-              className="secondary-button reports-page__filter-collapse"
-              aria-expanded={expandedFilters[activeTab]}
-              aria-controls="reports-filters-content"
-              onClick={() => toggleFilter(activeTab)}
+              className="reports-page__signal-card"
+              onClick={() => setActiveTab(signal.key)}
             >
-              <SlidersHorizontal size={16} aria-hidden="true" />
-              <span className="reports-page__filter-collapse-copy">
-                {expandedFilters[activeTab] ? "إخفاء الفلاتر" : "تعديل الفلاتر"}
-              </span>
-              <ChevronDown
-                size={16}
-                aria-hidden="true"
-                className={`reports-page__filter-icon ${expandedFilters[activeTab] ? "is-rotated" : ""}`}
-              />
+              <span className="reports-page__signal-label">{signal.label}</span>
+              <strong className="reports-page__signal-value">{signal.value}</strong>
+              <span className="reports-page__signal-hint">{signal.hint}</span>
+              <span className="reports-page__signal-action">فتح التفاصيل</span>
             </button>
-          </div>
-        }
-      >
-        <div className="reports-page__command-primary">
-          <div className="reports-page__tabs" role="tablist" aria-label="تبويبات شاشة التقارير">
-            {REPORT_TABS.map((tab) => (
-              <button
-                key={tab.key}
-                ref={(node) => {
-                  tabRefs.current[tab.key] = node;
-                }}
-                type="button"
-                id={`reports-tab-${tab.key}`}
-                role="tab"
-                tabIndex={activeTab === tab.key ? 0 : -1}
-                aria-selected={activeTab === tab.key}
-                aria-controls={`reports-panel-${tab.key}`}
-                className={`reports-page__tab ${activeTab === tab.key ? "is-active" : ""}`}
-                onClick={() => setActiveTab(tab.key)}
-                onKeyDown={(event) => handleTabKeyDown(event, tab.key)}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          <nav
-            className="analytical-section-nav reports-page__sections"
-            aria-label="التنقل داخل أقسام التقارير"
-          >
-            {visibleSections.map((section) => (
-              <a
-                key={section.href}
-                href={section.href}
-                className="chip"
-                onClick={() => handleSectionClick(section.tab)}
-              >
-                {section.label}
-              </a>
-            ))}
-          </nav>
-        </div>
-
-        {renderFilterSummaryRow()}
-
-        <div
-          id="reports-filters-content"
-          className="reports-page__filter-content"
-          hidden={!expandedFilters[activeTab]}
-          aria-hidden={!expandedFilters[activeTab]}
-        >
-          <form
-            id="reports-filters-form"
-            className="filters-grid"
-            method="GET"
-            onSubmit={() => setExpandedFilters((current) => ({ ...current, [activeTab]: false }))}
-          >
-            <input type="hidden" name="report_tab" value={activeTab} />
-            <label className="stack-field">
-              <span>من تاريخ</span>
-              <input type="date" name="from_date" defaultValue={filters.fromDate} />
-            </label>
-            <label className="stack-field">
-              <span>إلى تاريخ</span>
-              <input type="date" name="to_date" defaultValue={filters.toDate} />
-            </label>
-            <label className="stack-field">
-              <span>من تاريخ المقارنة</span>
-              <input type="date" name="compare_from_date" defaultValue={filters.compareFromDate ?? ""} />
-            </label>
-            <label className="stack-field">
-              <span>إلى تاريخ المقارنة</span>
-              <input type="date" name="compare_to_date" defaultValue={filters.compareToDate ?? ""} />
-            </label>
-            <label className="stack-field">
-              <span>المستخدم</span>
-              <select name="created_by" defaultValue={filters.createdBy ?? ""}>
-                <option value="">الكل</option>
-                {users.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.full_name ?? user.role}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="stack-field">
-              <span>الحالة</span>
-              <select name="status" defaultValue={filters.status ?? ""}>
-                <option value="">الكل</option>
-                <option value="active">نشطة</option>
-                <option value="partially_returned">مرتجع جزئي</option>
-                <option value="returned">مرتجعة</option>
-                <option value="cancelled">ملغاة</option>
-              </select>
-            </label>
-            <label className="stack-field">
-              <span>الجهاز</span>
-              <select name="pos_terminal_code" defaultValue={filters.posTerminalCode ?? ""}>
-                <option value="">الكل</option>
-                {terminals.map((terminal) => (
-                  <option key={terminal} value={terminal}>
-                    {terminal}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="stack-field">
-              <span>التجميع</span>
-              <select name="group_by" defaultValue={filters.groupBy ?? "day"}>
-                <option value="day">يومي</option>
-                <option value="week">أسبوعي</option>
-                <option value="month">شهري</option>
-              </select>
-            </label>
-            <label className="stack-field">
-              <span>بعد التحليل</span>
-              <select name="dimension" defaultValue={filters.dimension ?? "account"}>
-                <option value="account">الحساب</option>
-                <option value="entry_type">نوع القيد</option>
-                <option value="expense_category">فئة المصروف</option>
-                <option value="supplier">المورد / المزود</option>
-                <option value="maintenance_status">حالة الصيانة</option>
-              </select>
-            </label>
-          </form>
+          ))}
         </div>
       </SectionCard>
+    );
+  }
 
-      <section
-        id="reports-panel-overview"
-        role="tabpanel"
-        aria-labelledby="reports-tab-overview"
-        className="workspace-stack reports-page__tab-panel"
-        hidden={activeTab !== "overview"}
-      >
-        <SectionCard id="reports-compare" title="ملخص المقارنة" className="analytical-card">
-          <div className="analytical-kpi-grid reports-page__compare-grid">
-            <article className="analytical-kpi-card">
-              <span className="analytical-kpi-label">الفترة الحالية</span>
-              <strong className="analytical-kpi-value">{formatCurrency(advancedReport.currentPeriod.sales_total)}</strong>
-              <span className="analytical-kpi-hint">
-                صافي الربح: {formatCurrency(advancedReport.currentPeriod.net_profit)}
-              </span>
-            </article>
-            <article className="analytical-kpi-card">
-              <span className="analytical-kpi-label">فترة المقارنة</span>
-              <strong className="analytical-kpi-value">
-                {formatCurrency(advancedReport.comparePeriod?.sales_total ?? 0)}
-              </strong>
-              <span className="analytical-kpi-hint">
-                صافي الربح: {formatCurrency(advancedReport.comparePeriod?.net_profit ?? 0)}
-              </span>
-            </article>
-            <article className="analytical-kpi-card analytical-kpi-card--accent">
-              <span className="analytical-kpi-label">فرق المبيعات</span>
-              <strong className="analytical-kpi-value">{formatCurrency(advancedReport.delta.sales_total)}</strong>
-              <span className="analytical-kpi-hint">الفارق بين الفترتين بعد نفس الفلاتر</span>
-            </article>
-            <article className="analytical-kpi-card">
-              <span className="analytical-kpi-label">فرق الربح</span>
-              <strong className="analytical-kpi-value">{formatCurrency(advancedReport.delta.net_profit)}</strong>
-              <span className="analytical-kpi-hint">فارق صافي الربح بعد المصروفات والمرتجعات</span>
-            </article>
-          </div>
-        </SectionCard>
-
-        <SectionCard title="اتجاه الأداء" className="analytical-card">
-          <ReportsAdvancedCharts trend={advancedReport.trend} breakdown={advancedReport.breakdown} />
-        </SectionCard>
-
-        <SectionCard id="reports-baseline" title="مؤشرات سريعة" tone="accent" className="analytical-card">
-          <div className="analytical-kpi-grid reports-page__baseline-grid">
-            <article className="analytical-kpi-card">
-              <span className="analytical-kpi-label">المبيعات</span>
-              <strong className="analytical-kpi-value">{formatCurrency(reportBaseline.salesSummary.total_sales)}</strong>
-              <span className="analytical-kpi-hint">
-                {formatCompactNumber(reportBaseline.salesSummary.invoice_count)} فاتورة نشطة
-              </span>
-            </article>
-            <article className="analytical-kpi-card">
-              <span className="analytical-kpi-label">الديون</span>
-              <strong className="analytical-kpi-value">
-                {formatCurrency(reportBaseline.debtReport.total_outstanding)}
-              </strong>
-              <span className="analytical-kpi-hint">
-                {formatCompactNumber(reportBaseline.debtReport.customers.length)} عميلًا بديون حالية
-              </span>
-            </article>
-            <article className="analytical-kpi-card">
-              <span className="analytical-kpi-label">المخزون المنخفض</span>
-              <strong className="analytical-kpi-value">
-                {formatCompactNumber(reportBaseline.inventoryReport.low_stock_count)}
-              </strong>
-              <span className="analytical-kpi-hint">منتجات عند حد التنبيه أو أقل</span>
-            </article>
-            <article className="analytical-kpi-card analytical-kpi-card--accent">
-              <span className="analytical-kpi-label">ربح اللقطات</span>
-              <strong className="analytical-kpi-value">
-                {formatCurrency(reportBaseline.profitReport.snapshot_net_profit)}
-              </strong>
-              <span className="analytical-kpi-hint">
-                من {formatCompactNumber(reportBaseline.profitReport.snapshot_count)} لقطة يومية
-              </span>
-            </article>
-            <article className="analytical-kpi-card">
-              <span className="analytical-kpi-label">إيراد الصيانة</span>
-              <strong className="analytical-kpi-value">
-                {formatCurrency(reportBaseline.profitReport.maintenance_revenue)}
-              </strong>
-              <span className="analytical-kpi-hint">
-                {formatCompactNumber(reportBaseline.profitReport.maintenance_delivered_count)} أمرًا مسلّمًا
-              </span>
-            </article>
-            <article className="analytical-kpi-card">
-              <span className="analytical-kpi-label">الشحن والمرتجعات</span>
-              <strong className="analytical-kpi-value">
-                {formatCurrency(reportBaseline.profitReport.topup_profit)}
-              </strong>
-              <span className="analytical-kpi-hint">
-                مرتجعات: {formatCurrency(reportBaseline.profitReport.return_total)}
-              </span>
-            </article>
-          </div>
-
-          <div className="table-wrap">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>المؤشر</th>
-                  <th>القيمة</th>
-                  <th>القراءة التشغيلية</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>إجمالي المبيعات</td>
-                  <td>{formatCurrency(reportBaseline.salesSummary.total_sales)}</td>
-                  <td>
-                    {formatCompactNumber(reportBaseline.salesSummary.invoice_count)} فاتورة ضمن النطاق الحالي
-                  </td>
-                </tr>
-                <tr>
-                  <td>إجمالي الديون</td>
-                  <td>{formatCurrency(reportBaseline.debtReport.total_outstanding)}</td>
-                  <td>
-                    {formatCompactNumber(reportBaseline.debtReport.customers.length)} عميلًا بحاجة إلى متابعة
-                  </td>
-                </tr>
-                <tr>
-                  <td>المخزون المنخفض</td>
-                  <td>{formatCompactNumber(reportBaseline.inventoryReport.low_stock_count)}</td>
-                  <td>عدد المنتجات التي وصلت إلى حد التنبيه أو أقل</td>
-                </tr>
-                <tr>
-                  <td>الصيانة المسلّمة</td>
-                  <td>
-                    {formatCompactNumber(reportBaseline.profitReport.maintenance_delivered_count)}
-                  </td>
-                  <td>{formatCurrency(reportBaseline.profitReport.maintenance_revenue)} إيراد محقق</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </SectionCard>
-      </section>
-
-      <section
-        id="reports-panel-sales-returns"
-        role="tabpanel"
-        aria-labelledby="reports-tab-sales-returns"
-        className="workspace-stack reports-page__tab-panel"
-        hidden={activeTab !== "sales-returns"}
-      >
+  function renderSalesTab() {
+    return (
+      <>
         <SectionCard title="تفصيل المقارنة" className="analytical-card">
           <div className="table-wrap">
             <table className="data-table">
@@ -605,7 +357,7 @@ export function ReportsOverview({ filters, users, terminals, reportBaseline }: R
         </SectionCard>
 
         <section className="analytical-shell analytical-shell--split">
-          <SectionCard id="reports-sales" title="الفواتير" className="analytical-card">
+          <SectionCard title="الفواتير" className="analytical-card">
             <div className="action-row action-row--end">
               <Link href="/invoices" className="secondary-button">
                 فتح الفواتير
@@ -673,7 +425,7 @@ export function ReportsOverview({ filters, users, terminals, reportBaseline }: R
           </SectionCard>
         </section>
 
-        <SectionCard id="reports-returns" title="المرتجعات" className="analytical-card">
+        <SectionCard title="المرتجعات" className="analytical-card">
           <div className="analytical-shell analytical-shell--split">
             <div className="stack-list">
               {reportBaseline.returnsReport.reasons.length > 0 ? (
@@ -727,16 +479,14 @@ export function ReportsOverview({ filters, users, terminals, reportBaseline }: R
             </div>
           </div>
         </SectionCard>
-      </section>
+      </>
+    );
+  }
 
-      <section
-        id="reports-panel-accounts-operations"
-        role="tabpanel"
-        aria-labelledby="reports-tab-accounts-operations"
-        className="workspace-stack reports-page__tab-panel"
-        hidden={activeTab !== "accounts-operations"}
-      >
-        <section className="analytical-shell analytical-shell--triplet">
+  function renderFinanceTab() {
+    return (
+      <>
+        <section className="analytical-shell analytical-shell--split">
           <SectionCard eyebrow="الحسابات" title="الحسابات المالية" tone="subtle" className="analytical-card">
             <div className="stack-list">
               {reportBaseline.accountReport.accounts.length > 0 ? (
@@ -777,28 +527,9 @@ export function ReportsOverview({ filters, users, terminals, reportBaseline }: R
               )}
             </div>
           </SectionCard>
-
-          <SectionCard title="المخزون المنخفض" tone="subtle" className="analytical-card">
-            <div className="stack-list">
-              {reportBaseline.inventoryReport.products.length > 0 ? (
-                reportBaseline.inventoryReport.products.map((product) => (
-                  <article key={product.id} className="list-card">
-                    <div className="list-card__header">
-                      <strong>{product.name}</strong>
-                      <span>
-                        {formatCompactNumber(product.stock_quantity)} / {formatCompactNumber(product.min_stock_level)}
-                      </span>
-                    </div>
-                  </article>
-                ))
-              ) : (
-                renderEmptyList("لا توجد عناصر منخفضة المخزون ضمن المؤشرات الحالية.")
-              )}
-            </div>
-          </SectionCard>
         </section>
 
-        <SectionCard id="reports-movements" title="حركة الحسابات" className="analytical-card">
+        <SectionCard title="حركة الحسابات" className="analytical-card">
           <div className="analytical-shell analytical-shell--split">
             <div className="stack-list">
               {reportBaseline.accountMovementReport.summaries.length > 0 ? (
@@ -862,76 +593,366 @@ export function ReportsOverview({ filters, users, terminals, reportBaseline }: R
             </div>
           </div>
         </SectionCard>
+      </>
+    );
+  }
 
-        <SectionCard id="reports-maintenance" title="الصيانة" className="analytical-card">
-          <div className="analytical-kpi-grid">
-            <article className="analytical-kpi-card">
-              <span className="analytical-kpi-label">الإيراد المسلّم</span>
-              <strong className="analytical-kpi-value">
-                {formatCurrency(reportBaseline.maintenanceReport.delivered_revenue)}
-              </strong>
-              <span className="analytical-kpi-hint">إجمالي ما تم تسليمه ضمن الفترة الحالية</span>
-            </article>
-            <article className="analytical-kpi-card">
-              <span className="analytical-kpi-label">الأوامر المفتوحة</span>
-              <strong className="analytical-kpi-value">
-                {formatCompactNumber(reportBaseline.maintenanceReport.open_count)}
-              </strong>
-              <span className="analytical-kpi-hint">طلبات لم تُغلق بعد</span>
-            </article>
-            <article className="analytical-kpi-card">
-              <span className="analytical-kpi-label">جاهز للتسليم</span>
-              <strong className="analytical-kpi-value">
-                {formatCompactNumber(reportBaseline.maintenanceReport.ready_count)}
-              </strong>
-              <span className="analytical-kpi-hint">طلبات جاهزة حاليًا</span>
-            </article>
-            <article className="analytical-kpi-card">
-              <span className="analytical-kpi-label">المسلّم</span>
-              <strong className="analytical-kpi-value">
-                {formatCompactNumber(reportBaseline.maintenanceReport.delivered_count)}
-              </strong>
-              <span className="analytical-kpi-hint">أوامر أُغلقت ضمن الفترة الحالية</span>
-            </article>
-          </div>
+  function renderInventoryTab() {
+    return (
+      <SectionCard title="المخزون المنخفض" className="analytical-card">
+        <div className="stack-list">
+          {reportBaseline.inventoryReport.products.length > 0 ? (
+            reportBaseline.inventoryReport.products.map((product) => (
+              <article key={product.id} className="list-card">
+                <div className="list-card__header">
+                  <strong>{product.name}</strong>
+                  <span>
+                    {formatCompactNumber(product.stock_quantity)} / {formatCompactNumber(product.min_stock_level)}
+                  </span>
+                </div>
+              </article>
+            ))
+          ) : (
+            renderEmptyList("لا توجد عناصر منخفضة المخزون ضمن المؤشرات الحالية.")
+          )}
+        </div>
+      </SectionCard>
+    );
+  }
 
-          <div className="table-wrap">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>رقم الطلب</th>
-                  <th>التاريخ</th>
-                  <th>العميل</th>
-                  <th>الجهاز</th>
-                  <th>الحالة</th>
-                  <th>المبلغ النهائي</th>
-                </tr>
-              </thead>
-              <tbody>
-                {reportBaseline.maintenanceReport.jobs.length > 0 ? (
-                  reportBaseline.maintenanceReport.jobs.map((job) => (
-                    <tr key={job.job_id}>
-                      <td>{job.job_number}</td>
-                      <td>{formatDate(job.job_date)}</td>
-                      <td>{job.customer_name}</td>
-                      <td>{job.device_type}</td>
-                      <td>
-                        <span className={`status-badge status-badge--${job.status}`}>{getStatusLabel(job.status)}</span>
-                      </td>
-                      <td>{job.final_amount != null ? formatCurrency(job.final_amount) : "-"}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={6} className="table-empty">
-                      لا توجد أوامر صيانة داخل الفترة الحالية.
+  function renderMaintenanceTab() {
+    return (
+      <SectionCard title="الصيانة" className="analytical-card">
+        <div className="analytical-kpi-grid">
+          <article className="analytical-kpi-card">
+            <span className="analytical-kpi-label">الإيراد المسلّم</span>
+            <strong className="analytical-kpi-value">
+              {formatCurrency(reportBaseline.maintenanceReport.delivered_revenue)}
+            </strong>
+            <span className="analytical-kpi-hint">إجمالي ما تم تسليمه ضمن الفترة الحالية</span>
+          </article>
+          <article className="analytical-kpi-card">
+            <span className="analytical-kpi-label">الأوامر المفتوحة</span>
+            <strong className="analytical-kpi-value">
+              {formatCompactNumber(reportBaseline.maintenanceReport.open_count)}
+            </strong>
+            <span className="analytical-kpi-hint">طلبات لم تُغلق بعد</span>
+          </article>
+          <article className="analytical-kpi-card">
+            <span className="analytical-kpi-label">جاهز للتسليم</span>
+            <strong className="analytical-kpi-value">
+              {formatCompactNumber(reportBaseline.maintenanceReport.ready_count)}
+            </strong>
+            <span className="analytical-kpi-hint">طلبات جاهزة حاليًا</span>
+          </article>
+          <article className="analytical-kpi-card">
+            <span className="analytical-kpi-label">المسلّم</span>
+            <strong className="analytical-kpi-value">
+              {formatCompactNumber(reportBaseline.maintenanceReport.delivered_count)}
+            </strong>
+            <span className="analytical-kpi-hint">أوامر أُغلقت ضمن الفترة الحالية</span>
+          </article>
+        </div>
+
+        <div className="table-wrap">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>رقم الطلب</th>
+                <th>التاريخ</th>
+                <th>العميل</th>
+                <th>الجهاز</th>
+                <th>الحالة</th>
+                <th>المبلغ النهائي</th>
+              </tr>
+            </thead>
+            <tbody>
+              {reportBaseline.maintenanceReport.jobs.length > 0 ? (
+                reportBaseline.maintenanceReport.jobs.map((job) => (
+                  <tr key={job.job_id}>
+                    <td>{job.job_number}</td>
+                    <td>{formatDate(job.job_date)}</td>
+                    <td>{job.customer_name}</td>
+                    <td>{job.device_type}</td>
+                    <td>
+                      <span className={`status-badge status-badge--${job.status}`}>
+                        {getStatusLabel(job.status)}
+                      </span>
                     </td>
+                    <td>{formatCurrency(job.final_amount ?? 0)}</td>
                   </tr>
-                )}
-              </tbody>
-            </table>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={6} className="table-empty">
+                    لا توجد أوامر صيانة مطابقة لهذه الفترة.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </SectionCard>
+    );
+  }
+
+  function renderDetailPanel() {
+    switch (activeTab) {
+      case "finance":
+        return renderFinanceTab();
+      case "inventory":
+        return renderInventoryTab();
+      case "maintenance":
+        return renderMaintenanceTab();
+      case "sales":
+      default:
+        return renderSalesTab();
+    }
+  }
+
+  const currentNetProfit = advancedReport.currentPeriod.net_profit;
+  const salesChangePercentage = getComparisonPercentage(
+    advancedReport.currentPeriod.sales_total,
+    advancedReport.comparePeriod?.sales_total
+  );
+  const profitChangePercentage = getComparisonPercentage(
+    advancedReport.currentPeriod.net_profit,
+    advancedReport.comparePeriod?.net_profit
+  );
+  const averageInvoiceValue =
+    reportBaseline.salesHistory.total_count > 0
+      ? reportBaseline.salesSummary.total_sales / reportBaseline.salesHistory.total_count
+      : 0;
+  const comparisonTone = getComparisonTone(salesChangePercentage);
+
+  return (
+    <section className="analytical-page reports-page">
+      <PageHeader
+        title="التقارير"
+        description="ابدأ بقراءة المؤشرات الرئيسية واتجاه الأداء، ثم افتح تفاصيل المبيعات أو المالية أو المخزون أو الصيانة عند الحاجة."
+        meta={
+          <>
+            <span className="status-pill badge badge--neutral">
+              {formatDate(filters.fromDate)} → {formatDate(filters.toDate)}
+            </span>
+            <span className="status-pill badge badge--neutral">
+              {filters.compareFromDate && filters.compareToDate ? "المقارنة مفعلة" : "بدون مقارنة"}
+            </span>
+          </>
+        }
+        actions={
+          <div className="action-row">
+            <a href={exportHref} className="secondary-button">
+              تصدير Excel
+            </a>
           </div>
-        </SectionCard>
+        }
+      />
+
+      <SectionCard
+        id="reports-filters"
+        tone="subtle"
+        className="analytical-card analytical-card--filters reports-page__command-bar"
+      >
+        <form id="reports-filters-form" className="reports-page__command-form" method="GET">
+          <input type="hidden" name="report_tab" value={activeTab} />
+
+          <div className="reports-page__command-row">
+            <label className="stack-field reports-page__quick-field">
+              <span>من تاريخ</span>
+              <input type="date" name="from_date" defaultValue={filters.fromDate} />
+            </label>
+
+            <label className="stack-field reports-page__quick-field">
+              <span>إلى تاريخ</span>
+              <input type="date" name="to_date" defaultValue={filters.toDate} />
+            </label>
+
+            <label className="stack-field reports-page__quick-field">
+              <span>التجميع</span>
+              <select name="group_by" defaultValue={filters.groupBy ?? "day"}>
+                <option value="day">يومي</option>
+                <option value="week">أسبوعي</option>
+                <option value="month">شهري</option>
+              </select>
+            </label>
+
+            <div className="reports-page__command-actions">
+              <button type="submit" className="primary-button">
+                تطبيق الفلاتر
+              </button>
+              <Link href="/reports" className="secondary-button">
+                إعادة ضبط
+              </Link>
+              <button
+                type="button"
+                className="secondary-button reports-page__filter-toggle"
+                aria-expanded={showAdvancedFilters}
+                aria-controls="reports-filters-content"
+                onClick={() => setShowAdvancedFilters((current) => !current)}
+              >
+                <SlidersHorizontal size={16} aria-hidden="true" />
+                <span>{showAdvancedFilters ? "إخفاء الفلاتر المتقدمة" : "الفلاتر المتقدمة"}</span>
+                <ChevronDown
+                  size={16}
+                  aria-hidden="true"
+                  className={`reports-page__filter-icon ${showAdvancedFilters ? "is-rotated" : ""}`}
+                />
+              </button>
+            </div>
+          </div>
+
+          {renderFilterSummaryRow()}
+
+          <div
+            id="reports-filters-content"
+            className="reports-page__advanced-panel"
+            hidden={!showAdvancedFilters}
+            aria-hidden={!showAdvancedFilters}
+          >
+            <div className="reports-page__advanced-grid">
+              <label className="stack-field">
+                <span>من تاريخ المقارنة</span>
+                <input type="date" name="compare_from_date" defaultValue={filters.compareFromDate ?? ""} />
+              </label>
+
+              <label className="stack-field">
+                <span>إلى تاريخ المقارنة</span>
+                <input type="date" name="compare_to_date" defaultValue={filters.compareToDate ?? ""} />
+              </label>
+
+              <label className="stack-field">
+                <span>المستخدم</span>
+                <select name="created_by" defaultValue={filters.createdBy ?? ""}>
+                  <option value="">الكل</option>
+                  {users.map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {user.full_name ?? user.role}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="stack-field">
+                <span>الحالة</span>
+                <select name="status" defaultValue={filters.status ?? ""}>
+                  <option value="">الكل</option>
+                  <option value="active">نشطة</option>
+                  <option value="partially_returned">مرتجع جزئي</option>
+                  <option value="returned">مرتجعة</option>
+                  <option value="cancelled">ملغاة</option>
+                </select>
+              </label>
+
+              <label className="stack-field">
+                <span>الجهاز</span>
+                <select name="pos_terminal_code" defaultValue={filters.posTerminalCode ?? ""}>
+                  <option value="">الكل</option>
+                  {terminals.map((terminal) => (
+                    <option key={terminal} value={terminal}>
+                      {terminal}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="stack-field">
+                <span>بعد التحليل</span>
+                <select name="dimension" defaultValue={filters.dimension ?? "account"}>
+                  <option value="account">الحساب</option>
+                  <option value="entry_type">نوع القيد</option>
+                  <option value="expense_category">فئة المصروف</option>
+                  <option value="supplier">المورد / المزود</option>
+                  <option value="maintenance_status">حالة الصيانة</option>
+                </select>
+              </label>
+            </div>
+          </div>
+        </form>
+      </SectionCard>
+
+      <SectionCard id="reports-compare" title="ملخص المقارنة" className="analytical-card">
+        <div className="analytical-kpi-grid reports-page__summary-grid">
+          <article className="analytical-kpi-card">
+            <span className="analytical-kpi-label">إجمالي المبيعات</span>
+            <strong className="analytical-kpi-value">{formatCurrency(reportBaseline.salesSummary.total_sales)}</strong>
+            <span className="analytical-kpi-hint">
+              الفترة المقارنة: {formatCurrency(advancedReport.comparePeriod?.sales_total ?? 0)}
+            </span>
+          </article>
+
+          <article className="analytical-kpi-card">
+            <span className="analytical-kpi-label">صافي الربح</span>
+            <strong className="analytical-kpi-value">{formatCurrency(currentNetProfit)}</strong>
+            <span className="analytical-kpi-hint">{getComparisonHint(profitChangePercentage)}</span>
+          </article>
+
+          <article className="analytical-kpi-card">
+            <span className="analytical-kpi-label">عدد الفواتير</span>
+            <strong className="analytical-kpi-value">
+              {formatCompactNumber(reportBaseline.salesHistory.total_count)}
+            </strong>
+            <span className="analytical-kpi-hint">
+              متوسط الفاتورة: {formatCurrency(averageInvoiceValue)}
+            </span>
+          </article>
+
+          <article
+            className={`analytical-kpi-card reports-page__summary-card reports-page__summary-card--${comparisonTone}`}
+          >
+            <span className="analytical-kpi-label">التغير عن المقارنة</span>
+            <strong className="analytical-kpi-value">{formatSignedPercent(salesChangePercentage)}</strong>
+            <span className="analytical-kpi-hint">{getComparisonHint(salesChangePercentage)}</span>
+          </article>
+        </div>
+      </SectionCard>
+
+      <SectionCard title="اتجاه الأداء" className="analytical-card reports-page__hero">
+        <ReportsAdvancedCharts trend={advancedReport.trend} breakdown={advancedReport.breakdown} />
+      </SectionCard>
+
+      {renderSignalsGrid()}
+
+      <section className="workspace-stack reports-page__detail-workspace">
+        <div className="reports-page__detail-head">
+          <h2>مساحة التفاصيل</h2>
+          <p>اختر المجال الذي تريد التعمق فيه دون تحويل الشاشة إلى صفحة مكدسة بكل شيء دفعة واحدة.</p>
+        </div>
+
+        <div className="reports-page__tabs" role="tablist" aria-label="التنقل داخل أقسام التقارير">
+          {REPORT_DETAIL_TABS.map((tab) => (
+            <button
+              key={tab.key}
+              ref={(node) => {
+                tabRefs.current[tab.key] = node;
+              }}
+              type="button"
+              id={`reports-tab-${tab.key}`}
+              role="tab"
+              tabIndex={activeTab === tab.key ? 0 : -1}
+              aria-selected={activeTab === tab.key}
+              aria-controls={`reports-panel-${tab.key}`}
+              className={`reports-page__tab ${activeTab === tab.key ? "is-active" : ""}`}
+              onClick={() => setActiveTab(tab.key)}
+              onKeyDown={(event) => handleTabKeyDown(event, tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {REPORT_DETAIL_TABS.map((tab) => (
+          <section
+            key={tab.key}
+            id={`reports-panel-${tab.key}`}
+            role="tabpanel"
+            aria-labelledby={`reports-tab-${tab.key}`}
+            className="reports-page__tab-panel"
+            hidden={activeTab !== tab.key}
+          >
+            {activeTab === tab.key ? renderDetailPanel() : null}
+          </section>
+        ))}
       </section>
     </section>
   );

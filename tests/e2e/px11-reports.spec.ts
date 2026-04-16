@@ -117,16 +117,13 @@ test.describe.serial("PX-11 advanced reports", () => {
       });
       await page.waitForLoadState("networkidle");
 
-      await expect(
-        page.locator("main").getByRole("heading", { name: "التقارير" })
-      ).toBeVisible();
+      await expect(page.locator("main").getByRole("heading", { name: "التقارير" })).toBeVisible();
       await expect(page.getByRole("button", { name: "تطبيق الفلاتر" })).toBeVisible();
       await expect(page.getByText("ملخص المقارنة")).toBeVisible();
       await expect(page.getByText("اتجاه الأداء")).toBeVisible();
-      await expect(
-        page.locator("main").getByRole("heading", { name: "تفكيك البعد الحالي" })
-      ).toBeVisible();
+      await expect(page.locator("main").getByRole("heading", { name: "تفكيك البعد الحالي" })).toBeVisible();
 
+      await page.getByRole("button", { name: "الفلاتر المتقدمة" }).click();
       await page.getByLabel("من تاريخ المقارنة").fill(seededDate);
       await page.getByLabel("إلى تاريخ المقارنة").fill(seededDate);
       await page.getByLabel("التجميع").selectOption("week");

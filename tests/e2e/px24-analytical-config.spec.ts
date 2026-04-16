@@ -17,14 +17,15 @@ test.describe.serial("PX-24 analytical and configuration surfaces", () => {
     admin = await createFixtureUser(supabase, "admin", "px24-admin");
   });
 
-  test("phone admin gets a calmer filter-first reports surface", async ({ page }) => {
+  test("phone admin gets an insight-first reports surface", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await login(page, admin.email, admin.password, "/reports");
 
     await expect(page.locator(".dashboard-topbar .dashboard-header-title")).toContainText("التقارير");
     await expect(page.getByRole("button", { name: "تطبيق الفلاتر" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "نطاق التقرير" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "ملخص المقارنة" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "اتجاه الأداء" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "إشارات تحتاج متابعة" })).toBeVisible();
     await expectNoHorizontalOverflow(page);
   });
 

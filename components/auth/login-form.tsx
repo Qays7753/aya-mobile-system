@@ -9,10 +9,13 @@ import { getSafeArabicErrorMessage } from "@/lib/error-messages";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 const REMEMBERED_EMAIL_KEY = "aya.login.email";
+const POST_LOGIN_CONTINUE_ROUTE = "/auth/continue";
+const NAVIGATION_FAILSAFE_MS = 8000;
 
 export function LoginForm() {
   const router = useRouter();
   const submitLockRef = useRef(false);
+  const navigationFailSafeRef = useRef<number | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -41,10 +44,25 @@ export function LoginForm() {
     window.addEventListener("offline", handleOffline);
 
     return () => {
+      if (navigationFailSafeRef.current) {
+        clearTimeout(navigationFailSafeRef.current);
+      }
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
   }, []);
+
+  function releaseSubmitState() {
+    submitLockRef.current = false;
+    setIsPending(false);
+  }
+
+  function clearNavigationFailSafe() {
+    if (navigationFailSafeRef.current) {
+      clearTimeout(navigationFailSafeRef.current);
+      navigationFailSafeRef.current = null;
+    }
+  }
 
   function clearError() {
     if (errorMessage) {
@@ -69,7 +87,7 @@ export function LoginForm() {
 
     try {
       const supabase = createSupabaseBrowserClient();
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email: normalizedEmail,
         password
       });
@@ -84,37 +102,6 @@ export function LoginForm() {
         return;
       }
 
-      let nextRoute = "/pos";
-
-      // Check role with 2-second timeout
-      if (data.user) {
-        let timeoutId: ReturnType<typeof setTimeout> | undefined;
-        try {
-          const profilePromise = supabase
-            .from("profiles")
-            .select("role")
-            .eq("id", data.user.id)
-            .maybeSingle<{ role: "admin" | "pos_staff" }>();
-
-          const timeoutPromise = new Promise((_, reject) => {
-            timeoutId = setTimeout(() => reject(new Error("Timeout")), 2000);
-          });
-
-          const { data: profile } = await Promise.race([
-            profilePromise,
-            timeoutPromise
-          ]) as Awaited<typeof profilePromise>;
-
-          if (profile?.role === "admin") {
-            nextRoute = "/reports";
-          }
-        } catch {
-          // Timeout or error: use default route
-        } finally {
-          clearTimeout(timeoutId);
-        }
-      }
-
       try {
         if (rememberEmail) {
           window.localStorage.setItem(REMEMBERED_EMAIL_KEY, normalizedEmail);
@@ -125,9 +112,20 @@ export function LoginForm() {
         // Browser storage is optional for the login flow.
       }
 
+      clearNavigationFailSafe();
+      navigationFailSafeRef.current = window.setTimeout(() => {
+        navigationFailSafeRef.current = null;
+        const message = "تم تسجيل الدخول لكن تعذر فتح مساحة العمل. حاول مرة أخرى.";
+        setErrorMessage(message);
+        toast.error(message);
+        releaseSubmitState();
+      }, NAVIGATION_FAILSAFE_MS);
+
       didRequestRedirect = true;
-      router.replace(nextRoute);
+      router.replace(POST_LOGIN_CONTINUE_ROUTE);
+      router.refresh();
     } catch (error) {
+      clearNavigationFailSafe();
       const message = getSafeArabicErrorMessage(
         error,
         "تعذر إكمال تسجيل الدخول. حاول مجددًا."
@@ -136,8 +134,7 @@ export function LoginForm() {
       toast.error(message);
     } finally {
       if (!didRequestRedirect) {
-        submitLockRef.current = false;
-        setIsPending(false);
+        releaseSubmitState();
       }
     }
   }

@@ -163,6 +163,7 @@ export function DashboardShell({
     [navigation, pathname]
   );
   const isPosPage = pathname === "/pos" || pathname.startsWith("/pos/");
+  const isReportsPage = pathname === "/reports" || pathname.startsWith("/reports/");
   const bottomBarItems = useMemo(
     () =>
       PRIMARY_BOTTOM_NAV_HREFS.map((href) =>
@@ -351,6 +352,7 @@ export function DashboardShell({
         "dashboard-shell",
         "dashboard-layout",
         isPosPage ? "dashboard-shell--pos dashboard-layout--pos" : "",
+        isReportsPage ? "dashboard-shell--reports dashboard-layout--reports" : "",
         isOffline ? "dashboard-shell--offline" : ""
       ]
         .filter(Boolean)

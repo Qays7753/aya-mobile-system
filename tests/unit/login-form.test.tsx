@@ -1,16 +1,18 @@
 import React from "react";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { LoginForm } from "@/components/auth/login-form";
 
-const { mockRouterReplace, mockSignInWithPassword, mockSingle } = vi.hoisted(() => ({
+const { mockFrom, mockRouterRefresh, mockRouterReplace, mockSignInWithPassword } = vi.hoisted(() => ({
+  mockFrom: vi.fn(),
+  mockRouterRefresh: vi.fn(),
   mockRouterReplace: vi.fn(),
-  mockSignInWithPassword: vi.fn(),
-  mockSingle: vi.fn()
+  mockSignInWithPassword: vi.fn()
 }));
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
-    replace: mockRouterReplace
+    replace: mockRouterReplace,
+    refresh: mockRouterRefresh
   })
 }));
 
@@ -19,13 +21,7 @@ vi.mock("@/lib/supabase/client", () => ({
     auth: {
       signInWithPassword: mockSignInWithPassword
     },
-    from: () => ({
-      select: () => ({
-        eq: () => ({
-          maybeSingle: mockSingle
-        })
-      })
-    })
+    from: mockFrom
   })
 }));
 
@@ -38,22 +34,23 @@ vi.mock("sonner", () => ({
 
 describe("LoginForm", () => {
   beforeEach(() => {
+    vi.useRealTimers();
     Object.defineProperty(window.navigator, "onLine", {
       configurable: true,
       value: true
     });
     window.localStorage.clear();
+    mockFrom.mockReset();
+    mockRouterRefresh.mockReset();
     mockRouterReplace.mockReset();
     mockSignInWithPassword.mockReset();
-    mockSingle.mockReset();
   });
 
-  it("redirects admins to /reports after successful login", async () => {
+  it("routes successful logins through the server-side continuation page", async () => {
     mockSignInWithPassword.mockResolvedValue({
       data: { user: { id: "admin-1" }, session: {} },
       error: null
     });
-    mockSingle.mockResolvedValue({ data: { role: "admin" } });
 
     render(<LoginForm />);
 
@@ -70,7 +67,9 @@ describe("LoginForm", () => {
         email: "admin@aya.local",
         password: "password123"
       });
-      expect(mockRouterReplace).toHaveBeenCalledWith("/reports");
+      expect(mockFrom).not.toHaveBeenCalled();
+      expect(mockRouterReplace).toHaveBeenCalledWith("/auth/continue");
+      expect(mockRouterRefresh).toHaveBeenCalledTimes(1);
     });
   }, 15000);
 
@@ -95,28 +94,6 @@ describe("LoginForm", () => {
     expect(mockRouterReplace).not.toHaveBeenCalled();
   }, 15000);
 
-  it("redirects pos staff to /pos and falls back to /pos when profile is unavailable", async () => {
-    mockSignInWithPassword.mockResolvedValue({
-      data: { user: { id: "pos-1" }, session: {} },
-      error: null
-    });
-    mockSingle.mockResolvedValueOnce({ data: { role: "pos_staff" } }).mockResolvedValueOnce({ data: null });
-
-    render(<LoginForm />);
-
-    fireEvent.change(screen.getByLabelText("البريد الإلكتروني"), {
-      target: { value: "pos@aya.local" }
-    });
-    fireEvent.change(screen.getByLabelText("كلمة المرور"), {
-      target: { value: "password123" }
-    });
-    fireEvent.click(screen.getByRole("button", { name: /تسجيل الدخول/i }));
-
-    await waitFor(() => {
-      expect(mockRouterReplace).toHaveBeenCalledWith("/pos");
-    });
-  }, 15000);
-
   it("keeps the submit action available when the browser reports offline", async () => {
     Object.defineProperty(window.navigator, "onLine", {
       configurable: true,
@@ -127,7 +104,6 @@ describe("LoginForm", () => {
       data: { user: { id: "admin-1" }, session: {} },
       error: null
     });
-    mockSingle.mockResolvedValue({ data: { role: "admin" } });
 
     render(<LoginForm />);
 
@@ -149,7 +125,7 @@ describe("LoginForm", () => {
         email: "admin@aya.local",
         password: "password123"
       });
-      expect(mockRouterReplace).toHaveBeenCalledWith("/reports");
+      expect(mockRouterReplace).toHaveBeenCalledWith("/auth/continue");
     });
   }, 15000);
 
@@ -158,7 +134,6 @@ describe("LoginForm", () => {
       data: { user: { id: "admin-1" }, session: {} },
       error: null
     });
-    mockSingle.mockResolvedValue({ data: { role: "admin" } });
 
     render(<LoginForm />);
 
@@ -172,7 +147,37 @@ describe("LoginForm", () => {
 
     await waitFor(() => {
       expect(window.localStorage.getItem("aya.login.email")).toBe("admin@aya.local");
-      expect(mockRouterReplace).toHaveBeenCalledWith("/reports");
+      expect(mockRouterReplace).toHaveBeenCalledWith("/auth/continue");
     });
+  }, 15000);
+
+  it("releases the form lock if navigation does not complete", async () => {
+    vi.useFakeTimers();
+    mockSignInWithPassword.mockResolvedValue({
+      data: { user: { id: "admin-1" }, session: {} },
+      error: null
+    });
+
+    render(<LoginForm />);
+
+    fireEvent.change(screen.getByLabelText("البريد الإلكتروني"), {
+      target: { value: "admin@aya.local" }
+    });
+    fireEvent.change(screen.getByLabelText("كلمة المرور"), {
+      target: { value: "password123" }
+    });
+    fireEvent.click(screen.getByRole("button", { name: /تسجيل الدخول/i }));
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(8000);
+    });
+
+    expect(mockRouterReplace).toHaveBeenCalledWith("/auth/continue");
+    expect(screen.getByText("تم تسجيل الدخول لكن تعذر فتح مساحة العمل. حاول مرة أخرى.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /تسجيل الدخول/i })).not.toBeDisabled();
   }, 15000);
 });

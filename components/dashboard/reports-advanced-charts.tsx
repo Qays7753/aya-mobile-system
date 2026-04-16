@@ -1,8 +1,6 @@
 "use client";
 
 import {
-  Bar,
-  BarChart,
   CartesianGrid,
   Legend,
   Line,
@@ -34,46 +32,54 @@ export function ReportsAdvancedCharts({ trend, breakdown }: ReportsAdvancedChart
     );
   }
 
+  const topBreakdown = breakdown.slice(0, 5);
+
   return (
     <div className="analytics-grid">
-      <article className="workspace-panel chart-card">
+      <article className="chart-card chart-card--primary">
         <div className="section-heading">
           <div>
             <p className="eyebrow">الاتجاه</p>
-            <h3>تفاصيل الاتجاه</h3>
+            <h3>المبيعات وصافي الربح</h3>
           </div>
         </div>
 
-        <div className="chart-shell">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={trend} margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(24, 23, 21, 0.06)" />
-              <XAxis dataKey="bucket" tick={{ fontSize: 12 }} />
-              <YAxis tick={{ fontSize: 12 }} />
-              <Tooltip formatter={formatTooltipValue} />
-              <Legend />
-              <Line
-                type="monotone"
-                dataKey="sales_total"
-                name="إجمالي المبيعات"
-                stroke="var(--color-accent)"
-                strokeWidth={3}
-                dot={{ r: 3 }}
-              />
-              <Line
-                type="monotone"
-                dataKey="net_profit"
-                name="صافي الربح"
-                stroke="var(--color-text-secondary)"
-                strokeWidth={3}
-                dot={{ r: 3 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+        {trend.length > 0 ? (
+          <div className="chart-shell">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={trend} margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(24, 23, 21, 0.06)" />
+                <XAxis dataKey="bucket" tick={{ fontSize: 12 }} />
+                <YAxis tick={{ fontSize: 12 }} />
+                <Tooltip formatter={formatTooltipValue} />
+                <Legend />
+                <Line
+                  type="monotone"
+                  dataKey="sales_total"
+                  name="إجمالي المبيعات"
+                  stroke="var(--color-accent)"
+                  strokeWidth={3}
+                  dot={{ r: 3 }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="net_profit"
+                  name="صافي الربح"
+                  stroke="var(--color-text-secondary)"
+                  strokeWidth={3}
+                  dot={{ r: 3 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <div className="empty-panel">
+            <p>لا توجد بيانات اتجاه ضمن الفترة الحالية.</p>
+          </div>
+        )}
       </article>
 
-      <article className="workspace-panel chart-card">
+      <aside className="chart-card chart-card--secondary">
         <div className="section-heading">
           <div>
             <p className="eyebrow">التفكيك</p>
@@ -81,30 +87,25 @@ export function ReportsAdvancedCharts({ trend, breakdown }: ReportsAdvancedChart
           </div>
         </div>
 
-        <div className="chart-shell">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={breakdown.slice(0, 8)} margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(24, 23, 21, 0.06)" />
-              <XAxis dataKey="label" tick={{ fontSize: 12 }} interval={0} angle={-14} textAnchor="end" height={70} />
-              <YAxis tick={{ fontSize: 12 }} />
-              <Tooltip formatter={formatTooltipValue} />
-              <Legend />
-              <Bar
-                dataKey="amount"
-                name="القيمة الأساسية"
-                fill="var(--color-accent)"
-                radius={[8, 8, 0, 0]}
-              />
-              <Bar
-                dataKey="secondary_amount"
-                name="القيمة الثانوية"
-                fill="var(--color-warning)"
-                radius={[8, 8, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </article>
+        {topBreakdown.length > 0 ? (
+          <div className="reports-breakdown-list">
+            {topBreakdown.map((entry) => (
+              <article key={entry.label} className="reports-breakdown-item">
+                <div className="reports-breakdown-item__header">
+                  <strong>{entry.label}</strong>
+                  <span>{formatCurrency(entry.amount)}</span>
+                </div>
+                <p>المقارنة: {formatCurrency(entry.secondary_amount)}</p>
+                <p>العناصر: {entry.item_count.toLocaleString("en-US")}</p>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="empty-panel">
+            <p>لا توجد بيانات تفكيك ضمن الفترة الحالية.</p>
+          </div>
+        )}
+      </aside>
     </div>
   );
 }
