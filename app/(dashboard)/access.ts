@@ -11,7 +11,7 @@ type WorkspaceAccessResult =
       fullName: string | null;
       permissions: string[];
       bundleKeys: string[];
-      maxDiscountPercentage: number | null;
+      maxDiscountAmount: number | null;
       discountRequiresApproval: boolean;
     }
   | { state: "unauthenticated" }
@@ -59,7 +59,7 @@ export const getWorkspaceAccess = cache(async function getWorkspaceAccess(): Pro
     fullName: profile.full_name,
     permissions: permissionContext.permissions,
     bundleKeys: permissionContext.bundleKeys,
-    maxDiscountPercentage: permissionContext.maxDiscountPercentage,
+    maxDiscountAmount: permissionContext.maxDiscountAmount,
     discountRequiresApproval: permissionContext.discountRequiresApproval
   };
 });

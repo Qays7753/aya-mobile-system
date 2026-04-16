@@ -35,7 +35,7 @@ function buildAuthorization(options?: {
     userId: "user-1",
     permissions: ["sales.create"],
     bundleKeys: [],
-    maxDiscountPercentage: null,
+    maxDiscountAmount: null,
     discountRequiresApproval: false,
     supabase: {
       rpc: vi.fn().mockResolvedValue({

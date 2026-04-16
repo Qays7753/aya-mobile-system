@@ -12,7 +12,7 @@ describe("invoice validation schemas", () => {
         {
           product_id: "22222222-2222-2222-8222-222222222222",
           quantity: 1,
-          discount_percentage: 0,
+          discount_amount: 0,
           unit_price: 9999
         }
       ],

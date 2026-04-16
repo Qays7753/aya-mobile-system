@@ -55,11 +55,27 @@ function buildAuthorization(options?: {
     userId: "user-1",
     permissions: ["sales.create"],
     bundleKeys: [],
-    maxDiscountPercentage: null,
+    maxDiscountAmount: null,
     discountRequiresApproval: false,
     supabase: {
       rpc,
-      from() {
+      from(table: string) {
+        if (table === "products") {
+          const productsResult = {
+            data: [{ id: productId, sale_price: 50 }],
+            error: null
+          };
+          const productQuery = {
+            in: vi.fn(() => productQuery),
+            returns: vi.fn().mockResolvedValue(productsResult)
+          };
+          return {
+            select() {
+              return productQuery;
+            }
+          };
+        }
+
         return {
           select() {
             return {
@@ -130,7 +146,7 @@ describe("POST /api/sales", () => {
           {
             product_id: productId,
             quantity: 2,
-            discount_percentage: 5,
+            discount_amount: 5,
             unit_price: 9999
           }
         ],
@@ -200,7 +216,7 @@ describe("POST /api/sales", () => {
 
     const response = await POST(
       createRequest({
-        items: [{ product_id: productId, quantity: 1, discount_percentage: 12 }],
+        items: [{ product_id: productId, quantity: 1, discount_amount: 12 }],
         payments: [{ account_id: accountId, amount: 88 }],
         idempotency_key: idempotencyKey
       })

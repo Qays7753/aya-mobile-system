@@ -31,7 +31,7 @@ describe("GET /api/search/global", () => {
       supabase: {},
       permissions: ["products.read", "notifications.read"],
       bundleKeys: [],
-      maxDiscountPercentage: null,
+      maxDiscountAmount: null,
       discountRequiresApproval: false
     } as never);
 
@@ -50,7 +50,7 @@ describe("GET /api/search/global", () => {
       supabase: {},
       permissions: ["*"],
       bundleKeys: [],
-      maxDiscountPercentage: null,
+      maxDiscountAmount: null,
       discountRequiresApproval: false
     } as never);
     vi.mocked(searchGlobal).mockResolvedValue([

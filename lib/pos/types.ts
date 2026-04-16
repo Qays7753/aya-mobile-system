@@ -33,7 +33,7 @@ export interface PosCartItem {
   category: string;
   sale_price: number;
   quantity: number;
-  discount_percentage: number;
+  discount_amount: number;
   stock_quantity: number;
   track_stock: boolean;
 }

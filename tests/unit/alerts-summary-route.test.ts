@@ -31,7 +31,7 @@ describe("GET /api/alerts/summary", () => {
       supabase: {},
       permissions: ["*"],
       bundleKeys: [],
-      maxDiscountPercentage: null,
+      maxDiscountAmount: null,
       discountRequiresApproval: false
     } as never);
     vi.mocked(getAlertsSummary).mockResolvedValue({

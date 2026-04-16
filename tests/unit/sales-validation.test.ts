@@ -21,7 +21,7 @@ describe("createSaleSchema", () => {
         {
           product_id: productId,
           quantity: 1,
-          discount_percentage: 5,
+          discount_amount: 5,
           unit_price: 99999
         }
       ],

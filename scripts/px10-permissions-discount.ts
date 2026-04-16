@@ -331,7 +331,7 @@ async function main() {
   assert(Boolean(assignmentInsert.error), "Authenticated POS must not insert into role_assignments directly.");
 
   await expectRpcError(service, "create_sale", {
-    p_items: [{ product_id: product.id, quantity: 1, discount_percentage: 12 }],
+    p_items: [{ product_id: product.id, quantity: 1, discount_amount: 12 }],
     p_payments: [{ account_id: cashAccount.id, amount: 88 }],
     p_pos_terminal: "PX10-POS-BASE",
     p_idempotency_key: randomUUID(),
@@ -339,7 +339,7 @@ async function main() {
   }, "ERR_DISCOUNT_EXCEEDED");
 
   await expectRpcError(service, "create_sale", {
-    p_items: [{ product_id: product.id, quantity: 1, discount_percentage: 12 }],
+    p_items: [{ product_id: product.id, quantity: 1, discount_amount: 12 }],
     p_payments: [{ account_id: cashAccount.id, amount: 88 }],
     p_pos_terminal: "PX10-POS-GUARDED",
     p_idempotency_key: randomUUID(),
@@ -352,7 +352,7 @@ async function main() {
     total: number;
     change: number;
   }>(service, "create_sale", {
-    p_items: [{ product_id: product.id, quantity: 1, discount_percentage: 12 }],
+    p_items: [{ product_id: product.id, quantity: 1, discount_amount: 12 }],
     p_payments: [{ account_id: cashAccount.id, amount: 88 }],
     p_discount_by: supervisorPosId,
     p_pos_terminal: "PX10-POS-SUPERVISOR",

@@ -184,7 +184,7 @@ async function seedPx13Fixtures() {
   }
 
   const { error: saleError } = await supabase.rpc("create_sale", {
-    p_items: [{ product_id: saleProduct.id, quantity: 1, discount_percentage: 0 }],
+    p_items: [{ product_id: saleProduct.id, quantity: 1, discount_amount: 0 }],
     p_payments: [{ account_id: cashAccount.id, amount: 30 }],
     p_pos_terminal: terminalCode,
     p_notes: `${queryPrefix} search sale`,

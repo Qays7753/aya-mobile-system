@@ -31,7 +31,7 @@ export function calculateCartDiscount(items: PosCartItem[]) {
   return roundCartAmount(
     items.reduce((sum, item) => {
       const lineSubtotal = item.sale_price * item.quantity;
-      return sum + lineSubtotal * (item.discount_percentage / 100);
+      return sum + Math.min(Math.max(item.discount_amount, 0), lineSubtotal);
     }, 0)
   );
 }
@@ -48,6 +48,11 @@ function clampQuantity(item: PosCartItem, nextQuantity: number) {
   }
 
   return Math.min(normalized, Math.max(item.stock_quantity, 1));
+}
+
+function clampLineDiscountAmount(item: PosCartItem, nextDiscountAmount: number) {
+  const lineSubtotal = roundCartAmount(item.sale_price * item.quantity);
+  return roundCartAmount(Math.min(Math.max(nextDiscountAmount, 0), lineSubtotal));
 }
 
 type SubmissionState = "idle" | "submitting" | "success" | "error";
@@ -86,7 +91,7 @@ export type HeldCart = {
   selectedCustomerName: string | null;
   amountReceived: number | null;
   splitPayments: SplitPayment[];
-  invoiceDiscountPercentage: number;
+  invoiceDiscountAmount: number;
   notes: string;
   heldAt: string;
 };
@@ -99,7 +104,7 @@ interface PosCartStore {
   selectedCustomerName: string | null;
   amountReceived: number | null;
   splitPayments: SplitPayment[];
-  invoiceDiscountPercentage: number;
+  invoiceDiscountAmount: number;
   posTerminalCode: string;
   terminalCodeLocked: boolean;
   notes: string;
@@ -111,7 +116,7 @@ interface PosCartStore {
   addProduct: (product: PosProduct) => void;
   removeItem: (productId: string) => void;
   setQuantity: (productId: string, quantity: number) => void;
-  setDiscountPercentage: (productId: string, discountPercentage: number) => void;
+  setDiscountAmount: (productId: string, discountAmount: number) => void;
   setSelectedAccountId: (accountId: string) => void;
   setSelectedCustomer: (customerId: string | null, customerName: string | null) => void;
   clearSelectedCustomer: () => void;
@@ -121,7 +126,7 @@ interface PosCartStore {
   updateSplitPaymentAmount: (index: number, amount: number) => void;
   updateSplitPaymentAccount: (index: number, accountId: string) => void;
   clearSplitPayments: () => void;
-  setInvoiceDiscountPercentage: (percentage: number) => void;
+  setInvoiceDiscountAmount: (amount: number) => void;
   setNotes: (notes: string) => void;
   setPosTerminalCode: (code: string) => void;
   lockTerminalCode: () => void;
@@ -148,7 +153,7 @@ function createDefaultState() {
     selectedCustomerName: null as string | null,
     amountReceived: null as number | null,
     splitPayments: [] as SplitPayment[],
-    invoiceDiscountPercentage: 0,
+    invoiceDiscountAmount: 0,
     posTerminalCode: "POS-01",
     terminalCodeLocked: false,
     notes: "",
@@ -178,7 +183,7 @@ export const usePosCartStore = create<PosCartStore>()(
                   category: product.category,
                   sale_price: roundCartAmount(product.sale_price),
                   quantity: 1,
-                  discount_percentage: 0,
+                  discount_amount: 0,
                   stock_quantity: product.stock_quantity,
                   track_stock: product.track_stock
                 }
@@ -231,13 +236,13 @@ export const usePosCartStore = create<PosCartStore>()(
           lastErrorCode: null
         }));
       },
-      setDiscountPercentage(productId, discountPercentage) {
+      setDiscountAmount(productId, discountAmount) {
         set((state) => ({
           items: state.items.map((item) =>
             item.product_id === productId
               ? {
                   ...item,
-                  discount_percentage: Math.min(Math.max(discountPercentage, 0), 100)
+                  discount_amount: clampLineDiscountAmount(item, discountAmount)
                 }
               : item
           ),
@@ -330,9 +335,9 @@ export const usePosCartStore = create<PosCartStore>()(
           lastErrorCode: null
         });
       },
-      setInvoiceDiscountPercentage(percentage) {
+      setInvoiceDiscountAmount(amount) {
         set({
-          invoiceDiscountPercentage: Math.min(Math.max(percentage, 0), 100),
+          invoiceDiscountAmount: roundCartAmount(Math.max(amount, 0)),
           submissionState: "idle",
           lastErrorCode: null
         });
@@ -370,7 +375,7 @@ export const usePosCartStore = create<PosCartStore>()(
             selectedCustomerName: state.selectedCustomerName,
             amountReceived: state.amountReceived,
             splitPayments: state.splitPayments,
-            invoiceDiscountPercentage: state.invoiceDiscountPercentage,
+            invoiceDiscountAmount: state.invoiceDiscountAmount,
             notes: state.notes,
             heldAt: new Date().toISOString()
           };
@@ -383,7 +388,7 @@ export const usePosCartStore = create<PosCartStore>()(
             selectedCustomerName: null,
             amountReceived: null,
             splitPayments: [],
-            invoiceDiscountPercentage: 0,
+            invoiceDiscountAmount: 0,
             notes: "",
             heldCarts: [...state.heldCarts, heldCart],
             submissionState: "idle",
@@ -408,7 +413,7 @@ export const usePosCartStore = create<PosCartStore>()(
             selectedCustomerName: heldCart.selectedCustomerName,
             amountReceived: heldCart.amountReceived,
             splitPayments: heldCart.splitPayments,
-            invoiceDiscountPercentage: heldCart.invoiceDiscountPercentage ?? 0,
+            invoiceDiscountAmount: heldCart.invoiceDiscountAmount ?? 0,
             notes: heldCart.notes,
             heldCarts: state.heldCarts.filter((cart) => cart.id !== cartId),
             submissionState: "idle",
@@ -431,7 +436,7 @@ export const usePosCartStore = create<PosCartStore>()(
           selectedCustomerName: null,
           amountReceived: null,
           splitPayments: [],
-          invoiceDiscountPercentage: 0,
+          invoiceDiscountAmount: 0,
           notes: "",
           submissionState: "idle",
           lastCompletedSale: null,
@@ -457,7 +462,7 @@ export const usePosCartStore = create<PosCartStore>()(
           selectedCustomerName: null,
           amountReceived: null,
           splitPayments: [],
-          invoiceDiscountPercentage: 0,
+          invoiceDiscountAmount: 0,
           notes: "",
           submissionState: "success",
           lastCompletedSale: sale,
@@ -510,7 +515,7 @@ export const usePosCartStore = create<PosCartStore>()(
         selectedCustomerName: state.selectedCustomerName,
         amountReceived: state.amountReceived,
         splitPayments: state.splitPayments,
-        invoiceDiscountPercentage: state.invoiceDiscountPercentage,
+        invoiceDiscountAmount: state.invoiceDiscountAmount,
         posTerminalCode: state.posTerminalCode,
         terminalCodeLocked: state.terminalCodeLocked,
         notes: state.notes,

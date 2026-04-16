@@ -34,7 +34,7 @@ const POS_SEARCH_PLACEHOLDER = "ابحث بالاسم أو رمز المنتج..
 let seed: SeedState;
 
 function buildSalePayload(
-  items: Array<{ product_id: string; quantity: number; discount_percentage?: number; unit_price?: number }>,
+  items: Array<{ product_id: string; quantity: number; discount_amount?: number; unit_price?: number }>,
   accountId: string,
   posTerminalCode: string,
   notes: string
@@ -52,7 +52,7 @@ function buildSalePayload(
       throw new Error(`Unknown seeded product ${item.product_id}`);
     }
 
-    return sum + product.sale_price * item.quantity * (1 - (item.discount_percentage ?? 0) / 100);
+    return sum + product.sale_price * item.quantity - (item.discount_amount ?? 0);
   }, 0);
 
   return {
@@ -447,7 +447,7 @@ test.describe.serial("PX-06-T02 UAT release gate", () => {
     const warmItems = seed.performanceProducts.slice(0, 3).map((product) => ({
       product_id: product.id,
       quantity: 1,
-      discount_percentage: 0
+      discount_amount: 0
     }));
 
     try {
@@ -469,7 +469,7 @@ test.describe.serial("PX-06-T02 UAT release gate", () => {
         const payloadItems = seed.performanceProducts.slice(0, itemCount).map((product) => ({
           product_id: product.id,
           quantity: 1 + (attempt % 2),
-          discount_percentage: 0
+          discount_amount: 0
         }));
         const payload = buildSalePayload(
           payloadItems,

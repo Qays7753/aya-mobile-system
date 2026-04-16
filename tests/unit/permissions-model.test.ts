@@ -47,7 +47,7 @@ describe("permissions model", () => {
             label: "Inventory Clerk",
             base_role: "pos_staff",
             permissions: ["inventory.read", "inventory.count.start", "inventory.count.complete"],
-            max_discount_percentage: null,
+            max_discount_amount: null,
             discount_requires_approval: false,
             is_active: true
           }
@@ -60,7 +60,7 @@ describe("permissions model", () => {
             label: "Guarded Discount",
             base_role: "pos_staff",
             permissions: ["sales.discount.override"],
-            max_discount_percentage: 15,
+            max_discount_amount: 15,
             discount_requires_approval: true,
             is_active: true
           }
@@ -74,7 +74,7 @@ describe("permissions model", () => {
     expect(hasPermission(context.permissions, "inventory.read")).toBe(true);
     expect(hasAnyPermission(context.permissions, ["inventory.read", "maintenance.read"])).toBe(true);
     expect(context.bundleKeys).toEqual(["inventory_clerk", "sales_discount_guarded"]);
-    expect(context.maxDiscountPercentage).toBe(15);
+    expect(context.maxDiscountAmount).toBe(15);
     expect(context.discountRequiresApproval).toBe(true);
   });
 });

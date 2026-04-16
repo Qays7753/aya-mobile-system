@@ -11,19 +11,23 @@ type LastTouchedCartLine = {
 
 type PosCartRailProps = {
   accounts?: PosAccount[];
+  amountReceived?: number | null;
   canHoldCart: boolean;
   cartHydrated: boolean;
   cartOverviewLabel: string;
   customerSummaryLabel: string;
-  effectiveMaxDiscount: number;
+  effectiveMaxDiscountAmount: number;
   getAccountIcon?: (type: string) => LucideIcon;
   getHeldCartAge: (heldAt: string) => string;
   heldCarts: HeldCart[];
   isHeldCartsOpen: boolean;
+  isProcessing?: boolean;
   isReviewPaymentDisabled?: boolean;
   items: PosCartItem[];
   lastTouchedLine?: LastTouchedCartLine | null;
   layout?: "inline" | "review";
+  netTotal?: number;
+  onAmountReceivedChange?: (value: string) => void;
   onClearCartRequest: () => void;
   onDecreaseItem: (item: PosCartItem) => void;
   onDiscardHeldCart: (cartId: string) => void;
@@ -38,7 +42,9 @@ type PosCartRailProps = {
   onRestoreHeldCart: (cartId: string) => void;
   onSmartPaymentSubmit?: () => void;
   onToggleHeldCarts: () => void;
+  selectedAccount?: PosAccount | null;
   selectedAccountId?: string | null;
+  showAmountField?: boolean;
   smartPaymentActionLabel?: string;
   smartPaymentAriaLabel?: string;
   smartPaymentErrorMessage?: string | null;
@@ -48,19 +54,23 @@ type PosCartRailProps = {
 
 export function PosCartRail({
   accounts,
+  amountReceived = null,
   canHoldCart,
   cartHydrated,
   cartOverviewLabel,
   customerSummaryLabel,
-  effectiveMaxDiscount,
+  effectiveMaxDiscountAmount,
   getAccountIcon,
   getHeldCartAge,
   heldCarts,
   isHeldCartsOpen,
+  isProcessing = false,
   isReviewPaymentDisabled = false,
   items,
   lastTouchedLine = null,
   layout = "review",
+  netTotal = 0,
+  onAmountReceivedChange,
   onClearCartRequest,
   onDecreaseItem,
   onDiscardHeldCart,
@@ -75,7 +85,9 @@ export function PosCartRail({
   onRestoreHeldCart,
   onSmartPaymentSubmit,
   onToggleHeldCarts,
+  selectedAccount = null,
   selectedAccountId = null,
+  showAmountField = false,
   smartPaymentActionLabel,
   smartPaymentAriaLabel,
   smartPaymentErrorMessage = null,
@@ -83,6 +95,17 @@ export function PosCartRail({
   smartPaymentSubmitting = false
 }: PosCartRailProps) {
   const lineRefs = React.useRef<Record<string, HTMLElement | null>>({});
+  const shouldShowAmountField =
+    showAmountField &&
+    !isHeldCartsOpen &&
+    selectedAccount?.type === "cash" &&
+    typeof onAmountReceivedChange === "function";
+  const amountDifference =
+    amountReceived !== null ? Math.abs((amountReceived ?? 0) - netTotal) : null;
+  const amountDifferenceToneClass =
+    amountReceived !== null && amountReceived >= netTotal
+      ? "pos-remaining-balance validation-tone--success"
+      : "pos-remaining-balance validation-tone--warning";
 
   React.useLayoutEffect(() => {
     if (!lastTouchedLine) {
@@ -217,7 +240,7 @@ export function PosCartRail({
               {items.map((item) => {
                 const maxQuantity = item.track_stock ? Math.max(item.stock_quantity, 1) : null;
                 const lineSubtotal = item.sale_price * item.quantity;
-                const lineDiscountAmount = lineSubtotal * (item.discount_percentage / 100);
+                const lineDiscountAmount = Math.min(item.discount_amount, lineSubtotal);
                 const lineTotal = lineSubtotal - lineDiscountAmount;
                 const canIncreaseQuantity =
                   maxQuantity === null || item.quantity < maxQuantity;
@@ -279,12 +302,14 @@ export function PosCartRail({
                       </div>
 
                       <label className="cart-line-card__discount">
-                        <span>خصم %</span>
+                        <span>مبلغ الخصم (د.أ)</span>
                         <input
                           type="number"
+                          inputMode="decimal"
                           min={0}
-                          max={effectiveMaxDiscount}
-                          value={item.discount_percentage}
+                          max={Math.min(effectiveMaxDiscountAmount, lineSubtotal)}
+                          step="0.001"
+                          value={item.discount_amount}
                           onChange={(event) =>
                             onDiscountChange(item, Number(event.target.value))
                           }
@@ -311,6 +336,36 @@ export function PosCartRail({
         <div className="pos-cart-rail__summary-card">
           <p className="pos-cart-card__summary">{cartOverviewLabel}</p>
         </div>
+
+        {shouldShowAmountField ? (
+          <div className="pos-cart-rail__amount-panel stack-field">
+            <label className="stack-field">
+              <span className="field-label">المبلغ المستلم</span>
+              <input
+                className="field-input"
+                type="number"
+                inputMode="numeric"
+                min={0}
+                step="0.01"
+                value={amountReceived ?? ""}
+                onChange={(event) => onAmountReceivedChange(event.target.value)}
+                placeholder="0.00"
+                disabled={isProcessing || smartPaymentSubmitting}
+                aria-label="المبلغ المستلم"
+              />
+            </label>
+
+            {amountDifference !== null ? (
+              <div
+                className={amountDifferenceToneClass}
+                aria-live="polite"
+                aria-label="الباقي"
+              >
+                <strong>الباقي: {formatCurrency(amountDifference)}</strong>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
 
         {items.length === 0 ? (
           <div className="pos-cart-rail__empty-message">ابدأ بإضافة منتج</div>

@@ -124,7 +124,6 @@ async function insertCompareInvoiceFixture(
     quantity: 1,
     unit_price: 80,
     cost_price_at_time: 50,
-    discount_percentage: 0,
     discount_amount: 0,
     total_price: 80,
     returned_quantity: 0,

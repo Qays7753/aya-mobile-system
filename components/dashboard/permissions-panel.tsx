@@ -19,7 +19,7 @@ type BundlePreviewResponse = {
   bundle_key: string;
   base_role: "admin" | "pos_staff";
   permissions: string[];
-  max_discount_percentage: number | null;
+  max_discount_amount: number | null;
   discount_requires_approval: boolean;
 };
 
@@ -304,7 +304,11 @@ export function PermissionsPanel({
                 </article>
                 <article className="configuration-summary-card">
                   <span>الحد الأقصى للخصم</span>
-                  <strong>{preview.max_discount_percentage ?? "غير محدد"}</strong>
+                  <strong>
+                    {preview.max_discount_amount !== null
+                      ? `${preview.max_discount_amount} د.أ`
+                      : "غير محدد"}
+                  </strong>
                 </article>
                 <article className="configuration-summary-card">
                   <span>اعتماد الخصم</span>

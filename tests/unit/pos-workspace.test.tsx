@@ -122,7 +122,7 @@ describe("PosWorkspace", () => {
   });
 
   it("autofocuses the search input and forwards filters to the products hook", async () => {
-    render(<PosWorkspace maxDiscountPercentage={null} />);
+    render(<PosWorkspace maxDiscountAmount={null} />);
 
     const searchInput = await screen.findByRole("searchbox");
 
@@ -151,7 +151,7 @@ describe("PosWorkspace", () => {
   }, 30000);
 
   it("adds a product to the local cart without triggering a write request", async () => {
-    render(<PosWorkspace maxDiscountPercentage={null} />);
+    render(<PosWorkspace maxDiscountAmount={null} />);
 
     const quickAddButton = screen.getAllByRole("button", { name: /شاحن سريع/i })[0];
     fireEvent.click(quickAddButton);
@@ -163,7 +163,7 @@ describe("PosWorkspace", () => {
     expect(globalThis.fetch).not.toHaveBeenCalled();
   }, 30000);
   it("adds the first matching result when Enter is pressed in search", async () => {
-    render(<PosWorkspace maxDiscountPercentage={null} />);
+    render(<PosWorkspace maxDiscountAmount={null} />);
 
     const searchInput = await screen.findByRole("searchbox");
 
@@ -179,8 +179,8 @@ describe("PosWorkspace", () => {
     expect(globalThis.fetch).not.toHaveBeenCalled();
   }, 30000);
 
-  it("requires explicit amount confirmation before completing overlay payment", async () => {
-    render(<PosWorkspace maxDiscountPercentage={null} />);
+  it("requires explicit amount confirmation before completing the in-place cart payment flow", async () => {
+    render(<PosWorkspace maxDiscountAmount={null} />);
 
     const quickAddButton = screen.getAllByRole("button", { name: /شاحن سريع/i })[0];
     fireEvent.click(quickAddButton);
@@ -189,12 +189,22 @@ describe("PosWorkspace", () => {
       expect(usePosCartStore.getState().items).toHaveLength(1);
     });
 
+    const cartAmountInput = await screen.findByLabelText("المبلغ المستلم");
+    fireEvent.change(cartAmountInput, { target: { value: "80" } });
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("الباقي")).toHaveTextContent(/الباقي:/);
+    });
+
     fireEvent.click(await screen.findByRole("button", { name: "خيارات دفع أخرى" }));
 
     const amountInput = await screen.findByLabelText("المبلغ المستلم");
     const confirmPaymentButton = screen.getByRole("button", { name: "تأكيد الدفع" });
 
-    fireEvent.change(amountInput, { target: { value: "80" } });
+    expect(screen.getByRole("heading", { name: "طريقة الدفع" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "رجوع" })).toBeVisible();
+    expect(screen.queryByRole("button", { name: "تفريغ السلة" })).not.toBeInTheDocument();
+    expect(amountInput).toHaveValue(80);
 
     await waitFor(() => {
       expect(screen.getByText("يجب الدفع كامل المبلغ")).toBeVisible();
@@ -206,6 +216,13 @@ describe("PosWorkspace", () => {
     await waitFor(() => {
       expect(screen.getByLabelText("الباقي")).toHaveTextContent(/الباقي:/);
       expect(confirmPaymentButton).toBeEnabled();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "رجوع" }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "خيارات دفع أخرى" })).toBeVisible();
+      expect(screen.getByLabelText("المبلغ المستلم")).toHaveValue(100);
     });
   }, 30000);
 
@@ -243,7 +260,7 @@ describe("PosWorkspace", () => {
       refresh: vi.fn()
     });
 
-    render(<PosWorkspace maxDiscountPercentage={null} />);
+    render(<PosWorkspace maxDiscountAmount={null} />);
 
     fireEvent.click(screen.getAllByRole("button", { name: /شاحن سريع/i })[0]);
 
@@ -275,7 +292,7 @@ describe("PosWorkspace", () => {
       )
     );
 
-    render(<PosWorkspace maxDiscountPercentage={null} />);
+    render(<PosWorkspace maxDiscountAmount={null} />);
 
     fireEvent.click(screen.getAllByRole("button", { name: /شاحن سريع/i })[0]);
 
@@ -299,7 +316,7 @@ describe("PosWorkspace", () => {
         {
           product_id: "product-1",
           quantity: 1,
-          discount_percentage: 0
+          discount_amount: 0
         }
       ],
       payments: [
@@ -320,7 +337,7 @@ describe("PosWorkspace", () => {
   }, 30000);
 
   it("renders stabilized Arabic labels without mojibake in the active POS surface", async () => {
-    render(<PosWorkspace maxDiscountPercentage={null} />);
+    render(<PosWorkspace maxDiscountAmount={null} />);
 
     expect(screen.getByText("المنتجات")).toBeVisible();
     expect(screen.getByText("العميل: ضيف جديد")).toBeVisible();

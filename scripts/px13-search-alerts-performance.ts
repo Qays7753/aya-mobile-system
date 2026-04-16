@@ -273,7 +273,7 @@ async function main() {
   );
 
   await runRpc(supabase, "create_sale", {
-    p_items: [{ product_id: saleProduct.id, quantity: 1, discount_percentage: 0 }],
+    p_items: [{ product_id: saleProduct.id, quantity: 1, discount_amount: 0 }],
     p_payments: [{ account_id: coreCash.id, amount: 30 }],
     p_debt_customer_id: debtCustomer.id,
     p_pos_terminal: "PX13-TERM",

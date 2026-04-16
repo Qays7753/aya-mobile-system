@@ -37,7 +37,7 @@ export type PermissionBundleSummary = {
   label: string;
   base_role: WorkspaceRole;
   permissions: PermissionKey[];
-  max_discount_percentage: number | null;
+  max_discount_amount: number | null;
   discount_requires_approval: boolean;
 };
 
@@ -47,7 +47,7 @@ type PermissionBundleRow = {
   label: string;
   base_role: WorkspaceRole;
   permissions: string[] | null;
-  max_discount_percentage: number | null;
+  max_discount_amount: number | null;
   discount_requires_approval: boolean;
   is_active: boolean;
 };
@@ -61,7 +61,7 @@ export type PermissionContext = {
   permissions: string[];
   bundleKeys: string[];
   bundles: PermissionBundleSummary[];
-  maxDiscountPercentage: number | null;
+  maxDiscountAmount: number | null;
   discountRequiresApproval: boolean;
 };
 
@@ -89,7 +89,7 @@ export async function resolvePermissionContext(
   const { data, error } = await supabase
     .from("role_assignments")
     .select(
-      "bundle_id, permission_bundles(id, key, label, base_role, permissions, max_discount_percentage, discount_requires_approval, is_active)"
+      "bundle_id, permission_bundles(id, key, label, base_role, permissions, max_discount_amount, discount_requires_approval, is_active)"
     )
     .eq("user_id", userId)
     .eq("is_active", true)
@@ -117,7 +117,7 @@ export async function resolvePermissionContext(
       label: bundle.label,
       base_role: bundle.base_role,
       permissions: normalizedPermissions,
-      max_discount_percentage: bundle.max_discount_percentage,
+      max_discount_amount: bundle.max_discount_amount,
       discount_requires_approval: bundle.discount_requires_approval
     });
 
@@ -132,9 +132,9 @@ export async function resolvePermissionContext(
     permissions: [...permissionSet],
     bundleKeys: bundles.map((bundle) => bundle.key),
     bundles,
-    maxDiscountPercentage:
+    maxDiscountAmount:
       discountBundles.length > 0
-        ? Math.max(...discountBundles.map((bundle) => bundle.max_discount_percentage ?? 0))
+        ? Math.max(...discountBundles.map((bundle) => bundle.max_discount_amount ?? 0))
         : null,
     discountRequiresApproval: discountBundles.some((bundle) => bundle.discount_requires_approval)
   };

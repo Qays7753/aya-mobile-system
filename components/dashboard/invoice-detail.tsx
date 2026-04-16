@@ -533,7 +533,7 @@ export function InvoiceDetail({ role, invoice, accounts }: InvoiceDetailProps) {
           </article>
           {invoice.invoice_discount_amount > 0 ? (
             <article className="transaction-page__meta-card stat-card">
-              <span>خصم الفاتورة ({formatCompactNumber(invoice.invoice_discount_percentage)}%)</span>
+              <span>خصم الفاتورة</span>
               <strong>{formatCurrency(invoice.invoice_discount_amount)}</strong>
             </article>
           ) : null}
@@ -565,7 +565,7 @@ export function InvoiceDetail({ role, invoice, accounts }: InvoiceDetailProps) {
                   {formatCompactNumber(remainingQuantity)}
                 </p>
                 <p className="workspace-footnote">
-                  سعر الوحدة: {formatCurrency(item.unit_price)} | خصم: {formatCompactNumber(item.discount_percentage)}%
+                  سعر الوحدة: {formatCurrency(item.unit_price)} | خصم: {formatCurrency(item.discount_amount)}
                 </p>
               </article>
             );

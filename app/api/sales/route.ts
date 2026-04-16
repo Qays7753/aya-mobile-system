@@ -6,6 +6,7 @@ import {
   handleRouteError,
   parseAndValidate
 } from "@/lib/api/common";
+import { convertDiscountAmountsToLegacyPercentages } from "@/lib/api/discount-amounts";
 import { extractErrorCode, getCreateSaleErrorMeta } from "@/lib/api/sales";
 import type { SaleResponseData, StandardEnvelope } from "@/lib/pos/types";
 import { createSaleSchema } from "@/lib/validations/sales";
@@ -58,13 +59,35 @@ export async function POST(request: Request) {
     }
 
     const payload = validation.data;
+    const productIds = Array.from(new Set(payload.items.map((item) => item.product_id)));
+    const { data: products, error: productsError } = await authorization.supabase
+      .from("products")
+      .select("id, sale_price")
+      .in("id", productIds)
+      .returns<Array<{ id: string; sale_price: number }>>();
+
+    if (productsError) {
+      throw productsError;
+    }
+
+    const priceByProductId = new Map(
+      (products ?? []).map((product) => [product.id, product.sale_price])
+    );
+    const { items: legacyDiscountItems, invoiceDiscountPercentage } =
+      convertDiscountAmountsToLegacyPercentages({
+        items: payload.items,
+        invoiceDiscountAmount: payload.invoice_discount_amount ?? 0,
+        maxDiscountAmount: authorization.maxDiscountAmount,
+        priceByProductId
+      });
+
     const { data, error: rpcError } = await authorization.supabase.rpc("create_sale", {
-      p_items: payload.items,
+      p_items: legacyDiscountItems,
       p_payments: payload.payments,
       p_debt_customer_id: payload.customer_id ?? null,
       p_pos_terminal: payload.pos_terminal_code ?? null,
       p_notes: payload.notes ?? null,
-      p_invoice_discount_percentage: payload.invoice_discount_percentage ?? 0,
+      p_invoice_discount_percentage: invoiceDiscountPercentage,
       p_idempotency_key: payload.idempotency_key,
       p_created_by: authorization.userId
     });

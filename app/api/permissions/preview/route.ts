@@ -8,7 +8,7 @@ type BundlePreviewResponse = {
   bundle_key: string;
   base_role: "admin" | "pos_staff";
   permissions: string[];
-  max_discount_percentage: number | null;
+  max_discount_amount: number | null;
   discount_requires_approval: boolean;
 };
 
@@ -26,14 +26,14 @@ export async function POST(request: Request) {
 
     const { data, error } = await authorization.supabase
       .from("permission_bundles")
-      .select("key, base_role, permissions, max_discount_percentage, discount_requires_approval")
+      .select("key, base_role, permissions, max_discount_amount, discount_requires_approval")
       .eq("key", validation.data.bundle_key)
       .eq("is_active", true)
       .maybeSingle<{
         key: string;
         base_role: "admin" | "pos_staff";
         permissions: string[] | null;
-        max_discount_percentage: number | null;
+        max_discount_amount: number | null;
         discount_requires_approval: boolean;
       }>();
 
@@ -48,7 +48,7 @@ export async function POST(request: Request) {
           bundle_key: data.key,
           base_role: data.base_role,
           permissions: data.permissions ?? [],
-          max_discount_percentage: data.max_discount_percentage,
+          max_discount_amount: data.max_discount_amount,
           discount_requires_approval: data.discount_requires_approval
         }
       },

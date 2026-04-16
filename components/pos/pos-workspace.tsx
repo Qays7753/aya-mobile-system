@@ -20,12 +20,13 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
+import { SectionCard } from "@/components/ui/section-card";
 import { StatusBanner } from "@/components/ui/status-banner";
 import { CartReviewView } from "@/components/pos/view/cart-review-view";
 import { PosSettingsButton } from "@/components/pos/pos-settings-button";
 import { PosSettingsModal } from "@/components/pos/pos-settings-modal";
-import { PaymentCheckoutOverlay } from "@/components/pos/view/payment-checkout-overlay";
 import { PosCartRail } from "@/components/pos/view/pos-cart-rail";
+import { PosCheckoutPanel } from "@/components/pos/view/pos-checkout-panel";
 import { PosSuccessState } from "@/components/pos/view/pos-success-state";
 import { ProductSelectionView } from "@/components/pos/view/product-selection-view";
 import { PosSurfaceShell } from "@/components/pos/view/pos-surface-shell";
@@ -53,7 +54,7 @@ import {
 } from "@/stores/pos-cart";
 
 type PosWorkspaceProps = {
-  maxDiscountPercentage: number | null;
+  maxDiscountAmount: number | null;
 };
 
 type CartPanelState = "products" | "cart" | "payment" | "processing" | "success";
@@ -215,9 +216,7 @@ function getAccountChipLabel(account: PosAccount) {
           account.type === "visa" ||
           account.type === "mastercard"
         ? "بطاقة"
-        : account.type === "cliq"
-          ? "CliQ"
-          : account.name;
+        : account.name;
 
   return account.fee_percentage > 0
     ? `${baseLabel} (${account.fee_percentage}%)`
@@ -283,15 +282,15 @@ declare global {
   }
 }
 
-export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
+export function PosWorkspace({ maxDiscountAmount }: PosWorkspaceProps) {
   const items = usePosCartStore((state) => state.items);
   const selectedAccountId = usePosCartStore((state) => state.selectedAccountId);
   const selectedCustomerId = usePosCartStore((state) => state.selectedCustomerId);
   const selectedCustomerName = usePosCartStore((state) => state.selectedCustomerName);
   const amountReceived = usePosCartStore((state) => state.amountReceived);
   const splitPayments = usePosCartStore((state) => state.splitPayments);
-  const invoiceDiscountPercentage = usePosCartStore(
-    (state) => state.invoiceDiscountPercentage
+  const invoiceDiscountAmountInput = usePosCartStore(
+    (state) => state.invoiceDiscountAmount
   );
   const posTerminalCode = usePosCartStore((state) => state.posTerminalCode);
   const terminalCodeLocked = usePosCartStore((state) => state.terminalCodeLocked);
@@ -303,7 +302,7 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
   const addProduct = usePosCartStore((state) => state.addProduct);
   const removeItem = usePosCartStore((state) => state.removeItem);
   const setQuantity = usePosCartStore((state) => state.setQuantity);
-  const setDiscountPercentage = usePosCartStore((state) => state.setDiscountPercentage);
+  const setDiscountAmount = usePosCartStore((state) => state.setDiscountAmount);
   const setSelectedAccountId = usePosCartStore((state) => state.setSelectedAccountId);
   const setSelectedCustomer = usePosCartStore((state) => state.setSelectedCustomer);
   const clearSelectedCustomer = usePosCartStore((state) => state.clearSelectedCustomer);
@@ -316,8 +315,8 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
   const updateSplitPaymentAccount = usePosCartStore(
     (state) => state.updateSplitPaymentAccount
   );
-  const setInvoiceDiscountPercentage = usePosCartStore(
-    (state) => state.setInvoiceDiscountPercentage
+  const setInvoiceDiscountAmount = usePosCartStore(
+    (state) => state.setInvoiceDiscountAmount
   );
   const setNotes = usePosCartStore((state) => state.setNotes);
   const setPosTerminalCode = usePosCartStore((state) => state.setPosTerminalCode);
@@ -436,9 +435,10 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
   const subtotal = calculateCartSubtotal(items);
   const totalDiscount = calculateCartDiscount(items);
   const total = calculateCartTotal(items);
-  const effectiveMaxDiscount = maxDiscountPercentage ?? 100;
-  const invoiceDiscountAmount =
-    total > 0 ? roundAmount((total * invoiceDiscountPercentage) / 100) : 0;
+  const effectiveMaxDiscountAmount = maxDiscountAmount ?? 100;
+  const invoiceDiscountAmount = roundAmount(
+    Math.min(Math.max(invoiceDiscountAmountInput, 0), effectiveMaxDiscountAmount, total)
+  );
   const netTotal = roundAmount(total - invoiceDiscountAmount);
 
   const selectedAccount =
@@ -507,7 +507,7 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
   const remainingBalanceToneClass = getValidationToneClasses(
     remainingToSettle > 0 ? (canCreateDebt ? "warning" : "error") : "success"
   );
-  const hasInvalidDiscount = invoiceDiscountPercentage > effectiveMaxDiscount;
+  const hasInvalidDiscount = invoiceDiscountAmount > effectiveMaxDiscountAmount;
   const canCompleteSale =
     cartHydrated &&
     Boolean(selectedAccountId) &&
@@ -1392,11 +1392,11 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
       items: items.map((item) => ({
         product_id: item.product_id,
         quantity: item.quantity,
-        discount_percentage: item.discount_percentage
+        discount_amount: item.discount_amount
       })),
       payments,
       customer_id: effectiveSelectedCustomerId || undefined,
-      invoice_discount_percentage: invoiceDiscountPercentage || undefined,
+      invoice_discount_amount: invoiceDiscountAmount || undefined,
       pos_terminal_code: posTerminalCode || undefined,
       notes: effectiveNotes || undefined,
       idempotency_key: currentIdempotencyKey
@@ -1561,8 +1561,12 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
   function handleCartLineDiscountChange(item: (typeof items)[number], rawValue: number) {
     clearSubmissionFeedback();
     setLastTouchedCartLine(null);
-    const clampedValue = Number.isNaN(rawValue) ? 0 : Math.min(rawValue, effectiveMaxDiscount);
-    setDiscountPercentage(item.product_id, clampedValue);
+    const lineSubtotal = roundAmount(item.sale_price * item.quantity);
+    const clampedValue =
+      Number.isNaN(rawValue)
+        ? 0
+        : Math.min(Math.max(rawValue, 0), effectiveMaxDiscountAmount, lineSubtotal);
+    setDiscountAmount(item.product_id, clampedValue);
   }
 
   const headerSlot = (
@@ -1708,126 +1712,128 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
     </ProductSelectionView>
   );
 
-  const paymentOverlay = (
-    <PaymentCheckoutOverlay
-      accounts={accounts}
-      amountReceived={amountReceived}
-      availablePrimarySplitAccounts={availablePrimarySplitAccounts}
-      canCompleteSale={canCompleteSale}
-      canCreateDebt={canCreateDebt}
-      canHoldCart={canHoldCart}
-      changeToReturn={changeToReturn}
-      customerResults={customerResults}
-      customerSearchInput={customerSearchInput}
-      customersLoading={customersLoading}
-      effectiveMaxDiscount={effectiveMaxDiscount}
-      getAccountChipLabel={getAccountChipLabel}
-      getAccountIcon={getAccountIcon}
-      getAvailableAccountsForSplitRow={getAvailableAccountsForSplitRow}
-      heldCartsCount={heldCarts.length}
-      isMobileViewport={isMobileViewport}
-      itemCount={items.length}
-      invoiceDiscountAmount={invoiceDiscountAmount}
-      invoiceDiscountPercentage={invoiceDiscountPercentage}
-      isOffline={isOffline}
-      isPrimarySplitSelectorOpen={isPrimarySplitSelectorOpen}
-      isProcessing={panelState === "processing"}
-      isSplitMode={isSplitMode}
-      isSubmitting={isSubmitting}
-      netTotal={netTotal}
-      notes={notes}
-      onAddSplitPayment={handleAddSplitPayment}
-      onAmountReceivedChange={(value) => {
-        clearSubmissionFeedback();
-        const parsedValue = parseAmount(value);
-        setAmountReceived(value === "" ? null : parsedValue);
-      }}
-      onClearCartRequest={() => setIsClearCartDialogOpen(true)}
-      onClearCustomerSelection={clearCustomerSelection}
-      onClose={returnToActiveCartSurface}
-      onConfirmSale={(amountPaid) => {
-        setIsSmartSubmitting(false);
-        startSubmission(() => {
-          void submitSale({
-            amountReceived: typeof amountPaid === "number" ? amountPaid : undefined
-          });
-        });
-      }}
-      onCustomerSearchInputChange={(value) => {
-        clearSubmissionFeedback();
-        setCustomerSearchInput(value);
-      }}
-      onHeldCartsToggle={() => setIsHeldCartsOpen((currentValue) => !currentValue)}
-      onHoldCart={handleHoldCart}
-      onInvoiceDiscountChange={(value) => {
-        clearSubmissionFeedback();
-        const rawValue = Number(value);
-        setInvoiceDiscountPercentage(
-          Number.isNaN(rawValue) ? 0 : Math.min(Math.max(rawValue, 0), effectiveMaxDiscount)
-        );
-      }}
-      onNotesChange={(value) => {
-        clearSubmissionFeedback();
-        setNotes(value);
-      }}
-      onPaymentAccountSelect={(accountId) => {
-        clearSubmissionFeedback();
-        setSelectedAccountId(accountId);
-      }}
-      onPosTerminalCodeChange={(value) => {
-        clearSubmissionFeedback();
-        setPosTerminalCode(value.toUpperCase());
-      }}
-      onPrimarySplitAccountSelect={selectPrimarySplitAccount}
-      onPrimarySplitAmountChange={(value) => {
-        clearSubmissionFeedback();
-        const parsedValue = parseAmount(value);
-        setPrimarySplitAmount(value === "" ? null : parsedValue);
-      }}
-      onPrimarySplitSelectorToggle={() =>
-        setIsPrimarySplitSelectorOpen((currentValue) => !currentValue)
-      }
-      onRemoveSplitPayment={(index) => {
-        clearSubmissionFeedback();
-        removeSplitPayment(index);
-      }}
-      onSelectCustomer={(customer) => selectCustomer(customer as CustomerSearchResult)}
-      onSplitPaymentAccountChange={(index, accountId) => {
-        clearSubmissionFeedback();
-        updateSplitPaymentAccount(index, accountId);
-      }}
-      onSplitPaymentAmountChange={(index, value) => {
-        clearSubmissionFeedback();
-        updateSplitPaymentAmount(index, parseAmount(value) ?? 0);
-      }}
-      onTerminalCodeLockToggle={() => {
-        if (terminalCodeLocked) {
-          unlockTerminalCode();
-          return;
-        }
+  const handleAmountReceivedChange = (value: string) => {
+    clearSubmissionFeedback();
+    const parsedValue = parseAmount(value);
+    setAmountReceived(value === "" ? null : parsedValue);
+  };
 
-        lockTerminalCode();
-      }}
-      open={panelState === "payment" || (panelState === "processing" && !isSmartSubmitting)}
-      paymentRowCount={paymentRows.length}
-      posTerminalCode={posTerminalCode}
-      primarySplitAmount={primarySplitAmount}
-      remainingToSettle={remainingToSettle}
-      remainingBalanceToneClass={remainingBalanceToneClass}
-      selectedAccount={selectedAccount}
-      selectedAccountId={selectedAccountId}
-      selectedCustomerBalance={selectedCustomerBalance}
-      selectedCustomerId={selectedCustomerId}
-      selectedCustomerName={selectedCustomerName}
-      selectedCustomerPhone={selectedCustomerPhone}
-      shouldBlockForDebt={shouldBlockForDebt}
-      shouldShowCustomerResults={shouldShowCustomerResults}
-      splitPayments={splitPayments}
-      subtotal={subtotal}
-      terminalCodeLocked={terminalCodeLocked}
-      totalDiscount={totalDiscount}
-    />
-  );
+  const handleConfirmSale = (amountPaid?: number | null) => {
+    setIsSmartSubmitting(false);
+    startSubmission(() => {
+      void submitSale({
+        amountReceived: typeof amountPaid === "number" ? amountPaid : undefined
+      });
+    });
+  };
+
+  const checkoutPanelProps = {
+    accounts,
+    amountReceived,
+    availablePrimarySplitAccounts,
+    canCompleteSale,
+    canCreateDebt,
+    canHoldCart,
+    changeToReturn,
+    customerResults,
+    customerSearchInput,
+    customersLoading,
+    effectiveMaxDiscountAmount,
+    getAccountChipLabel,
+    getAccountIcon,
+    getAvailableAccountsForSplitRow,
+    heldCartsCount: heldCarts.length,
+    itemCount: items.length,
+    invoiceDiscountAmount,
+    invoiceDiscountAmountInput: invoiceDiscountAmount,
+    isOffline,
+    isPrimarySplitSelectorOpen,
+    isProcessing: panelState === "processing",
+    isSplitMode,
+    isSubmitting,
+    netTotal,
+    notes,
+    onAddSplitPayment: handleAddSplitPayment,
+    onAmountReceivedChange: handleAmountReceivedChange,
+    onBackToDisplay: returnToActiveCartSurface,
+    onClearCartRequest: () => setIsClearCartDialogOpen(true),
+    onClearCustomerSelection: clearCustomerSelection,
+    onConfirmSale: handleConfirmSale,
+    onCustomerSearchInputChange: (value: string) => {
+      clearSubmissionFeedback();
+      setCustomerSearchInput(value);
+    },
+    onHeldCartsToggle: () => setIsHeldCartsOpen((currentValue) => !currentValue),
+    onHoldCart: handleHoldCart,
+    onInvoiceDiscountChange: (value: string) => {
+      clearSubmissionFeedback();
+      const rawValue = Number(value);
+      setInvoiceDiscountAmount(
+        Number.isNaN(rawValue)
+          ? 0
+          : Math.min(Math.max(rawValue, 0), effectiveMaxDiscountAmount, total)
+      );
+    },
+    onNotesChange: (value: string) => {
+      clearSubmissionFeedback();
+      setNotes(value);
+    },
+    onPaymentAccountSelect: (accountId: string) => {
+      clearSubmissionFeedback();
+      setSelectedAccountId(accountId);
+    },
+    onPosTerminalCodeChange: (value: string) => {
+      clearSubmissionFeedback();
+      setPosTerminalCode(value.toUpperCase());
+    },
+    onPrimarySplitAccountSelect: selectPrimarySplitAccount,
+    onPrimarySplitAmountChange: (value: string) => {
+      clearSubmissionFeedback();
+      const parsedValue = parseAmount(value);
+      setPrimarySplitAmount(value === "" ? null : parsedValue);
+    },
+    onPrimarySplitSelectorToggle: () =>
+      setIsPrimarySplitSelectorOpen((currentValue) => !currentValue),
+    onRemoveSplitPayment: (index: number) => {
+      clearSubmissionFeedback();
+      removeSplitPayment(index);
+    },
+    onSelectCustomer: (customer: CustomerSearchResult) =>
+      selectCustomer(customer as CustomerSearchResult),
+    onSplitPaymentAccountChange: (index: number, accountId: string) => {
+      clearSubmissionFeedback();
+      updateSplitPaymentAccount(index, accountId);
+    },
+    onSplitPaymentAmountChange: (index: number, value: string) => {
+      clearSubmissionFeedback();
+      updateSplitPaymentAmount(index, parseAmount(value) ?? 0);
+    },
+    onTerminalCodeLockToggle: () => {
+      if (terminalCodeLocked) {
+        unlockTerminalCode();
+        return;
+      }
+
+      lockTerminalCode();
+    },
+    paymentRowCount: paymentRows.length,
+    posTerminalCode,
+    primarySplitAmount,
+    remainingToSettle,
+    remainingBalanceToneClass,
+    selectedAccount,
+    selectedAccountId,
+    selectedCustomerBalance,
+    selectedCustomerId,
+    selectedCustomerName,
+    selectedCustomerPhone,
+    shouldBlockForDebt,
+    shouldShowCustomerResults,
+    splitPayments,
+    subtotal,
+    terminalCodeLocked,
+    totalDiscount
+  } satisfies React.ComponentProps<typeof PosCheckoutPanel>;
 
   const successSurface =
     panelState === "success" && lastCompletedSale ? (
@@ -1874,19 +1880,22 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
 
   const cartRailProps = {
     accounts,
+    amountReceived,
     canHoldCart,
     cartHydrated,
     cartOverviewLabel,
     customerSummaryLabel,
-    effectiveMaxDiscount,
+    effectiveMaxDiscountAmount,
     getAccountIcon,
     getHeldCartAge,
     heldCarts,
     isHeldCartsOpen,
+    isProcessing: panelState === "processing",
     isReviewPaymentDisabled: items.length === 0 || panelState === "processing",
     items,
     lastTouchedLine: lastTouchedCartLine,
     onClearCartRequest: () => setIsClearCartDialogOpen(true),
+    onAmountReceivedChange: handleAmountReceivedChange,
     onDecreaseItem: handleCartLineDecrease,
     onDiscardHeldCart: handleDiscardHeldCart,
     onDiscountChange: handleCartLineDiscountChange,
@@ -1903,40 +1912,64 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
     onRestoreHeldCart: handleRestoreHeldCart,
     onSmartPaymentSubmit: handleSmartPaymentSubmit,
     onToggleHeldCarts: () => setIsHeldCartsOpen((currentValue) => !currentValue),
+    selectedAccount,
     selectedAccountId,
+    showAmountField: panelState !== "payment" && panelState !== "processing",
     smartPaymentActionLabel,
     smartPaymentAriaLabel,
     smartPaymentErrorMessage,
     smartPaymentSubmitting: isSmartSubmitting,
-    smartPaymentSubmitDisabled: !canUseSmartPayment
+    smartPaymentSubmitDisabled: !canUseSmartPayment,
+    netTotal
   } satisfies React.ComponentProps<typeof PosCartRail>;
+
+  const shouldShowCheckoutSurface =
+    panelState === "payment" || (panelState === "processing" && !isSmartSubmitting);
+
+  const renderCheckoutSurface = () => (
+    <SectionCard className="transaction-card transaction-card--checkout pos-cart-surface">
+      <PosCheckoutPanel {...checkoutPanelProps} />
+    </SectionCard>
+  );
 
   const cartSurface = (
     hasContainerQuerySupport ? (
       <>
         {!isMobileViewport ? (
           <div className="pos-cart-rail-shell">
-            <PosCartRail {...cartRailProps} layout="inline" />
+            {shouldShowCheckoutSurface
+              ? renderCheckoutSurface()
+              : <PosCartRail {...cartRailProps} layout="inline" />}
           </div>
         ) : null}
 
         <div className="pos-cart-review-shell">
-          <CartReviewView
-            {...cartRailProps}
-            layout="review"
-          />
+          {shouldShowCheckoutSurface
+            ? renderCheckoutSurface()
+            : (
+              <CartReviewView
+                {...cartRailProps}
+                layout="review"
+              />
+            )}
         </div>
       </>
     ) : isMobileViewport ? (
       <div className="pos-cart-review-shell">
-        <CartReviewView
-          {...cartRailProps}
-          layout="review"
-        />
+        {shouldShowCheckoutSurface
+          ? renderCheckoutSurface()
+          : (
+            <CartReviewView
+              {...cartRailProps}
+              layout="review"
+            />
+          )}
       </div>
     ) : (
       <div className="pos-cart-rail-shell">
-        <PosCartRail {...cartRailProps} layout="inline" />
+        {shouldShowCheckoutSurface
+          ? renderCheckoutSurface()
+          : <PosCartRail {...cartRailProps} layout="inline" />}
       </div>
     )
   );
@@ -1994,7 +2027,6 @@ export function PosWorkspace({ maxDiscountPercentage }: PosWorkspaceProps) {
         products={productsSurface}
       />
 
-      {paymentOverlay}
       {successSurface}
 
       {isMobileViewport && activeMobileTab === "products" && panelState !== "success" ? (

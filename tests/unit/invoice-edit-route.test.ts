@@ -36,9 +36,28 @@ function buildAuthorization(options?: {
     userId: "admin-1",
     permissions: ["invoices.edit"],
     bundleKeys: [],
-    maxDiscountPercentage: null,
+    maxDiscountAmount: null,
     discountRequiresApproval: false,
     supabase: {
+      from(table: string) {
+        if (table === "products") {
+          const productsResult = {
+            data: [{ id: productId, sale_price: 100 }],
+            error: null
+          };
+          const productQuery = {
+            in: vi.fn(() => productQuery),
+            returns: vi.fn().mockResolvedValue(productsResult)
+          };
+          return {
+            select() {
+              return productQuery;
+            }
+          };
+        }
+
+        throw new Error(`Unexpected table lookup: ${table}`);
+      },
       rpc: vi.fn().mockResolvedValue({
         data:
           options?.rpcData ?? {
@@ -68,7 +87,7 @@ describe("POST /api/invoices/edit", () => {
           {
             product_id: productId,
             quantity: 1,
-            discount_percentage: 5,
+            discount_amount: 5,
             unit_price: 9999
           }
         ],

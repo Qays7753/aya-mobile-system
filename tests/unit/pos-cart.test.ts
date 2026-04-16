@@ -103,7 +103,7 @@ describe("usePosCartStore", () => {
           category: "accessory",
           sale_price: 10,
           quantity: 2,
-          discount_percentage: 10,
+          discount_amount: 2,
           stock_quantity: 5,
           track_stock: true
         }
@@ -128,7 +128,7 @@ describe("usePosCartStore", () => {
           category: "accessory",
           sale_price: 10,
           quantity: 1,
-          discount_percentage: 0,
+          discount_amount: 0,
           stock_quantity: 5,
           track_stock: true
         }

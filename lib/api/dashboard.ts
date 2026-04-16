@@ -35,7 +35,7 @@ export type PermissionBundleOption = {
   description: string | null;
   base_role: WorkspaceRole;
   permissions: string[];
-  max_discount_percentage: number | null;
+  max_discount_amount: number | null;
   discount_requires_approval: boolean;
   is_system: boolean;
 };
@@ -301,7 +301,6 @@ export type InvoiceItemOption = {
   quantity: number;
   returned_quantity: number;
   unit_price: number;
-  discount_percentage: number;
   discount_amount: number;
   total_price: number;
 };
@@ -319,7 +318,6 @@ export type InvoiceOption = {
   debt_amount: number;
   subtotal: number;
   discount_amount: number;
-  invoice_discount_percentage: number;
   invoice_discount_amount: number;
   items: InvoiceItemOption[];
 };
@@ -410,9 +408,9 @@ type InvoiceRow = Omit<InvoiceOption, "items">;
 type InvoiceListRow = InvoiceRow & { created_by: string };
 
 const INVOICE_LIST_SELECT =
-  "id, invoice_number, invoice_date, created_at, customer_name, customer_phone, subtotal, discount_amount, invoice_discount_percentage, invoice_discount_amount, total_amount, status, pos_terminal_code, debt_amount, created_by";
+  "id, invoice_number, invoice_date, created_at, customer_name, customer_phone, subtotal, discount_amount, invoice_discount_amount, total_amount, status, pos_terminal_code, debt_amount, created_by";
 const INVOICE_DETAIL_SELECT =
-  "id, invoice_number, invoice_date, created_at, customer_name, customer_phone, subtotal, discount_amount, invoice_discount_percentage, invoice_discount_amount, total_amount, debt_amount, status, cancel_reason, cancelled_by, cancelled_at, pos_terminal_code, notes, created_by";
+  "id, invoice_number, invoice_date, created_at, customer_name, customer_phone, subtotal, discount_amount, invoice_discount_amount, total_amount, debt_amount, status, cancel_reason, cancelled_by, cancelled_at, pos_terminal_code, notes, created_by";
 
 type PurchaseOrderRow = {
   id: string;
@@ -701,7 +699,7 @@ export async function getSettingsPageBaseline(
     supabase
       .from("permission_bundles")
       .select(
-        "id, key, label, description, base_role, permissions, max_discount_percentage, discount_requires_approval, is_system"
+        "id, key, label, description, base_role, permissions, max_discount_amount, discount_requires_approval, is_system"
       )
       .eq("is_active", true)
       .order("base_role", { ascending: true })
@@ -1164,7 +1162,7 @@ export async function getInvoicesPageBaseline(
       : await supabase
           .from("invoice_items")
           .select(
-            "id, invoice_id, product_name_at_time, quantity, returned_quantity, unit_price, discount_percentage, discount_amount, total_price"
+            "id, invoice_id, product_name_at_time, quantity, returned_quantity, unit_price, discount_amount, total_price"
           )
           .in("invoice_id", invoiceIds)
           .returns<InvoiceItemOption[]>();
@@ -1221,7 +1219,7 @@ export async function getInvoiceDetailPageData(
     supabase
       .from("invoice_items")
       .select(
-        "id, invoice_id, product_name_at_time, quantity, returned_quantity, unit_price, discount_percentage, discount_amount, total_price"
+        "id, invoice_id, product_name_at_time, quantity, returned_quantity, unit_price, discount_amount, total_price"
       )
       .eq("invoice_id", invoiceId)
       .returns<InvoiceItemOption[]>(),

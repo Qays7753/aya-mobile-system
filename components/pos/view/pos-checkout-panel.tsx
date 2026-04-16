@@ -12,7 +12,7 @@ type CustomerSearchResult = {
 };
 
 type SectionId = "customer" | "discount" | "split" | "debt" | "notes";
-type PaymentStep = "method-select" | "amount-confirmation";
+type CartDisplayMode = "display" | "payment";
 
 type PosCheckoutPanelProps = {
   accounts: PosAccount[];
@@ -25,14 +25,14 @@ type PosCheckoutPanelProps = {
   customerResults: CustomerSearchResult[];
   customerSearchInput: string;
   customersLoading: boolean;
-  effectiveMaxDiscount: number;
+  effectiveMaxDiscountAmount: number;
   getAccountChipLabel: (account: PosAccount) => string;
   getAccountIcon: (type: string) => LucideIcon;
   getAvailableAccountsForSplitRow: (selectedAccountId: string) => PosAccount[];
   heldCartsCount: number;
   itemCount: number;
   invoiceDiscountAmount: number;
-  invoiceDiscountPercentage: number;
+  invoiceDiscountAmountInput: number;
   isOffline: boolean;
   isPrimarySplitSelectorOpen: boolean;
   isProcessing: boolean;
@@ -46,6 +46,7 @@ type PosCheckoutPanelProps = {
   onClearCustomerSelection: () => void;
   onConfirmSale: (amountPaid?: number | null) => void;
   onCustomerSearchInputChange: (value: string) => void;
+  onBackToDisplay?: () => void;
   onHeldCartsToggle: () => void;
   onHoldCart: () => void;
   onInvoiceDiscountChange: (value: string) => void;
@@ -93,7 +94,7 @@ const DEFAULT_TERMINAL_CODE = "POS-01";
 
 function buildInitialOpenSections({
   canCreateDebt,
-  invoiceDiscountPercentage,
+  invoiceDiscountAmountInput,
   isSplitMode,
   notes,
   posTerminalCode,
@@ -101,7 +102,7 @@ function buildInitialOpenSections({
   terminalCodeLocked
 }: {
   canCreateDebt: boolean;
-  invoiceDiscountPercentage: number;
+  invoiceDiscountAmountInput: number;
   isSplitMode: boolean;
   notes: string;
   posTerminalCode: string;
@@ -111,7 +112,7 @@ function buildInitialOpenSections({
   return {
     customer: Boolean(selectedCustomerId),
     debt: canCreateDebt,
-    discount: invoiceDiscountPercentage > 0,
+    discount: invoiceDiscountAmountInput > 0,
     notes:
       notes.trim().length > 0 ||
       terminalCodeLocked ||
@@ -179,14 +180,14 @@ export function PosCheckoutPanel({
   customerResults,
   customerSearchInput,
   customersLoading,
-  effectiveMaxDiscount,
+  effectiveMaxDiscountAmount,
   getAccountChipLabel,
   getAccountIcon,
   getAvailableAccountsForSplitRow,
   heldCartsCount,
   itemCount,
   invoiceDiscountAmount,
-  invoiceDiscountPercentage,
+  invoiceDiscountAmountInput,
   isOffline,
   isPrimarySplitSelectorOpen,
   isProcessing,
@@ -200,6 +201,7 @@ export function PosCheckoutPanel({
   onClearCustomerSelection,
   onConfirmSale,
   onCustomerSearchInputChange,
+  onBackToDisplay,
   onHeldCartsToggle,
   onHoldCart,
   onInvoiceDiscountChange,
@@ -232,13 +234,13 @@ export function PosCheckoutPanel({
   terminalCodeLocked,
   totalDiscount
 }: PosCheckoutPanelProps) {
-  const [paymentStep, setPaymentStep] = React.useState<PaymentStep>(() =>
-    selectedAccountId ? "amount-confirmation" : "method-select"
+  const [cartDisplayMode, setCartDisplayMode] = React.useState<CartDisplayMode>(() =>
+    selectedAccountId ? "payment" : "display"
   );
   const [openSections, setOpenSections] = React.useState<Record<SectionId, boolean>>(() =>
     buildInitialOpenSections({
       canCreateDebt,
-      invoiceDiscountPercentage,
+      invoiceDiscountAmountInput,
       isSplitMode,
       notes,
       posTerminalCode,
@@ -265,9 +267,9 @@ export function PosCheckoutPanel({
     const accountIdChanged = previousSelectedAccountId.current !== selectedAccountId;
 
     if (!selectedAccountId) {
-      setPaymentStep("method-select");
+      setCartDisplayMode("display");
     } else if (!isSplitMode && accountIdChanged) {
-      setPaymentStep("amount-confirmation");
+      setCartDisplayMode("payment");
     }
 
     previousSelectedAccountId.current = selectedAccountId;
@@ -384,19 +386,36 @@ export function PosCheckoutPanel({
   const handlePaymentAccountSelection = React.useCallback(
     (accountId: string) => {
       onPaymentAccountSelect(accountId);
-      onAmountReceivedChange("");
-      setPaymentStep("amount-confirmation");
+      setCartDisplayMode("payment");
     },
-    [onAmountReceivedChange, onPaymentAccountSelect]
+    [onPaymentAccountSelect]
   );
 
+  const handleReturnToDisplay = React.useCallback(() => {
+    setCartDisplayMode("display");
+    onBackToDisplay?.();
+  }, [onBackToDisplay]);
+
   const handleAmountConfirmationCancel = React.useCallback(() => {
-    onAmountReceivedChange("");
-    setPaymentStep("method-select");
-  }, [onAmountReceivedChange]);
+    handleReturnToDisplay();
+  }, [handleReturnToDisplay]);
 
   return (
     <div className="pos-unified-checkout">
+      <div className="pos-checkout-panel__header">
+        <h2 className="pos-checkout-panel__title">طريقة الدفع</h2>
+        {!isSplitMode && cartDisplayMode === "payment" ? (
+          <button
+            type="button"
+            className="secondary-button pos-checkout-panel__back"
+            onClick={handleReturnToDisplay}
+            disabled={isProcessing || isSubmitting}
+          >
+            رجوع
+          </button>
+        ) : null}
+      </div>
+
       <div className="pos-cart-summary">
         <dl>
           <div>
@@ -452,7 +471,7 @@ export function PosCheckoutPanel({
       ) : null}
 
       {!isSplitMode && selectedAccount ? (
-        paymentStep === "amount-confirmation" ? (
+        cartDisplayMode === "payment" ? (
           <PaymentAmountConfirmation
             amountPaid={amountReceived}
             isProcessing={isProcessing || isSubmitting}
@@ -486,11 +505,6 @@ export function PosCheckoutPanel({
           type="button"
           className="secondary-button"
           onClick={(event) => {
-            if (!isSplitMode && paymentStep === "amount-confirmation") {
-              setPaymentStep("method-select");
-              return;
-            }
-
             const paymentSurface = event.currentTarget
               .closest(".pos-unified-checkout")
               ?.querySelector<HTMLElement>(".pos-payment-chip-row, .pos-split-payments");
@@ -664,14 +678,15 @@ export function PosCheckoutPanel({
           sectionRef={discountSectionRef}
         >
           <label className="stack-field">
-            <span className="field-label">خصم الفاتورة</span>
+            <span className="field-label">خصم الفاتورة (د.أ)</span>
             <input
               className="field-input"
               type="number"
               inputMode="decimal"
               min={0}
-              max={effectiveMaxDiscount}
-              value={invoiceDiscountPercentage}
+              max={effectiveMaxDiscountAmount}
+              step="0.001"
+              value={invoiceDiscountAmountInput}
               onChange={(event) => onInvoiceDiscountChange(event.target.value)}
               disabled={isProcessing}
             />

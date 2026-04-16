@@ -39,7 +39,7 @@ function buildAuthorization(options?: {
     userId: "admin-1",
     permissions: ["invoices.cancel"],
     bundleKeys: [],
-    maxDiscountPercentage: null,
+    maxDiscountAmount: null,
     discountRequiresApproval: false,
     supabase: {
       rpc: vi.fn().mockResolvedValue({

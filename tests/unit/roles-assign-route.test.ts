@@ -25,7 +25,7 @@ function buildAuthorization(rpc: ReturnType<typeof vi.fn>) {
     userId: "admin-1",
     permissions: ["*"],
     bundleKeys: [],
-    maxDiscountPercentage: null,
+    maxDiscountAmount: null,
     discountRequiresApproval: false,
     supabase: { rpc }
   };

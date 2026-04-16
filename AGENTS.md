@@ -4174,3 +4174,80 @@ Types:
 - Test coverage is critical (discount math affects revenue)
 - Consider soft-launching with 0 max_discount_amount to verify logic
 
+═══ EXECUTION_RESULT — 2026-04-16-POS-CLIQ-WALLET-PLURALITY ═══
+
+- STATUS: DONE
+- ROOT CAUSE:
+  `getAccountChipLabel()` كان يحتوي branch provider-specific قديم (`cliq`) رغم أن المحافظ في العقد الحالي تُعرض كحسابات `wallet` باسم المزود من قاعدة البيانات.
+- CHANGES:
+  - [components/pos/pos-workspace.tsx](</c:/Users/Qaysk/OneDrive/Desktop/Aya Mobile/components/pos/pos-workspace.tsx>) أزيل منه hardcoded provider label، وأصبح الاعتماد على `account.name` للحسابات غير النقدية/غير البطاقة.
+- VERIFY:
+  - `npx tsc --noEmit --pretty false` ✅
+  - `npx vitest run` ✅
+- RESULT:
+  لا توجد provider strings hardcoded بعد الآن، وإضافة محافظ جديدة لم تعد تحتاج تعديل كود.
+
+═══ EXECUTION_RESULT — 2026-04-16-POS-CART-AMOUNT-FIELD ═══
+
+- STATUS: DONE
+- ROOT CAUSE:
+  حقل `المبلغ المستلم` كان موجودًا فقط داخل مسار الدفع، بينما عرض السلة الرئيسي لا يشاركه نفس الحالة. كذلك `cart-line-list` كانت single-column دائمًا.
+- CHANGES:
+  - [components/pos/view/pos-cart-rail.tsx](</c:/Users/Qaysk/OneDrive/Desktop/Aya Mobile/components/pos/view/pos-cart-rail.tsx>) أضيف له amount panel في السلة الرئيسية، مربوط بنفس `amountReceived` المركزي.
+  - [components/pos/pos-workspace.tsx](</c:/Users/Qaysk/OneDrive/Desktop/Aya Mobile/components/pos/pos-workspace.tsx>) مرّر state/callbacks المشتركة إلى cart rail.
+  - [app/globals.css](</c:/Users/Qaysk/OneDrive/Desktop/Aya Mobile/app/globals.css>) حوّلت `cart-line-list` إلى grid عمودين مع fallback عمود واحد على الهاتف، وأضيف styling بسيط للـ amount panel.
+  - [tests/unit/pos-workspace.test.tsx](</c:/Users/Qaysk/OneDrive/Desktop/Aya Mobile/tests/unit/pos-workspace.test.tsx>) تم تحديثه ليتحقق من ظهور الحقل في السلة ومن بقاء القيمة عند فتح الدفع.
+- VERIFY:
+  - `npx tsc --noEmit --pretty false` ✅
+  - `npx vitest run` ✅
+- RESULT:
+  الحقل ظاهر ومشترك بين السلة والدفع، والمنتجات في السلة أصبحت أكثف بدون كسر قابلية القراءة.
+
+═══ EXECUTION_RESULT — 2026-04-16-POS-CART-PAYMENT-SWAP ═══
+
+- STATUS: DONE
+- ROOT CAUSE:
+  مسار الدفع الفعلي كان يعتمد على `PaymentCheckoutOverlay` full-screen، لذلك الانتقال إلى الدفع كان يخرج من cart shell بدل عمل content swap داخله.
+- CHANGES:
+  - [components/pos/view/pos-checkout-panel.tsx](</c:/Users/Qaysk/OneDrive/Desktop/Aya Mobile/components/pos/view/pos-checkout-panel.tsx>) استبدل `paymentStep` بـ `cartDisplayMode` وأضيف header + back action داخل panel.
+  - [components/pos/pos-workspace.tsx](</c:/Users/Qaysk/OneDrive/Desktop/Aya Mobile/components/pos/pos-workspace.tsx>) أزيل منه overlay من المسار الحي، وصار checkout يُرسم داخل نفس cart shell باستخدام `SectionCard` + `PosCheckoutPanel`.
+  - [app/globals.css](</c:/Users/Qaysk/OneDrive/Desktop/Aya Mobile/app/globals.css>) أضيفت handles بسيطة لـ checkout header/title/back.
+  - [tests/unit/pos-workspace.test.tsx](</c:/Users/Qaysk/OneDrive/Desktop/Aya Mobile/tests/unit/pos-workspace.test.tsx>) عزز التحقق لوجود عنوان `طريقة الدفع` وزر `رجوع` وعدم بقاء cart controls أثناء payment mode.
+- VERIFY:
+  - `npx tsc --noEmit --pretty false` ✅
+  - `npx vitest run tests/unit/pos-workspace.test.tsx` ✅
+  - `npx vitest run` ✅
+- RESULT:
+  الضغط على `خيارات دفع أخرى` يبدّل محتوى نفس cart container بدل overlay منفصل، والرجوع يعيد عرض السلة في نفس المكان.
+
+═══ EXECUTION_RESULT — 2026-04-16-POS-DISCOUNT-MODEL-CHANGE ═══
+
+- STATUS: DONE
+- ROOT CAUSE:
+  نموذج الخصم كان مبنيًا end-to-end على `discount_percentage` و`invoice_discount_percentage` في POS/API/permissions/invoice detail، بينما المطلوب أصبح خصمًا ثابتًا بالمبلغ.
+- CHANGES:
+  - Runtime contract:
+    - [lib/pos/types.ts](</c:/Users/Qaysk/OneDrive/Desktop/Aya Mobile/lib/pos/types.ts>) و[stores/pos-cart.ts](</c:/Users/Qaysk/OneDrive/Desktop/Aya Mobile/stores/pos-cart.ts>) حُوّلا إلى `discount_amount` و`invoiceDiscountAmount`.
+    - [components/pos/view/pos-cart-rail.tsx](</c:/Users/Qaysk/OneDrive/Desktop/Aya Mobile/components/pos/view/pos-cart-rail.tsx>) و[components/pos/view/pos-checkout-panel.tsx](</c:/Users/Qaysk/OneDrive/Desktop/Aya Mobile/components/pos/view/pos-checkout-panel.tsx>) عُدّلت labels/input semantics/display لتكون amounts لا percentages.
+    - [components/pos/pos-workspace.tsx](</c:/Users/Qaysk/OneDrive/Desktop/Aya Mobile/components/pos/pos-workspace.tsx>) صار يحسب الخصم بالطرح المباشر ويبعث `discount_amount` / `invoice_discount_amount`.
+  - API compatibility:
+    - [lib/validations/sales.ts](</c:/Users/Qaysk/OneDrive/Desktop/Aya Mobile/lib/validations/sales.ts>) تحوّل للعقد الجديد.
+    - [lib/api/discount-amounts.ts](</c:/Users/Qaysk/OneDrive/Desktop/Aya Mobile/lib/api/discount-amounts.ts>) أضيف helper يحوّل amount-based requests إلى legacy derived percentages قبل RPC، حتى يبقى backend القديم usable لحين ترقية دوال SQL.
+    - [app/api/sales/route.ts](</c:/Users/Qaysk/OneDrive/Desktop/Aya Mobile/app/api/sales/route.ts>) و[app/api/invoices/edit/route.ts](</c:/Users/Qaysk/OneDrive/Desktop/Aya Mobile/app/api/invoices/edit/route.ts>) صارا يطبّقان validation amount-based ثم يرسلان النسب المشتقة إلى RPC legacy.
+  - Permissions + reporting:
+    - [lib/permissions.ts](</c:/Users/Qaysk/OneDrive/Desktop/Aya Mobile/lib/permissions.ts>), [app/(dashboard)/access.ts](</c:/Users/Qaysk/OneDrive/Desktop/Aya Mobile/app/(dashboard)/access.ts>), [lib/api/common.ts](</c:/Users/Qaysk/OneDrive/Desktop/Aya Mobile/lib/api/common.ts>), [app/api/permissions/preview/route.ts](</c:/Users/Qaysk/OneDrive/Desktop/Aya Mobile/app/api/permissions/preview/route.ts>), [components/dashboard/permissions-panel.tsx](</c:/Users/Qaysk/OneDrive/Desktop/Aya Mobile/components/dashboard/permissions-panel.tsx>) و[app/(dashboard)/pos/page.tsx](</c:/Users/Qaysk/OneDrive/Desktop/Aya Mobile/app/(dashboard)/pos/page.tsx>) انتقلت إلى `maxDiscountAmount` / `max_discount_amount`.
+    - [lib/api/dashboard.ts](</c:/Users/Qaysk/OneDrive/Desktop/Aya Mobile/lib/api/dashboard.ts>) و[components/dashboard/invoice-detail.tsx](</c:/Users/Qaysk/OneDrive/Desktop/Aya Mobile/components/dashboard/invoice-detail.tsx>) توقفت عن عرض النسب في تفاصيل الفاتورة، وأصبحت تعرض مبالغ الخصم فقط.
+  - Database migration:
+    - [supabase/migrations/021_discount_amount_model.sql](</c:/Users/Qaysk/OneDrive/Desktop/Aya Mobile/supabase/migrations/021_discount_amount_model.sql>) أضيفت لـ:
+      - backfill `discount_amount` و`invoice_discount_amount`
+      - إضافة `permission_bundles.max_discount_amount`
+      - إضافة مفاتيح `max_pos_discount_amount` و`discount_warning_threshold_amount`
+      - إبقاء الحقول النسبية القديمة legacy للتوافق الخلفي بدل حذفها فورًا
+  - Tests/scripts:
+    - unit/e2e/scripts المرتبطة بالخصم أو permission context تم تحديثها للعقد الجديد.
+- VERIFY:
+  - `npx tsc --noEmit --pretty false` ✅
+  - `npx vitest run` ✅ (`71/71` files, `209/209` tests)
+- RESULT:
+  POS صار amount-based على مستوى الواجهة والعقد الأمامي والـ permissions والعرض التقاريري، مع طبقة توافق backend تمنع كسر RPC الحالي إلى أن تُستبدل دوال SQL legacy بالكامل.
+

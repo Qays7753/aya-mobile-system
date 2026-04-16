@@ -42,7 +42,7 @@ describe("POST /api/permissions/preview", () => {
         key: "inventory_clerk",
         base_role: "pos_staff",
         permissions: ["inventory.read", "inventory.count.start"],
-        max_discount_percentage: null,
+        max_discount_amount: null,
         discount_requires_approval: false
       },
       error: null
@@ -54,7 +54,7 @@ describe("POST /api/permissions/preview", () => {
       userId: "admin-1",
       permissions: ["*"],
       bundleKeys: [],
-      maxDiscountPercentage: null,
+      maxDiscountAmount: null,
       discountRequiresApproval: false,
       supabase: {
         from() {

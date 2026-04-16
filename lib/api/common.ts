@@ -65,7 +65,7 @@ export type AuthorizationResult =
       role: WorkspaceRole;
       permissions: string[];
       bundleKeys: string[];
-      maxDiscountPercentage: number | null;
+      maxDiscountAmount: number | null;
       discountRequiresApproval: boolean;
     }
   | {
@@ -272,7 +272,7 @@ export async function authorizeRequest(
     role: profile.role,
     permissions: permissionContext.permissions,
     bundleKeys: permissionContext.bundleKeys,
-    maxDiscountPercentage: permissionContext.maxDiscountPercentage,
+    maxDiscountAmount: permissionContext.maxDiscountAmount,
     discountRequiresApproval: permissionContext.discountRequiresApproval
   };
 }
