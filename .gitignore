@@ -41,3 +41,4 @@ supabase/.temp/
 
 # Gemini AI artifacts (local only)
 .gemini/
+.claude/worktrees/
